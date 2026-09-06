@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+  "integration: calls the live OneMap service and requires explicit opt-in",
+  "llm_integration: calls the configured LLM and requires explicit opt-in",
+]
+
+[tool.ruff]
+line-length = 100

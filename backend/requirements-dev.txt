@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest>=8.3,<9
+pytest-asyncio>=0.24,<1
+pyshp>=2.3,<3
+xlrd>=2.0,<3

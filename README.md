@@ -4,9 +4,7 @@
 
 Along finds places to complete one or two errands without turning an existing trip into a large detour. Instead of searching only for the nearest shop, it compares candidate stops against the direct public-transport journey and ranks them by added time, walking and transfers.
 
-> **Status:** active development. The hosted beta is not public yet.
-
-![Along route recommendation](docs/assets/along-route-result.png)
+> **Status:** active development. This repository is a curated public portfolio snapshot; the hosted beta and bulky development datasets/fixtures are not public yet.
 
 ## Why I built it
 
@@ -14,7 +12,7 @@ A normal maps search can tell you where a shop is, but not whether stopping ther
 
 Along treats the direct journey as the baseline, then asks a different question: which real stop satisfies the errand with the least additional inconvenience?
 
-For example, a request such as:
+For example:
 
 ```text
 From: Punggol MRT
@@ -22,17 +20,26 @@ To: Orchard MRT
 Need: groceries + pharmacy
 ```
 
-is evaluated as a routing problem rather than a nearest-place lookup.
+The request is evaluated as a routing problem rather than a nearest-place lookup.
+
+```mermaid
+flowchart LR
+    A[Origin] --> B[Direct transit baseline]
+    B --> C[Candidate errand stops]
+    C --> D[Prune + route]
+    D --> E[Score added time, walking and transfers]
+    E --> F[Best along-the-way option]
+```
 
 ## What it does
 
 - Resolves Singapore locations from station aliases, local entities and OneMap results.
 - Handles one or two errands, including same-hub consolidation when both can be completed at one stop.
-- Searches a local SQLite/FTS5 POI catalog built from Singapore OpenStreetMap data.
+- Uses a SQLite/FTS5 POI catalog for local place discovery.
 - Supports natural-language needs and preferences such as preferred brands, detour limits and walking tolerance.
 - Compares candidate routes against the direct A→B public-transport baseline.
 - Ranks recommendations using added journey time, walking, transfers and user preferences.
-- Uses bounded candidate generation and route-call budgets to keep optimisation practical.
+- Uses bounded candidate generation, corridor pruning, route-call budgets and caching.
 - Can optionally expand discovery through TomTom, Geoapify and web evidence when the local catalog is insufficient.
 - Keeps routing and place-provider credentials on the backend.
 
@@ -44,11 +51,10 @@ The core optimiser is deterministic. LLM support is optional and limited to inte
 | --- | --- |
 | Frontend | Next.js 16, React 19, TypeScript, Leaflet |
 | Backend | FastAPI, Python, Pydantic, HTTPX |
-| Data | SQLite, FTS5, OpenStreetMap POIs, LTA rail gazetteer |
+| Data | SQLite, FTS5, OpenStreetMap-derived POIs, LTA rail gazetteer |
 | Routing / geocoding | OneMap provider abstraction with deterministic mock mode |
 | Optional discovery | TomTom, Geoapify, Tavily |
 | Testing | Pytest, Playwright |
-| Deployment | Docker / Render configuration |
 
 ## Architecture
 
@@ -82,100 +88,65 @@ For each request, Along:
 
 For two errands, the optimiser evaluates consolidated stops and both travel orders where separate stops are required.
 
-## Repository layout
+## Public source map
+
+The files kept public are the parts most useful for technical review:
 
 ```text
-backend/
-  app/              API, providers, discovery, data access and optimiser
-  data/             public Singapore reference data and evaluation corpora
-  fixtures/         sanitised routing fixtures
-  scripts/          ingestion, diagnostics and operational helpers
-  tests/            deterministic and opt-in integration tests
-  tools/            discovery evaluation and data-building utilities
-frontend/
-  app/              Next.js application
-  e2e/              Playwright browser tests
+backend/app/
+  config.py                 typed runtime configuration
+  db.py                     SQLite/FTS5 repository and taxonomy
+  domain.py                 routing and candidate domain models
+  providers/                OneMap, mock, LLM and discovery adapters
+  services/
+    candidates.py           staged candidate generation and pruning
+    optimizer.py            routing, caching, scoring and ranking
+    intent_optimizer.py     intent → optimisation preferences
+    open_needs.py           conservative open-world need parsing
+frontend/app/
+  page.tsx                  planner workflow
+  components/               location, discovery, map and result UI
 docs/
-  architecture.md   current design and engineering decisions
-  privacy.md        beta analytics/privacy boundary
+  architecture.md           system design and engineering decisions
+  onemap-pt-contract.md     live routing-contract validation
+  privacy.md                beta analytics/privacy boundary
 ```
 
-## Run locally
+The full development workspace also contains a large OSM capture, generated SQLite databases, sanitized provider regression fixtures, browser artefacts and additional QA tooling. Those are intentionally excluded from this portfolio snapshot rather than committed as repository noise.
 
-### 1. Backend
+## Validation
 
-Python 3.12+ is recommended.
+Before publication, the cleaned full working snapshot passed:
 
-```bash
-cp .env.example .env
-cd backend
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload --port 8000
-```
+- **188 backend tests**
+- **4 credential-gated integration tests skipped by default**
+- repository credential scan with no tracked secret values found
 
-Mock routing is enabled by default, so the project can be explored without external credentials.
+The full snapshot includes deterministic unit/regression coverage plus opt-in live provider tests. Frontend dependencies could not be freshly reinstalled in the publication environment, so I am not claiming a new frontend build result for this public snapshot.
 
-### 2. Frontend
+## Security and privacy
 
-Node.js 20.9+ is required.
-
-```bash
-cd frontend
-npm ci
-npm run dev
-```
-
-Open `http://localhost:3000`.
-
-## Tests
-
-Backend:
-
-```bash
-cd backend
-pytest -q
-```
-
-The current portfolio snapshot passes **188 backend tests**, with four credential-gated integration tests skipped by default.
-
-Frontend:
-
-```bash
-cd frontend
-npm run lint
-npm run build
-npm run test:e2e
-```
-
-Live OneMap and LLM integration tests are opt-in so the default suite remains deterministic and credential-free.
-
-## Configuration and secrets
-
-Copy `.env.example` to `.env` for local development. `.env`, frontend environment overrides, local databases, build output, virtual environments and test artifacts are ignored by Git.
-
-Provider keys are backend-only. Do not place OneMap credentials or private provider keys in `NEXT_PUBLIC_*` variables.
-
-A source scan is also included:
-
-```bash
-python backend/scripts/scan_secrets.py
-```
+- `.env`, frontend environment overrides, local databases, virtual environments, build output and test artefacts are ignored by Git.
+- Provider credentials remain backend-only.
+- OneMap authentication tokens are cached in backend memory rather than exposed to the browser.
+- Beta analytics accept an allowlisted schema and do not accept exact coordinates or free-form journey text.
+- Live-provider fixtures used during development are sanitized before retention.
 
 ## Data
 
-The bundled Singapore POI capture is derived from OpenStreetMap and includes source metadata and attribution. See [`backend/data/README.md`](backend/data/README.md) for ingestion and licensing notes.
+The development build uses a Singapore OpenStreetMap-derived POI capture with source metadata and ODbL attribution. The large raw capture is not committed to this portfolio repository. The repository layer also contains a small curated seed catalog for deterministic development paths.
+
+See [`backend/data/README.md`](backend/data/README.md) for the data/licensing boundary.
 
 ## Current limitations
 
 - Singapore only.
 - No public hosted demo yet.
 - Real routing quality and availability depend on OneMap.
-- The bundled POI snapshot is not a live business directory.
+- Place coverage is a snapshot rather than a live business directory.
 - No turn-by-turn navigation; selected stops hand off to an external navigation app.
 - The project is designed for personal/beta-scale use rather than high-traffic production infrastructure.
 
 ## Development history
 
-The project has been built iteratively from baseline routing through multi-stop optimisation, POI discovery, intent parsing and open-world place discovery. A concise release history is kept in [`CHANGELOG.md`](CHANGELOG.md).
+Along has been built iteratively from baseline routing through multi-stop optimisation, POI discovery, intent parsing and open-world place discovery. A concise release history is kept in [`CHANGELOG.md`](CHANGELOG.md).
