@@ -122,6 +122,7 @@ class CandidateOption:
 
 @dataclass(frozen=True)
 class ScoredCandidate:
+    # Per-stop estimated arrival, kept separate from the combined journey.
     option: CandidateOption
     ordered_stops: tuple[Hub, ...]
     total_route: RouteResult
@@ -135,6 +136,8 @@ class ScoredCandidate:
     match_classification: str = "best_match"
     data_quality_score: float = 0.0
     hard_constraints_satisfied: bool = True
+    stop_arrivals: tuple[datetime | None, ...] = ()
+    stop_dwell_minutes: tuple[float, ...] = ()
 
 
 @dataclass(frozen=True)

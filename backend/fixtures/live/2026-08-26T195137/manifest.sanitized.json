@@ -1,0 +1,953 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:51:37.646725+08:00",
+    "captured_live": true,
+    "credentials_or_tokens_persisted": false,
+    "request_budget": 24,
+    "request_count": 22
+  },
+  "entries": [
+    {
+      "experiment": "minimal",
+      "fixture": "01__contract_reference_punggol_to_orchard__minimal.sanitized.json",
+      "latency_ms": 68.82,
+      "request": {
+        "end": "1.3043,103.8322",
+        "routeType": "pt",
+        "start": "1.4052,103.9024"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": false,
+        "error_present": true,
+        "http_status": 400,
+        "json_object": true,
+        "top_level_keys": [
+          "error"
+        ]
+      }
+    },
+    {
+      "experiment": "date_time_iso_rejected_expected",
+      "fixture": "02__contract_reference_punggol_to_orchard__date_time_iso_rejected_expected.sanitized.json",
+      "latency_ms": 79.68,
+      "request": {
+        "date": "2026-08-26",
+        "end": "1.3043,103.8322",
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": false,
+        "error_present": true,
+        "http_status": 400,
+        "json_object": true,
+        "top_level_keys": [
+          "error"
+        ]
+      }
+    },
+    {
+      "experiment": "date_time_mmddyyyy",
+      "fixture": "03__contract_reference_punggol_to_orchard__date_time_mmddyyyy.sanitized.json",
+      "latency_ms": 88.5,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": false,
+        "error_present": true,
+        "http_status": 400,
+        "json_object": true,
+        "top_level_keys": [
+          "error"
+        ]
+      }
+    },
+    {
+      "experiment": "date_time_mmddyyyy_mode",
+      "fixture": "04__contract_reference_punggol_to_orchard__date_time_mmddyyyy_mode.sanitized.json",
+      "latency_ms": 1111.62,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "mode": "TRANSIT",
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "historical_full_contract",
+      "fixture": "05__contract_reference_punggol_to_orchard__historical_full_contract.sanitized.json",
+      "latency_ms": 889.79,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "departure_morning",
+      "fixture": "06__contract_reference_punggol_to_orchard__departure_morning.sanitized.json",
+      "latency_ms": 947.21,
+      "request": {
+        "date": "08-27-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "08:00:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2375,
+          "end_time_raw": 1787791221000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787788846000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "departure_evening",
+      "fixture": "07__contract_reference_punggol_to_orchard__departure_evening.sanitized.json",
+      "latency_ms": 1116.23,
+      "request": {
+        "date": "08-27-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "18:00:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2324,
+          "end_time_raw": 1787827170000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787824846000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "mode_transit",
+      "fixture": "08__contract_reference_punggol_to_orchard__mode_transit.sanitized.json",
+      "latency_ms": 144.18,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "mode_bus",
+      "fixture": "09__contract_reference_punggol_to_orchard__mode_bus.sanitized.json",
+      "latency_ms": 1142.06,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "BUS",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 5292,
+          "end_time_raw": 1787750361000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "BUS",
+            "BUS",
+            "BUS",
+            "WALK"
+          ],
+          "start_time_raw": 1787745069000,
+          "transfer_raw": 2,
+          "walk_distance_raw": 534.22,
+          "walk_time_raw": 523
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "mode_rail",
+      "fixture": "10__contract_reference_punggol_to_orchard__mode_rail.sanitized.json",
+      "latency_ms": 725.37,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "RAIL",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "mode_invalid",
+      "fixture": "11__contract_reference_punggol_to_orchard__mode_invalid.sanitized.json",
+      "latency_ms": 93.31,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "NOT_A_MODE",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": false,
+        "error_present": true,
+        "http_status": 400,
+        "json_object": true,
+        "top_level_keys": [
+          "error"
+        ]
+      }
+    },
+    {
+      "experiment": "max_walk_250",
+      "fixture": "12__contract_reference_punggol_to_orchard__max_walk_250.sanitized.json",
+      "latency_ms": 103.79,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 250,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "max_walk_2000",
+      "fixture": "13__contract_reference_punggol_to_orchard__max_walk_2000.sanitized.json",
+      "latency_ms": 77.38,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 2000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "max_walk_invalid",
+      "fixture": "14__contract_reference_punggol_to_orchard__max_walk_invalid.sanitized.json",
+      "latency_ms": 84.9,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": -1,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "itineraries_1",
+      "fixture": "15__contract_reference_punggol_to_orchard__itineraries_1.sanitized.json",
+      "latency_ms": 86.31,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "itineraries_3",
+      "fixture": "16__contract_reference_punggol_to_orchard__itineraries_3.sanitized.json",
+      "latency_ms": 764.12,
+      "request": {
+        "date": "08-26-2026",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 3,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 2384,
+          "end_time_raw": 1787747580000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787745196000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 536.77,
+          "walk_time_raw": 531
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "date_invalid",
+      "fixture": "17__contract_reference_punggol_to_orchard__date_invalid.sanitized.json",
+      "latency_ms": 81.54,
+      "request": {
+        "date": "not-a-date",
+        "end": "1.3043,103.8322",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "19:51:00"
+      },
+      "scenario": "contract_reference_punggol_to_orchard",
+      "summary": {
+        "accepted": false,
+        "error_present": true,
+        "http_status": 400,
+        "json_object": true,
+        "top_level_keys": [
+          "error"
+        ]
+      }
+    },
+    {
+      "experiment": "representative_route",
+      "fixture": "18__mrt_focused_jurong_east_to_raffles_place__representative_route.sanitized.json",
+      "latency_ms": 387.84,
+      "request": {
+        "date": "08-27-2026",
+        "end": "1.2840,103.8515",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.3331,103.7422",
+        "time": "08:00:00"
+      },
+      "scenario": "mrt_focused_jurong_east_to_raffles_place",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 1511,
+          "end_time_raw": 1787790378000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787788867000,
+          "transfer_raw": 0,
+          "walk_distance_raw": 27.74,
+          "walk_time_raw": 29
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "representative_route",
+      "fixture": "19__bus_only_where_possible_nus_to_holland_village__representative_route.sanitized.json",
+      "latency_ms": 267.93,
+      "request": {
+        "date": "08-27-2026",
+        "end": "1.3115,103.7966",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.3038,103.7740",
+        "time": "08:00:00"
+      },
+      "scenario": "bus_only_where_possible_nus_to_holland_village",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 1813,
+          "end_time_raw": 1787790864000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "BUS",
+            "WALK"
+          ],
+          "start_time_raw": 1787789051000,
+          "transfer_raw": 0,
+          "walk_distance_raw": 1023.33,
+          "walk_time_raw": 952
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "representative_route",
+      "fixture": "20__bus_mrt_punggol_to_nus__representative_route.sanitized.json",
+      "latency_ms": 2343.96,
+      "request": {
+        "date": "08-27-2026",
+        "end": "1.2966,103.7764",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4052,103.9024",
+        "time": "08:00:00"
+      },
+      "scenario": "bus_mrt_punggol_to_nus",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 3852,
+          "end_time_raw": 1787792698000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787788846000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 1721.45,
+          "walk_time_raw": 1509
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "representative_route",
+      "fixture": "21__transfer_heavy_woodlands_to_harbourfront__representative_route.sanitized.json",
+      "latency_ms": 948.87,
+      "request": {
+        "date": "08-27-2026",
+        "end": "1.2653,103.8215",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.4360,103.7865",
+        "time": "08:00:00"
+      },
+      "scenario": "transfer_heavy_woodlands_to_harbourfront",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 3584,
+          "end_time_raw": 1787792474000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "SUBWAY",
+            "WALK",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787788890000,
+          "transfer_raw": 1,
+          "walk_distance_raw": 260.01,
+          "walk_time_raw": 235
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    },
+    {
+      "experiment": "representative_route",
+      "fixture": "22__long_distance_changi_airport_to_tuas_link__representative_route.sanitized.json",
+      "latency_ms": 409.77,
+      "request": {
+        "date": "08-27-2026",
+        "end": "1.3404,103.6368",
+        "maxWalkDistance": 1000,
+        "mode": "TRANSIT",
+        "numItineraries": 1,
+        "routeType": "pt",
+        "start": "1.3571,103.9887",
+        "time": "08:00:00"
+      },
+      "scenario": "long_distance_changi_airport_to_tuas_link",
+      "summary": {
+        "accepted": true,
+        "first_itinerary": {
+          "duration_raw": 6346,
+          "end_time_raw": 1787795298000,
+          "geometry_value_types": [
+            "dict"
+          ],
+          "leg_modes": [
+            "WALK",
+            "BUS",
+            "WALK",
+            "SUBWAY",
+            "SUBWAY",
+            "WALK"
+          ],
+          "start_time_raw": 1787788952000,
+          "transfer_raw": 2,
+          "walk_distance_raw": 1142.27,
+          "walk_time_raw": 965
+        },
+        "http_status": 200,
+        "itinerary_count": 1,
+        "json_object": true,
+        "top_level_keys": [
+          "debugOutput",
+          "elevationMetadata",
+          "metadata",
+          "nextPageCursor",
+          "plan",
+          "previousPageCursor",
+          "requestParameters"
+        ]
+      }
+    }
+  ]
+}

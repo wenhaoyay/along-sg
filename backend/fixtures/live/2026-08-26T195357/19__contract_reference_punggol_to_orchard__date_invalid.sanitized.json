@@ -1,0 +1,25 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:53:57.971189+08:00",
+    "captured_live": true,
+    "contains_credentials_or_token": false,
+    "expected_coverage": null,
+    "experiment": "date_invalid",
+    "provider_latency_ms": 78.02,
+    "request": {
+      "date": "not-a-date",
+      "end": "1.3043,103.8322",
+      "maxWalkDistance": 1000,
+      "mode": "TRANSIT",
+      "numItineraries": 1,
+      "routeType": "pt",
+      "start": "1.4052,103.9024",
+      "time": "19:53:00"
+    },
+    "response_status": 400,
+    "scenario": "contract_reference_punggol_to_orchard"
+  },
+  "response": {
+    "error": "Date must be a valid calendar date in the format MM-DD-YYYY."
+  }
+}

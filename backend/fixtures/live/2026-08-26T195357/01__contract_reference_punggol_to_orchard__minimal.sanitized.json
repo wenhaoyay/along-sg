@@ -1,0 +1,20 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:53:57.971189+08:00",
+    "captured_live": true,
+    "contains_credentials_or_token": false,
+    "expected_coverage": null,
+    "experiment": "minimal",
+    "provider_latency_ms": 99.39,
+    "request": {
+      "end": "1.3043,103.8322",
+      "routeType": "pt",
+      "start": "1.4052,103.9024"
+    },
+    "response_status": 400,
+    "scenario": "contract_reference_punggol_to_orchard"
+  },
+  "response": {
+    "error": "Please specify a date in the format MM-DD-YYYY."
+  }
+}

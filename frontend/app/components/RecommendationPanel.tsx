@@ -18,6 +18,7 @@ export type Business = {
   canonical_brand: string | null;
   category_labels: string[];
   location_context: string | null;
+  opening_status?: string;
 };
 
 export type Stop = {
@@ -31,9 +32,13 @@ export type Stop = {
   context_kind: string;
   location_quality: number;
   navigation_ready: boolean;
+  arrival_time?: string | null;
 };
 
 export type Recommendation = {
+  time_dependent?: boolean;
+  departure_time?: string | null;
+  arrival_time?: string | null;
   label: string;
   quality_label: string;
   match_classification: string;
@@ -79,9 +84,11 @@ type Props = {
   selectedKey: string;
   onSelect: (key: string) => void;
   onEdit: () => void;
+  activeStop?: number | null;
+  onStopSelect?: (index: number) => void;
 };
 
-export function RecommendationPanel({ recommendation, result, alternatives, selectedKey, onSelect, onEdit }: Props) {
+export function RecommendationPanel({ recommendation, result, alternatives, selectedKey, onSelect, onEdit, activeStop, onStopSelect }: Props) {
   const primaryStop = recommendation.stops[0];
   const otherOptions = alternatives.filter(([key]) => key !== selectedKey);
 
@@ -102,20 +109,28 @@ export function RecommendationPanel({ recommendation, result, alternatives, sele
     <div className="result-impact">
       <strong>+{Math.round(recommendation.incremental_detour_minutes)}<small> min</small></strong>
       <div>
-        <span><Footprints size={16} aria-hidden="true" />+{metres(recommendation.incremental_walking_distance_m)}</span>
+        <span><Footprints size={16} aria-hidden="true" />+{metres(recommendation.incremental_walking_distance_m)} walking</span>
         <span><TrainFront size={16} aria-hidden="true" />{transferCopy(recommendation.incremental_transfers)}</span>
       </div>
     </div>
 
-    <div className="stop-summary" aria-label="Errand stops">
-      {recommendation.stops.map((stop, stopIndex) => <div className="stop-summary-row" key={`${stop.display_name}-${stopIndex}`}>
-        <span className="stop-number">{recommendation.stops.length > 1 ? stopIndex + 1 : <Route size={15} aria-hidden="true" />}</span>
+    <p className="trip-comparison">Direct <strong>{Math.round(result.baseline.duration_minutes)} min</strong><ArrowRight size={14} aria-hidden="true" />With stops <strong>{Math.round(recommendation.total_duration_minutes)} min</strong></p>
+    <p className="impact-caption">Added time includes ~{Math.round(recommendation.detour_breakdown.dwell_minutes)} min at your stops.</p>
+
+    <div className="stop-summary journey-timeline" aria-label="Errand stops">
+      <p className="timeline-endpoint">A · {result.origin.label}{recommendation.departure_time ? ` · ${sgTime(recommendation.departure_time)}` : ""}</p>
+      {recommendation.stops.map((stop, stopIndex) => <div className={`stop-summary-row ${activeStop === stopIndex ? "selected-stop-card" : ""}`} key={`${stop.display_name}-${stopIndex}`}>
+        <button type="button" className="stop-number" aria-label={`Highlight stop ${stopIndex + 1}: ${stop.display_name}`} aria-pressed={activeStop === stopIndex} onClick={() => onStopSelect?.(stopIndex)}>{recommendation.stops.length > 1 ? stopIndex + 1 : <Route size={15} aria-hidden="true" />}</button>
         <div>
           {recommendation.stops.length > 1 && <strong>{stop.display_name}</strong>}
           <p>{stop.businesses.map((business) => business.display_name).join(" · ") || stop.display_name}</p>
+          {stop.arrival_time && <small>Estimated arrival {new Intl.DateTimeFormat("en-SG", { timeZone: "Asia/Singapore", hour: "numeric", minute: "2-digit" }).format(new Date(stop.arrival_time))}</small>}
+          {stop.businesses.map((business, index) => <small className={`hours-status hours-${business.opening_status ?? "unknown"}`} key={index}>{business.display_name}: {({ open: "Listed open at arrival · hours may change", closed: "Listed closed at arrival · check before travelling", closing_soon: "May close before you finish", unknown: "Hours not confirmed · check before travelling" } as Record<string, string>)[business.opening_status ?? "unknown"] ?? "Hours not confirmed"}</small>)}
         </div>
       </div>)}
+      <p className="timeline-endpoint">B · {result.destination.label}{recommendation.arrival_time ? ` · Est. ${sgTime(recommendation.arrival_time)}` : ""}</p>
     </div>
+    {recommendation.time_dependent === false && <p className="precision-note">Departure-time routing is not verified for this provider. Stop arrival times are unavailable; this comparison is not a timetable promise.</p>}
 
     {primaryStop?.navigation_ready && <button className="navigate-button" type="button" onClick={() => navigate(primaryStop)}>
       <Navigation size={18} aria-hidden="true" />
@@ -123,7 +138,7 @@ export function RecommendationPanel({ recommendation, result, alternatives, sele
       <ArrowRight size={18} aria-hidden="true" />
     </button>}
 
-    <p className="why-brief">{relationshipCopy(recommendation)}</p>
+    <p className="why-brief">{relationshipCopy(recommendation)} {transferCopy(recommendation.incremental_transfers)}.</p>
 
     <details className="result-disclosure why-disclosure">
       <summary><span>Why this option</span><ChevronDown size={18} aria-hidden="true" /></summary>
@@ -172,6 +187,8 @@ function metres(value: number) {
   return value >= 1000 ? `${(value / 1000).toFixed(1)} km` : `${Math.round(value)} m`;
 }
 
+function sgTime(value: string) { return new Intl.DateTimeFormat("en-SG", { timeZone: "Asia/Singapore", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value)); }
+
 function transferCopy(value: number) {
   if (!value) return "No extra transfers";
   return `+${value} extra transfer${value === 1 ? "" : "s"}`;
@@ -182,13 +199,14 @@ function shortDwellLabel(label: string) {
 }
 
 function relationshipCopy(item: Recommendation) {
+  if (item.match_classification === "partial_option") return "This option covers only part of your request. Edit your journey to change the remaining errand.";
   const relationship = {
     same_mall: "Both errands are together in one mall along your route.",
     same_place: "Both errands are handled in one place.",
     same_transport_hub: "Both stops are within the same station area.",
     nearby_separate_stores: "The shops are close together, keeping the detour compact.",
     separate_stops: "This is the least disruptive order for the two stops.",
-    single_stop: "This stop adds the least disruption to your journey.",
+    single_stop: "One errand stop between your starting point and destination.",
   }[item.stop_relationship] ?? "This option stays close to your existing journey.";
   if (item.match_classification === "best_available") return `${relationship} It takes longer than usual.`;
   if (item.match_classification === "closest_exact") return `${relationship} It is just above your preference.`;

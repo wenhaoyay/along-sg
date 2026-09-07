@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, ChevronRight, Info, Search } from "lucide-react";
+import { ArrowRight, ArrowDownUp, ChevronRight, Footprints, Info, Search, SlidersHorizontal, Zap } from "lucide-react";
 
 import { CatalogCategory, DiscoveryPalette, DiscoverySelection } from "./components/DiscoveryPalette";
 import { LocationField, ResolvedLocation } from "./components/LocationField";
@@ -27,11 +27,21 @@ export default function Home() {
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const [selections, setSelections] = useState<DiscoverySelection[]>([]);
   const [loading, setLoading] = useState(false);
+  const [leaveMode, setLeaveMode] = useState<"now" | "later">("now");
+  const [leaveAt, setLeaveAt] = useState("");
+  const [cancelled, setCancelled] = useState(false);
+  const [activeStop, setActiveStop] = useState<number | null>(null);
+  const searchRef = useRef<AbortController | null>(null);
   const [loadingSlow, setLoadingSlow] = useState(false);
+  const [searchStage, setSearchStage] = useState<"discovery" | "routing">("discovery");
+  const [tripStyle, setTripStyle] = useState<"balanced" | "faster" | "walking">("balanced");
   const [error, setError] = useState<string | null>(null);
   const [clarification, setClarification] = useState<string | null>(null);
   const [conflict, setConflict] = useState<Conflict | null>(null);
   const [pendingIntent, setPendingIntent] = useState<Intent | null>(null);
+  const [partial, setPartial] = useState<{ intent: Intent; text: string; missing: string[] } | null>(null);
+  const [sheet, setSheet] = useState<"peek" | "half" | "full">("half");
+  const needRef = useRef<HTMLTextAreaElement>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [selectedKey, setSelectedKey] = useState("best_overall");
   const plannerRef = useRef<HTMLElement>(null);
@@ -40,6 +50,21 @@ export default function Home() {
   useEffect(() => { if (!loading) return; const timer = window.setTimeout(() => setLoadingSlow(true), 4500); return () => window.clearTimeout(timer); }, [loading]);
   useEffect(() => { plannerRef.current?.scrollTo({ top: 0, behavior: "auto" }); }, [result]);
   useEffect(() => { if (conflict) plannerRef.current?.scrollTo({ top: 0, behavior: "auto" }); }, [conflict]);
+  useEffect(() => () => searchRef.current?.abort(), []);
+
+  function beginSearch() {
+    searchRef.current?.abort();
+    const controller = new AbortController(); searchRef.current = controller;
+    setCancelled(false); setLoading(true); setLoadingSlow(false); setError(null);
+    return controller;
+  }
+
+  function departureValue() {
+    if (leaveMode === "now") return null;
+    const value = `${leaveAt}:00+08:00`;
+    if (!leaveAt || !Number.isFinite(Date.parse(value)) || Date.parse(value) <= Date.now()) throw new Error("Choose a future departure time in Singapore time.");
+    return value;
+  }
 
   function structuredIntent(): Intent {
     if (!selections.length) throw new Error("Choose at least one errand.");
@@ -58,30 +83,41 @@ export default function Home() {
     };
   }
 
-  async function optimize(interpreted: Intent) {
+  async function optimize(interpreted: Intent, signal: AbortSignal) {
     if (!origin || !destination) throw new Error("Choose both From and To before searching.");
+    setSearchStage("routing");
+    interpreted = { ...interpreted, preferences: {
+      ...interpreted.preferences,
+      ...(tripStyle === "walking" ? { walking_tolerance: "minimal" } : {}),
+      ...(tripStyle === "faster" ? { urgency: "urgent" } : {}),
+    } };
     const confirmedDiscoveryPlaces = selections.flatMap(({ category, item }) => item?.coordinate ? [{ display_name: item.display_name, coordinate: item.coordinate, category, address: item.address ?? null }] : []);
-    const response = await fetch(`${API_BASE}/api/optimize-intent`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ origin: { coordinate: origin.coordinate }, destination: { coordinate: destination.coordinate }, intent: interpreted, confirmed_discovery_places: confirmedDiscoveryPlaces }) });
+    const response = await fetch(`${API_BASE}/api/optimize-intent`, { signal, method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ origin: { coordinate: origin.coordinate }, destination: { coordinate: destination.coordinate }, departure: departureValue(), intent: interpreted, confirmed_discovery_places: confirmedDiscoveryPlaces }) });
     const body = await response.json();
+    signal.throwIfAborted();
     if (!response.ok) throw new Error(errorMessage(response.status, body));
-    setIntent(interpreted); setResult(body); setSelectedKey("best_overall");
+    setIntent(interpreted); setResult(body); setSelectedKey("best_overall"); setSheet("half"); setPartial(null); setActiveStop(null);
   }
 
   async function submit(event: FormEvent) {
-    event.preventDefault(); setError(null); setClarification(null); setConflict(null); setLoadingSlow(false); setLoading(true);
+    event.preventDefault(); setError(null); setClarification(null); setConflict(null); setLoadingSlow(false); setSearchStage("discovery"); setLoading(true);
+    const controller = beginSearch();
     try {
+      departureValue();
       if (!origin || !destination) throw new Error("Choose both From and To from the suggestions first.");
-      if (selections.length) { await optimize(structuredIntent()); return; }
+      if (selections.length) { await optimize(structuredIntent(), controller.signal); return; }
       if (!need.trim()) throw new Error("Tell us what you need, or browse categories.");
-      const response = await fetch(`${API_BASE}/api/intent/parse`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: need, origin: context(origin), destination: context(destination) }) });
+      const response = await fetch(`${API_BASE}/api/intent/parse`, { signal: controller.signal, method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: need, origin: context(origin), destination: context(destination) }) });
       const body = await response.json();
+      controller.signal.throwIfAborted();
       if (!response.ok) throw new Error(errorMessage(response.status, body));
       if (body.journey_conflicts?.length) { setConflict(body.journey_conflicts[0]); setPendingIntent(body.intent); setClarification(body.clarification_question); return; }
+      if (body.intent && body.unresolved_terms?.length) { setPartial({ intent: body.intent, text: need, missing: body.unresolved_terms }); return; }
       if (body.status !== "resolved" || !body.intent) { setClarification(body.clarification_question ?? "Tell us a little more about the errand."); return; }
       if (body.clarification_question) setClarification(body.clarification_question);
-      await optimize(body.intent);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "We couldn’t compare that journey."); }
-    finally { setLoading(false); }
+      await optimize(body.intent, controller.signal);
+    } catch (caught) { if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "We couldn’t compare that journey."); }
+    finally { if (searchRef.current === controller) setLoading(false); }
   }
 
   function resolveConflict(action: "keep" | "change") {
@@ -110,22 +146,32 @@ export default function Home() {
     </header>
 
     <section className="map-area">
-      <SpatialMap origin={origin} destination={destination} stops={selected?.stops ?? []} baselineGeometry={result?.baseline.geometry ?? []} routeGeometry={selected?.route_geometry ?? []} />
+      <SpatialMap origin={origin} destination={destination} stops={selected?.stops ?? []} baselineGeometry={result?.baseline.geometry ?? []} routeGeometry={selected?.route_geometry ?? []} activeStop={activeStop} onStopSelect={setActiveStop} />
       {selected && <div className="map-key" aria-label="Map route key"><span><i className="baseline" />Straight</span><span><i className="recommended" />With stop</span></div>}
     </section>
 
-    <aside ref={plannerRef} className={`planner ${result ? "result-mode" : ""}`} id="planner" aria-label={result ? "Recommendation" : "Plan your journey"}>
+    <aside ref={plannerRef} className={`planner ${result ? `result-mode sheet-${sheet}` : ""}`} id="planner" aria-label={result ? "Recommendation" : "Plan your journey"}>
       <div className="sheet-handle" aria-hidden="true" />
+      {result && selected && <><div className="sheet-controls" role="group" aria-label="Result sheet size">{([ ["peek", "Map"], ["half", "Summary"], ["full", "Details"] ] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={sheet === value} onClick={() => { setSheet(value); plannerRef.current?.scrollTo({ top: 0 }); }}>{label}</button>)}</div><div className="sheet-peek"><strong>{selected.stops[0]?.display_name ?? "Your journey"}</strong><span>+{Math.round(selected.incremental_detour_minutes)} min including stops</span></div></>}
       {!result && <form onSubmit={submit}>
-        <div className="planner-intro"><span>Plan a stop</span><h1>Find what you need <br />along the way.</h1><p>Keep your journey. Add a useful stop.</p></div>
+        <div className="planner-intro"><span className="intro-eyebrow"><i aria-hidden="true" />Your journey, a little more useful</span><h1>Find what you need <br /><em>along the way.</em></h1><p>One journey. A better way to get things done.</p></div>
+        <fieldset className="planner-controls" disabled={loading}>
         <div className="journey-fields">
           <LocationField key={`origin-${origin?.label ?? "empty"}`} label="From" placeholder="Search starting point" apiBase={API_BASE} value={origin} onChange={(value) => { setOrigin(value); setResult(null); }} allowCurrentLocation />
           <div className="journey-line" aria-hidden="true" />
+          <button className="swap-journey" type="button" aria-label="Reverse journey" disabled={!origin && !destination} onClick={() => { setOrigin(destination); setDestination(origin); setIntent(null); setError(null); setClarification(null); }}><ArrowDownUp size={16} aria-hidden="true" /></button>
           <LocationField key={`destination-${destination?.label ?? "empty"}`} label="To" placeholder="Search destination" apiBase={API_BASE} value={destination} onChange={(value) => { setDestination(value); setResult(null); }} />
         </div>
 
-        <label className="need-control"><span>What do you need?</span><div className="need-input-wrap"><Search size={19} aria-hidden="true" /><textarea aria-label="What do you need on the way?" value={need} onChange={(event) => { setNeed(event.target.value); setIntent(null); setSelections([]); }} placeholder="Mee pok, Molly Tea or printer ink" rows={1} maxLength={500} /></div></label>
+        <label className="need-control"><span>What do you need?</span><div className="need-input-wrap"><Search size={19} aria-hidden="true" /><textarea ref={needRef} aria-label="What do you need on the way?" value={need} onChange={(event) => { setNeed(event.target.value); setPartial(null); setIntent(null); setSelections([]); }} placeholder="Mee pok, Molly Tea or printer ink" rows={1} maxLength={500} /></div></label>
         {!intent && !selections.length && <div className="quick-needs" aria-label="Popular needs">{QUICK_NEEDS.map(([slug, label]) => <button type="button" key={slug} onClick={() => selectQuickNeed(slug, label)}>{label}</button>)}</div>}
+        <div className="trip-style" role="group" aria-label="Journey preference">
+          <button type="button" aria-pressed={tripStyle === "balanced"} onClick={() => setTripStyle("balanced")}><SlidersHorizontal size={14} aria-hidden="true" />Balanced</button>
+          <button type="button" aria-pressed={tripStyle === "faster"} onClick={() => setTripStyle("faster")}><Zap size={14} aria-hidden="true" />Faster</button>
+          <button type="button" aria-pressed={tripStyle === "walking"} onClick={() => setTripStyle("walking")}><Footprints size={14} aria-hidden="true" />Less walking</button>
+        </div>
+        <p className="preference-hint">{tripStyle === "walking" ? "Give easier walks more weight when comparing stops." : tripStyle === "faster" ? "Give extra journey time more weight when comparing stops." : "Balance extra time, walking and changes."}</p>
+        <div className="departure-controls"><label>Departure<select aria-label="Departure mode" value={leaveMode} onChange={(event) => setLeaveMode(event.target.value as "now" | "later")}><option value="now">Leave now</option><option value="later">Leave later</option></select></label>{leaveMode === "later" && <label>Singapore time (SGT)<input aria-label="Departure time in Singapore" type="datetime-local" value={leaveAt} onChange={(event) => setLeaveAt(event.target.value)} required /></label>}</div>
 
         {(intent || selections.length > 0) && <div className="intent-preview">
           <span>Looking for</span>
@@ -135,14 +181,19 @@ export default function Home() {
 
         {clarification && <div className={conflict ? "notice conflict" : "notice"} role="alert"><strong>{conflict ? "Your journey changed" : "A quick check"}</strong><p>{clarification}</p>{conflict && <div className="conflict-actions"><button type="button" onClick={() => resolveConflict("keep")}>Keep {conflict.current_label}</button>{conflict.mentioned_label && <button type="button" onClick={() => resolveConflict("change")}>Use {conflict.mentioned_label}</button>}<button type="button" onClick={() => { if (conflict.endpoint === "origin") setOrigin(null); else setDestination(null); setConflict(null); }}>Edit {conflict.endpoint}</button></div>}</div>}
         {error && <div className="notice error" role="alert"><strong>One more thing</strong><p>{error}</p></div>}
+        {partial && partial.text === need && !selections.length && <div className="notice" role="alert"><strong>We found part of your request</strong><p>Not resolved: {partial.missing.join(", ")}. Continue with {[...partial.intent.required_errands, ...partial.intent.optional_errands].map((item) => intentLabel(categories, item)).join(" and ")} only?</p><div className="conflict-actions"><button type="button" onClick={async () => { const controller = beginSearch(); try { await optimize(partial.intent, controller.signal); } catch (caught) { if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "We couldn’t compare that journey."); } finally { if (searchRef.current === controller) setLoading(false); } }}>Continue with matched errands</button><button type="button" onClick={() => needRef.current?.focus()}>Edit request</button></div></div>}
 
         {discoveryOpen && <DiscoveryPalette apiBase={API_BASE} categories={categories} selections={selections} onClose={() => setDiscoveryOpen(false)} onChange={(items) => { setSelections(items); setNeed(""); setIntent(null); }} />}
+        </fieldset>
 
-        <button className="find-button" type="submit" disabled={loading || !origin || !destination}><span>{loading ? loadingSlow ? "Checking live public-transport routes…" : need.trim() ? `Looking for ${need.trim()}…` : "Finding stops along your route…" : "Find best stop"}</span>{loading ? <span className="button-spinner" /> : <ArrowRight size={19} aria-hidden="true" />}</button>
+        <button className="find-button" type="submit" disabled={loading || !origin || !destination}><span>{loading ? searchStage === "routing" ? "Comparing journeys…" : "Finding suitable stops…" : error ? "Retry search" : "Find best stop"}</span>{loading ? <span className="button-spinner" /> : <ArrowRight size={19} aria-hidden="true" />}</button>
+        {loading && <button className="cancel-search" type="button" onClick={() => { searchRef.current?.abort(); searchRef.current = null; setLoading(false); setCancelled(true); }}>Cancel search</button>}
+        {cancelled && <p role="status" className="precision-note">Search cancelled. Your journey is kept; edit it or search again. A server check already in progress may still finish.</p>}
+        {loading && <div className="search-progress" role="status"><span className={searchStage === "discovery" ? "active" : "complete"}>1 · Find places</span><span className={searchStage === "routing" ? "active" : ""}>2 · Compare journeys</span>{loadingSlow && <small>This is taking a little longer. We’re still checking your options.</small>}</div>}
         {!discoveryOpen && <button className="catalog-toggle" type="button" aria-expanded="false" onClick={() => setDiscoveryOpen(true)}><span>Browse categories</span><ChevronRight size={17} aria-hidden="true" /></button>}
       </form>}
 
-      {result && selected && <RecommendationPanel recommendation={selected} result={result} alternatives={alternatives} selectedKey={selectedKey} onSelect={setSelectedKey} onEdit={() => { setResult(null); setSelectedKey("best_overall"); }} />}
+      {result && selected && <RecommendationPanel recommendation={selected} result={result} alternatives={alternatives} selectedKey={selectedKey} onSelect={(key) => { setSelectedKey(key); setActiveStop(null); }} activeStop={activeStop} onStopSelect={setActiveStop} onEdit={() => { setResult(null); setActiveStop(null); setSelectedKey("best_overall"); }} />}
       {result && !selected && <section className="recommendation empty-result" aria-live="polite"><button className="edit-journey" type="button" onClick={() => setResult(null)}><ArrowRight size={15} aria-hidden="true" />Edit journey</button><span>Try another way</span><h1>No easy match</h1><p>{result.message ?? "Try a broader category or loosen a brand or time preference."}</p><button className="find-button" type="button" onClick={() => { setDiscoveryOpen(true); setResult(null); }}>Browse options<ArrowRight size={18} aria-hidden="true" /></button></section>}
     </aside>
   </main>;

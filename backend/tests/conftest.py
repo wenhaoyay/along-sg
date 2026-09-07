@@ -12,3 +12,4 @@ def repository(tmp_path: Path) -> HubRepository:
     repo = HubRepository(tmp_path / "test.db")
     repo.initialize()
     return repo
+

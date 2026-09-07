@@ -1,0 +1,42 @@
+{
+  "_fixture_meta": {
+    "captured_live": false,
+    "purpose": "Offline parser contract template; replace evidence with probe output before claiming live verification"
+  },
+  "response": {
+    "plan": {
+      "itineraries": [
+        {
+          "duration": 2520,
+          "walkTime": 480,
+          "walkDistance": 620.5,
+          "transfers": 1,
+          "legs": [
+            {
+              "mode": "WALK",
+              "duration": 240,
+              "distance": 310.2,
+              "from": {"name": "Origin"},
+              "to": {"name": "Boarding stop"},
+              "legGeometry": {"points": "<redacted-geometry>"}
+            },
+            {
+              "mode": "SUBWAY",
+              "duration": 1800,
+              "distance": 14800,
+              "from": {"name": "Boarding stop"},
+              "to": {"name": "Alighting stop"}
+            },
+            {
+              "mode": "WALK",
+              "duration": 240,
+              "distance": 310.3,
+              "from": {"name": "Alighting stop"},
+              "to": {"name": "Destination"}
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

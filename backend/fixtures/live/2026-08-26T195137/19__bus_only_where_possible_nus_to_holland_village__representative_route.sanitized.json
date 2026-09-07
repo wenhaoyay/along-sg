@@ -1,0 +1,369 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:51:37.646725+08:00",
+    "captured_live": true,
+    "contains_credentials_or_token": false,
+    "expected_coverage": "bus-only where the router permits",
+    "experiment": "representative_route",
+    "provider_latency_ms": 267.93,
+    "request": {
+      "date": "08-27-2026",
+      "end": "1.3115,103.7966",
+      "maxWalkDistance": 1000,
+      "mode": "TRANSIT",
+      "numItineraries": 1,
+      "routeType": "pt",
+      "start": "1.3038,103.7740",
+      "time": "08:00:00"
+    },
+    "response_status": 200,
+    "scenario": "bus_only_where_possible_nus_to_holland_village"
+  },
+  "response": {
+    "debugOutput": {
+      "directStreetRouterTime": 17598917,
+      "filteringTime": 565389,
+      "precalculationTime": 29773,
+      "renderingTime": 142453,
+      "totalTime": 165171212,
+      "transitRouterTime": 146820641,
+      "transitRouterTimes": {
+        "accessEgressTime": 31978786,
+        "itineraryCreationTime": 5318644,
+        "raptorSearchTime": 79853675,
+        "tripPatternFilterTime": 29655352
+      }
+    },
+    "elevationMetadata": {
+      "ellipsoidToGeoidDifference": 7.474248868803462,
+      "geoidElevation": false
+    },
+    "metadata": {
+      "nextDateTime": 1787789700000,
+      "prevDateTime": 1787787000000,
+      "searchWindowUsed": 1800
+    },
+    "nextPageCursor": "rO0ABXcxAQAJTkVYVF9QQUdFDIOghIAAAAAAAASwABdTVFJFRVRfQU5EX0FSUklWQUxfVElNRQ==",
+    "plan": {
+      "date": 1787788800000,
+      "from": {
+        "lat": 1.3038,
+        "lon": 103.774,
+        "name": "Origin",
+        "vertexType": "NORMAL"
+      },
+      "itineraries": [
+        {
+          "arrivedAtDestinationWithRentedBicycle": false,
+          "duration": 1813,
+          "elevationGained": 0,
+          "elevationLost": 0,
+          "endTime": 1787790864000,
+          "fare": "1.38",
+          "generalizedCost": 8060,
+          "legs": [
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 619.81,
+              "duration": 567,
+              "endTime": 1787789618000,
+              "from": {
+                "departure": 1787789051000,
+                "lat": 1.3038,
+                "lon": 103.774,
+                "name": "Origin",
+                "vertexType": "NORMAL"
+              },
+              "generalizedCost": 4073,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 178,
+                "points": "ys}FwjkxRXGHAZ@J@J?J@F?@@@@@@@@@@B?@@@@@@@?B@@@@?@@B?@@@?@@B?@@@?B@@?@@B?@?@@B?@?B?@@@?B?@?B?@?@?B?@?B?@?@?B?@?B?@?@?BA@?@?B?@A@?B?@AB?@A@?B?bEyA@?@?@A@?@A@?@?@A@???@?@A@?@?@?@A@?@?@?@?@?@?@?@?@?@?@?@?@?@?@?@?@?@?@?@?@?@@@?@???@?@@@?@???@???@@??@???@???@@??@???@??@@?????@@??@???@@??@??@??@??@@?BEFM?APHD?FAR?B@F@XSVMZIXENC@LONBJDALB@@LFj@FZLRBN@F@B@HBPHH@@AJ??@AE??"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787789051000,
+              "steps": [
+                {
+                  "absoluteDirection": "SOUTH",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 619.83,
+                  "elevation": "",
+                  "lat": 1.3038128,
+                  "lon": 103.7740407,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787789618000,
+                "departure": 1787789618000,
+                "lat": 1.2989816,
+                "lon": 103.7741773,
+                "name": "OPP YUSOF ISHAK HSE",
+                "stopCode": "16179",
+                "stopId": "FERRY:16179",
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            },
+            {
+              "agencyId": "1:SBST",
+              "agencyName": "SBS Transit",
+              "agencyTimeZoneOffset": 28800000,
+              "agencyUrl": "http://www.sbstransit.com.sg/",
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 4143.17,
+              "duration": 861,
+              "endTime": 1787790479000,
+              "from": {
+                "arrival": 1787789618000,
+                "departure": 1787789618000,
+                "lat": 1.2989816,
+                "lon": 103.7741773,
+                "name": "OPP YUSOF ISHAK HSE",
+                "stopCode": "16179",
+                "stopId": "FERRY:16179",
+                "stopIndex": 3,
+                "stopSequence": 4,
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 1407,
+              "interlineWithPreviousLeg": false,
+              "intermediateStops": [
+                {
+                  "arrival": 1787789662000,
+                  "departure": 1787789692000,
+                  "lat": 1.2989244,
+                  "lon": 103.7761142,
+                  "name": "UNIVERSITY HEALTH CENTRE",
+                  "stopCode": "18329",
+                  "stopId": "FERRY:18329",
+                  "stopIndex": 4,
+                  "stopSequence": 5,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789735000,
+                  "departure": 1787789765000,
+                  "lat": 1.2975264,
+                  "lon": 103.7781311,
+                  "name": "OPP UNIVERSITY HALL",
+                  "stopCode": "18319",
+                  "stopId": "FERRY:18319",
+                  "stopIndex": 5,
+                  "stopSequence": 6,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789808000,
+                  "departure": 1787789838000,
+                  "lat": 1.2975201,
+                  "lon": 103.781342,
+                  "name": "BLK S17",
+                  "stopCode": "18309",
+                  "stopId": "FERRY:18309",
+                  "stopIndex": 6,
+                  "stopSequence": 7,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789881000,
+                  "departure": 1787789911000,
+                  "lat": 1.2967894,
+                  "lon": 103.7831878,
+                  "name": "OPP NUH",
+                  "stopCode": "18239",
+                  "stopId": "FERRY:18239",
+                  "stopIndex": 7,
+                  "stopSequence": 8,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789954000,
+                  "departure": 1787789984000,
+                  "lat": 1.2950645,
+                  "lon": 103.7845551,
+                  "name": "OPP KENT RIDGE STN EXIT A",
+                  "stopCode": "18339",
+                  "stopId": "FERRY:18339",
+                  "stopIndex": 8,
+                  "stopSequence": 9,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787790085000,
+                  "departure": 1787790115000,
+                  "lat": 1.2975117,
+                  "lon": 103.7854209,
+                  "name": "OPP AYER RAJAH IND EST",
+                  "stopCode": "18121",
+                  "stopId": "FERRY:18121",
+                  "stopIndex": 9,
+                  "stopSequence": 10,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787790230000,
+                  "departure": 1787790260000,
+                  "lat": 1.3041828,
+                  "lon": 103.7878809,
+                  "name": "AFT ANGLO-CHINESE JC",
+                  "stopCode": "18141",
+                  "stopId": "FERRY:18141",
+                  "stopIndex": 10,
+                  "stopSequence": 11,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787790318000,
+                  "departure": 1787790348000,
+                  "lat": 1.306497,
+                  "lon": 103.7905812,
+                  "name": "BUONA VISTA STN EXIT C",
+                  "stopCode": "11361",
+                  "stopId": "FERRY:11361",
+                  "stopIndex": 11,
+                  "stopSequence": 12,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787790391000,
+                  "departure": 1787790421000,
+                  "lat": 1.3074014,
+                  "lon": 103.7925422,
+                  "name": "BLK 43",
+                  "stopCode": "11189",
+                  "stopId": "FERRY:11189",
+                  "stopIndex": 12,
+                  "stopSequence": 13,
+                  "vertexType": "TRANSIT"
+                }
+              ],
+              "legGeometry": {
+                "length": 251,
+                "points": "gu|FclkxRGCAACA{@W[C[ESQFKDGJEJEVARBJMPQJU\\m@DQ@IDo@?CCwA@I????@QJa@b@q@zAgAf@o@p@gAZeA@E@CJY????BMPm@b@_BLg@?m@Gk@Ma@Uw@SmAAe@GmB?A@a@?E?C?????CDSBMDOJQX_@R[Rc@?GHiANcAPSLQ????Za@\\a@DEJMn@a@nCsAfAm@FG??xB}ADA^IjAEJ?`@IVMTULKmAu@o@]AA??A?u@Qc@Ea@CS?i@@g@H_ADU@Q?u@DcENA???A?g@EeAHa@F????A?a@FE?iBVs@Du@AO?g@C_@GC?AAA?A?A?A?MCKC??A?EAEAUE]KWIeCsAeCeBUM_@QQGOGKEC?EAMCA???o@Ka@Gy@KC?WEuAa@SK[MCA??A???ECCC??A?EEWUOKi@a@[a@AA????AACCkAwBCE??AEGKoBgDy@kACECEe@Uy@o@A?AAA?e@Yu@Y??AA??A?AACA????????A???AAIEs@YYKkBc@UG[IAACAA?A?AACA????KC@C@C@GBG?A@C?A@EDMFUZkA^{@JQ??LQ??????HOnAgB^}@NSYQEAKGWOkB_As@k@qBaBgAi@_A]OG??"
+              },
+              "mode": "BUS",
+              "pathway": false,
+              "realTime": false,
+              "route": "95",
+              "routeId": "95",
+              "routeLongName": "SBST BUS 95",
+              "routeShortName": "95",
+              "routeType": 3,
+              "serviceDate": "2026-08-27",
+              "startTime": 1787789618000,
+              "steps": [],
+              "to": {
+                "arrival": 1787790479000,
+                "departure": 1787790479000,
+                "lat": 1.3090672,
+                "lon": 103.7950744,
+                "name": "HOLLAND V STN/BLK 12",
+                "stopCode": "11401",
+                "stopId": "FERRY:11401",
+                "stopIndex": 13,
+                "stopSequence": 14,
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": true,
+              "tripId": "95-1-1012"
+            },
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 403.52,
+              "duration": 385,
+              "endTime": 1787790864000,
+              "from": {
+                "arrival": 1787790479000,
+                "departure": 1787790479000,
+                "lat": 1.3090672,
+                "lon": 103.7950744,
+                "name": "HOLLAND V STN/BLK 12",
+                "stopCode": "11401",
+                "stopId": "FERRY:11401",
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 2654,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 41,
+                "points": "st~FenoxR??ARECMKOIIE??CAQG??_A_@WEQCQGIGOM_@M@AL]@ACCAAQECADA@A?A@MD[?MBK?A@IeE_@IAAEG?E@UEGC"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787790479000,
+              "steps": [
+                {
+                  "absoluteDirection": "WEST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 403.53,
+                  "elevation": "",
+                  "lat": 1.3090659,
+                  "lon": 103.7950743,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787790864000,
+                "lat": 1.3115,
+                "lon": 103.7966,
+                "name": "Destination",
+                "vertexType": "NORMAL"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            }
+          ],
+          "startTime": 1787789051000,
+          "tooSloped": false,
+          "transfers": 0,
+          "transitTime": 861,
+          "waitingTime": 0,
+          "walkDistance": 1023.33,
+          "walkLimitExceeded": false,
+          "walkTime": 952
+        }
+      ],
+      "to": {
+        "lat": 1.3115,
+        "lon": 103.7966,
+        "name": "Destination",
+        "vertexType": "NORMAL"
+      }
+    },
+    "previousPageCursor": "rO0ABXc1AQANUFJFVklPVVNfUEFHRQyDmFCAAAAAAAAEsAAXU1RSRUVUX0FORF9BUlJJVkFMX1RJTUU=",
+    "requestParameters": {
+      "arriveBy": "false",
+      "date": "08-27-2026",
+      "fromPlace": "1.3038,103.774",
+      "maxTransfers": "3",
+      "mode": "TRANSIT,WALK",
+      "numItineraries": "1",
+      "showIntermediateStops": "true",
+      "time": "8:00 AM",
+      "toPlace": "1.3115,103.7966",
+      "transferPenalty": "2500"
+    }
+  }
+}

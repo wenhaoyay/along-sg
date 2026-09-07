@@ -1,0 +1,196 @@
+{
+  "stage": "V0.5",
+  "mode": "live-onemap",
+  "captured_at": "2026-08-26T20:27:37.988835+08:00",
+  "departure": "2026-08-27T10:00:00+08:00",
+  "poi_database": {
+    "outlets": 6192,
+    "active_outlets": 6191,
+    "brands": 21,
+    "categories": 10,
+    "hubs": 6138,
+    "malls": 15,
+    "transport_nodes": 132,
+    "known_hours": 1382,
+    "known_freshness": 6162,
+    "closed_outlets": 1
+  },
+  "summary": {
+    "case_count": 6,
+    "average_route_calls": 8,
+    "worst_route_calls": 9,
+    "cache_hit_rate": 0.0769,
+    "p50_latency_ms": 1255.55,
+    "p95_latency_ms": 2096.15,
+    "average_provider_latency_ms": 774.17
+  },
+  "cases": [
+    {
+      "case": "Punggol-Orchard fried chicken",
+      "errands": [
+        "fried_chicken"
+      ],
+      "baseline_minutes": 38.08,
+      "outcome": "ok",
+      "winner": [
+        "KFC · node/4836072450"
+      ],
+      "detour_minutes": 19.31,
+      "walking_minutes": 12.95,
+      "transfers": 1,
+      "raw_poi_count": 6191,
+      "category_match_hubs": 101,
+      "corridor_hubs": 34,
+      "transit_proximity_hubs": 19,
+      "hub_coverage_candidates": 12,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 4,
+      "evaluated_candidates": 4,
+      "route_calls": 9,
+      "cache_hits": 0,
+      "provider_latency_ms": 1069.01,
+      "total_latency_ms": 1145.11,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Jurong East-Bugis coffee",
+      "errands": [
+        "coffee"
+      ],
+      "baseline_minutes": 30.57,
+      "outcome": "ok",
+      "winner": [
+        "Starbucks · node/6774040322"
+      ],
+      "detour_minutes": 15.81,
+      "walking_minutes": 6.0,
+      "transfers": 0,
+      "raw_poi_count": 6191,
+      "category_match_hubs": 1845,
+      "corridor_hubs": 1028,
+      "transit_proximity_hubs": 825,
+      "hub_coverage_candidates": 12,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 4,
+      "evaluated_candidates": 4,
+      "route_calls": 9,
+      "cache_hits": 0,
+      "provider_latency_ms": 803.87,
+      "total_latency_ms": 1546.62,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Tampines-Orchard bubble tea",
+      "errands": [
+        "bubble_tea"
+      ],
+      "baseline_minutes": 38.18,
+      "outcome": "ok",
+      "winner": [
+        "R&B巡茶 · node/9810591365"
+      ],
+      "detour_minutes": 9.36,
+      "walking_minutes": 4.55,
+      "transfers": 1,
+      "raw_poi_count": 6191,
+      "category_match_hubs": 225,
+      "corridor_hubs": 90,
+      "transit_proximity_hubs": 45,
+      "hub_coverage_candidates": 12,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 4,
+      "evaluated_candidates": 3,
+      "route_calls": 9,
+      "cache_hits": 0,
+      "provider_latency_ms": 963.9,
+      "total_latency_ms": 1102.58,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Punggol-Orchard groceries and pharmacy",
+      "errands": [
+        "groceries",
+        "pharmacy"
+      ],
+      "baseline_minutes": 38.08,
+      "outcome": "ok",
+      "winner": [
+        "ION Orchard"
+      ],
+      "detour_minutes": 29.87,
+      "walking_minutes": 8.72,
+      "transfers": 1,
+      "raw_poi_count": 6191,
+      "category_match_hubs": 738,
+      "corridor_hubs": 311,
+      "transit_proximity_hubs": 170,
+      "hub_coverage_candidates": 49,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 3,
+      "evaluated_candidates": 1,
+      "route_calls": 8,
+      "cache_hits": 3,
+      "provider_latency_ms": 654.71,
+      "total_latency_ms": 1022.44,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Jurong East-Tampines convenience and ATM",
+      "errands": [
+        "convenience",
+        "banking"
+      ],
+      "baseline_minutes": 53.45,
+      "outcome": "ok",
+      "winner": [
+        "7-Eleven · node/9604806888",
+        "UOB · node/4869133225"
+      ],
+      "detour_minutes": 38.37,
+      "walking_minutes": 18.77,
+      "transfers": 0,
+      "raw_poi_count": 6191,
+      "category_match_hubs": 1946,
+      "corridor_hubs": 1182,
+      "transit_proximity_hubs": 702,
+      "hub_coverage_candidates": 64,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 1,
+      "evaluated_candidates": 1,
+      "route_calls": 7,
+      "cache_hits": 0,
+      "provider_latency_ms": 616.9,
+      "total_latency_ms": 2279.33,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Bugis-VivoCity electronics and coffee",
+      "errands": [
+        "electronics",
+        "coffee"
+      ],
+      "baseline_minutes": 20.12,
+      "outcome": "ok",
+      "winner": [
+        "VivoCity",
+        "Central Hong Kong Café · node/9396011699"
+      ],
+      "detour_minutes": 28.94,
+      "walking_minutes": 7.31,
+      "transfers": 1,
+      "raw_poi_count": 6191,
+      "category_match_hubs": 2104,
+      "corridor_hubs": 929,
+      "transit_proximity_hubs": 762,
+      "hub_coverage_candidates": 64,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 1,
+      "evaluated_candidates": 1,
+      "route_calls": 6,
+      "cache_hits": 1,
+      "provider_latency_ms": 536.66,
+      "total_latency_ms": 1366.0,
+      "hard_budget_reached": false
+    }
+  ]
+}

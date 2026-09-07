@@ -1,10 +1,12 @@
-# OneMap public-transport contract — live validation
+# OneMap public-transport contract — V0.4 live validation
 
 ## Evidence
 
 Live authentication and public-transport probing succeeded on **2026-08-26 (Asia/Singapore)**.
 
-The sanitised capture in `backend/fixtures/live/2026-08-26T195357/` contains 24 bounded requests: 17 accepted route responses and 7 rejected contract experiments. A secret audit confirmed that configured credential values and authentication fields are not present in the committed fixtures.
+The definitive capture is in backend/fixtures/live/2026-08-26T195357/. Its sanitised manifest contains 24 bounded requests: 17 accepted route responses and 7 rejected contract experiments. A secret audit confirmed that neither configured credential value nor an unredacted token/password/email/authorization field appears in the capture.
+
+An earlier four-request capture documents the rejected ISO date assumption, and a 22-request capture documents the first successful matrix. Timestamped directories prevent those evidence sets from being overwritten.
 
 ## Required live request contract
 

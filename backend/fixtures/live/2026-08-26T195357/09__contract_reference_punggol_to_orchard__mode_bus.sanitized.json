@@ -1,0 +1,636 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:53:57.971189+08:00",
+    "captured_live": true,
+    "contains_credentials_or_token": false,
+    "expected_coverage": null,
+    "experiment": "mode_bus",
+    "provider_latency_ms": 987.45,
+    "request": {
+      "date": "08-26-2026",
+      "end": "1.3043,103.8322",
+      "maxWalkDistance": 1000,
+      "mode": "BUS",
+      "numItineraries": 1,
+      "routeType": "pt",
+      "start": "1.4052,103.9024",
+      "time": "19:53:00"
+    },
+    "response_status": 200,
+    "scenario": "contract_reference_punggol_to_orchard"
+  },
+  "response": {
+    "debugOutput": {
+      "directStreetRouterTime": 249945587,
+      "filteringTime": 3460419,
+      "precalculationTime": 19524,
+      "renderingTime": 197371,
+      "totalTime": 848727156,
+      "transitRouterTime": 595090990,
+      "transitRouterTimes": {
+        "accessEgressTime": 42243648,
+        "itineraryCreationTime": 31719856,
+        "raptorSearchTime": 493175577,
+        "tripPatternFilterTime": 27937924
+      }
+    },
+    "elevationMetadata": {
+      "ellipsoidToGeoidDifference": 7.474248868803462,
+      "geoidElevation": false
+    },
+    "metadata": {
+      "nextDateTime": 1787745720000,
+      "prevDateTime": 1787742180000,
+      "searchWindowUsed": 3000
+    },
+    "nextPageCursor": "rO0ABXcxAQAJTkVYVF9QQUdFDIL0uIAAAAAAAASwABdTVFJFRVRfQU5EX0FSUklWQUxfVElNRQ==",
+    "plan": {
+      "date": 1787745180000,
+      "from": {
+        "lat": 1.4052,
+        "lon": 103.9024,
+        "name": "Origin",
+        "vertexType": "NORMAL"
+      },
+      "itineraries": [
+        {
+          "arrivedAtDestinationWithRentedBicycle": false,
+          "duration": 4992,
+          "elevationGained": 0,
+          "elevationLost": 0,
+          "endTime": 1787750455000,
+          "fare": "3.40",
+          "generalizedCost": 7595,
+          "legs": [
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 115.87,
+              "duration": 105,
+              "endTime": 1787745568000,
+              "from": {
+                "departure": 1787745463000,
+                "lat": 1.4052,
+                "lon": 103.9024,
+                "name": "Origin",
+                "vertexType": "NORMAL"
+              },
+              "generalizedCost": 761,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 8,
+                "points": "omqG}ldyRTHMZCD@F_@x@_@|@\\N"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787745463000,
+              "steps": [
+                {
+                  "absoluteDirection": "SOUTHWEST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 115.87,
+                  "elevation": "",
+                  "lat": 1.4052012,
+                  "lon": 103.9023976,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787745568000,
+                "departure": 1787745568000,
+                "lat": 1.4053406,
+                "lon": 103.9014514,
+                "name": "PUNGGOL STN/INT",
+                "stopCode": "65259",
+                "stopId": "FERRY:65259",
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            },
+            {
+              "agencyId": "1:GAS",
+              "agencyName": "Go-Ahead Singapore",
+              "agencyTimeZoneOffset": 28800000,
+              "agencyUrl": "http://www.go-aheadsingapore.com/",
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 9484.14,
+              "duration": 1699,
+              "endTime": 1787747267000,
+              "from": {
+                "arrival": 1787745568000,
+                "departure": 1787745568000,
+                "lat": 1.4053406,
+                "lon": 103.9014514,
+                "name": "PUNGGOL STN/INT",
+                "stopCode": "65259",
+                "stopId": "FERRY:65259",
+                "stopIndex": 1,
+                "stopSequence": 2,
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 2119,
+              "interlineWithPreviousLeg": false,
+              "intermediateStops": [
+                {
+                  "arrival": 1787745611000,
+                  "departure": 1787745641000,
+                  "lat": 1.406245,
+                  "lon": 103.8995745,
+                  "name": "BEF BLK 264",
+                  "stopCode": "65409",
+                  "stopId": "FERRY:65409",
+                  "stopIndex": 2,
+                  "stopSequence": 3,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787745698000,
+                  "departure": 1787745728000,
+                  "lat": 1.4045481,
+                  "lon": 103.8971639,
+                  "name": "AFT SOO TECK STN",
+                  "stopCode": "65141",
+                  "stopId": "FERRY:65141",
+                  "stopIndex": 3,
+                  "stopSequence": 4,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787745757000,
+                  "departure": 1787745787000,
+                  "lat": 1.4023894,
+                  "lon": 103.8967356,
+                  "name": "TWIN WATERFALLS",
+                  "stopCode": "65431",
+                  "stopId": "FERRY:65431",
+                  "stopIndex": 4,
+                  "stopSequence": 5,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787745974000,
+                  "departure": 1787746004000,
+                  "lat": 1.3959172,
+                  "lon": 103.9054274,
+                  "name": "AFT PUNGGOL RD",
+                  "stopCode": "65199",
+                  "stopId": "FERRY:65199",
+                  "stopIndex": 5,
+                  "stopSequence": 6,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746580000,
+                  "departure": 1787746610000,
+                  "lat": 1.3743865,
+                  "lon": 103.9314795,
+                  "name": "IKEA TAMPINES/AFT TPE",
+                  "stopCode": "75359",
+                  "stopId": "FERRY:75359",
+                  "stopIndex": 6,
+                  "stopSequence": 7,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746668000,
+                  "departure": 1787746698000,
+                  "lat": 1.3707963,
+                  "lon": 103.9305653,
+                  "name": "BEF TAMPINES LK",
+                  "stopCode": "75369",
+                  "stopId": "FERRY:75369",
+                  "stopIndex": 7,
+                  "stopSequence": 8,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746756000,
+                  "departure": 1787746786000,
+                  "lat": 1.3675935,
+                  "lon": 103.9310929,
+                  "name": "AFT TAMPINES LK",
+                  "stopCode": "75319",
+                  "stopId": "FERRY:75319",
+                  "stopIndex": 8,
+                  "stopSequence": 9,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746858000,
+                  "departure": 1787746888000,
+                  "lat": 1.362391,
+                  "lon": 103.9310662,
+                  "name": "BEF TAMPINES AVE 9",
+                  "stopCode": "75299",
+                  "stopId": "FERRY:75299",
+                  "stopIndex": 9,
+                  "stopSequence": 10,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746931000,
+                  "departure": 1787746961000,
+                  "lat": 1.35943,
+                  "lon": 103.9309898,
+                  "name": "BEF TAMPINES AVE 5",
+                  "stopCode": "75379",
+                  "stopId": "FERRY:75379",
+                  "stopIndex": 10,
+                  "stopSequence": 11,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787747004000,
+                  "departure": 1787747034000,
+                  "lat": 1.3575036,
+                  "lon": 103.9313012,
+                  "name": "UWCSEA",
+                  "stopCode": "75171",
+                  "stopId": "FERRY:75171",
+                  "stopIndex": 11,
+                  "stopSequence": 12,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787747106000,
+                  "departure": 1787747136000,
+                  "lat": 1.354044,
+                  "lon": 103.9313951,
+                  "name": "BLK 874",
+                  "stopCode": "75159",
+                  "stopId": "FERRY:75159",
+                  "stopIndex": 12,
+                  "stopSequence": 13,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787747194000,
+                  "departure": 1787747224000,
+                  "lat": 1.3506577,
+                  "lon": 103.9295682,
+                  "name": "SPRINGFIELD SEC SCH",
+                  "stopCode": "75039",
+                  "stopId": "FERRY:75039",
+                  "stopIndex": 13,
+                  "stopSequence": 14,
+                  "vertexType": "TRANSIT"
+                }
+              ],
+              "legGeometry": {
+                "length": 139,
+                "points": "gpqGahdyRIPUf@IPi@jAQn@K`@Oj@UzB????AL?~B?pBJz@Vr@Z^TTv@Nx@PdDr@??hAT^DrANf@DN@jALpAN\\D??fAJnCZrA?`AO`AcAfAoE`DkLhAiCjBcFf@cBfA{C`AaCbAuAlEqF????PS~CqCbCqC`GwFrd@u_@bM_KxG{F~JyJnCyClAgBnA_CnBmEvBqGj@}BZgBbD}S~@_G\\iC`AqEx@}Ch@_AbBoAl@RjExAPF@???fGtB|@RXHbBTbAHr@DRApA?~@G????FApFc@rAMZE`@G\\EpBMbBE??x@CN?~AAxB@`@?tA@fKEfFA??pA?zFAhABbABpBL??B?pA\\vATv@Vv@It@SdAaC????jCeGL[tErBFBtGvCFB??rB|@fEjBnClAXL|DdB@???`Ad@rB|@ZLhBv@^NLYpBoE"
+              },
+              "mode": "BUS",
+              "pathway": false,
+              "realTime": false,
+              "route": "118",
+              "routeId": "118",
+              "routeLongName": "GAS BUS 118",
+              "routeShortName": "118",
+              "routeType": 3,
+              "serviceDate": "2026-08-26",
+              "startTime": 1787745568000,
+              "steps": [],
+              "to": {
+                "arrival": 1787747267000,
+                "departure": 1787747267000,
+                "lat": 1.348448,
+                "lon": 103.9298022,
+                "name": "OPP TEMASEK POLY WEST G",
+                "stopCode": "75241",
+                "stopId": "FERRY:75241",
+                "stopIndex": 14,
+                "stopSequence": 15,
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": true,
+              "tripId": "118-1-4006"
+            },
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 101.38,
+              "duration": 105,
+              "endTime": 1787747372000,
+              "from": {
+                "arrival": 1787747267000,
+                "departure": 1787747267000,
+                "lat": 1.348448,
+                "lon": 103.9298022,
+                "name": "OPP TEMASEK POLY WEST G",
+                "stopCode": "75241",
+                "stopId": "FERRY:75241",
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 676,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 12,
+                "points": "wjfGgxiyR??CAHQBGBED?N[t@ZJUFOCA"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787747267000,
+              "steps": [
+                {
+                  "absoluteDirection": "NORTHEAST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 101.38,
+                  "elevation": "",
+                  "lat": 1.348448,
+                  "lon": 103.9298021,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787747372000,
+                "departure": 1787747659000,
+                "lat": 1.347915,
+                "lon": 103.9301701,
+                "name": "TEMASEK POLY WEST G",
+                "stopCode": "75249",
+                "stopId": "FERRY:75249",
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            },
+            {
+              "agencyId": "1:GAS",
+              "agencyName": "Go-Ahead Singapore",
+              "agencyTimeZoneOffset": 28800000,
+              "agencyUrl": "http://www.go-aheadsingapore.com/",
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 12904.88,
+              "duration": 2680,
+              "endTime": 1787750339000,
+              "from": {
+                "arrival": 1787747372000,
+                "departure": 1787747659000,
+                "lat": 1.347915,
+                "lon": 103.9301701,
+                "name": "TEMASEK POLY WEST G",
+                "stopCode": "75249",
+                "stopId": "FERRY:75249",
+                "stopIndex": 32,
+                "stopSequence": 33,
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 3315,
+              "interlineWithPreviousLeg": false,
+              "intermediateStops": [
+                {
+                  "arrival": 1787747702000,
+                  "departure": 1787747732000,
+                  "lat": 1.3491381,
+                  "lon": 103.9279803,
+                  "name": "TROPICA CONDO",
+                  "stopCode": "75259",
+                  "stopId": "FERRY:75259",
+                  "stopIndex": 33,
+                  "stopSequence": 34,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787747948000,
+                  "departure": 1787747978000,
+                  "lat": 1.3423208,
+                  "lon": 103.918768,
+                  "name": "HOMETEAMNS",
+                  "stopCode": "72179",
+                  "stopId": "FERRY:72179",
+                  "stopIndex": 34,
+                  "stopSequence": 35,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787748079000,
+                  "departure": 1787748109000,
+                  "lat": 1.3364633,
+                  "lon": 103.9183227,
+                  "name": "BEDOK NTH STN EXIT B",
+                  "stopCode": "84459",
+                  "stopId": "FERRY:84459",
+                  "stopIndex": 35,
+                  "stopSequence": 36,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787748138000,
+                  "departure": 1787748168000,
+                  "lat": 1.3350342,
+                  "lon": 103.9185175,
+                  "name": "BEDOK NTH STN EXIT B",
+                  "stopCode": "84539",
+                  "stopId": "FERRY:84539",
+                  "stopIndex": 36,
+                  "stopSequence": 37,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787749668000,
+                  "departure": 1787749698000,
+                  "lat": 1.3189881,
+                  "lon": 103.8492903,
+                  "name": "OPP TAN TOCK SENG HOSP",
+                  "stopCode": "50129",
+                  "stopId": "FERRY:50129",
+                  "stopIndex": 37,
+                  "stopSequence": 40,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787749756000,
+                  "departure": 1787749786000,
+                  "lat": 1.318295,
+                  "lon": 103.8458185,
+                  "name": "ST. JOSEPH INSTN JNR",
+                  "stopCode": "50119",
+                  "stopId": "FERRY:50119",
+                  "stopIndex": 38,
+                  "stopSequence": 41,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787749872000,
+                  "departure": 1787749902000,
+                  "lat": 1.3170359,
+                  "lon": 103.8416049,
+                  "name": "HOTEL ROYAL",
+                  "stopCode": "50069",
+                  "stopId": "FERRY:50069",
+                  "stopIndex": 39,
+                  "stopSequence": 42,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787750047000,
+                  "departure": 1787750077000,
+                  "lat": 1.3122742,
+                  "lon": 103.8381006,
+                  "name": "NEWTON STN EXIT B",
+                  "stopCode": "40189",
+                  "stopId": "FERRY:40189",
+                  "stopIndex": 40,
+                  "stopSequence": 44,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787750106000,
+                  "departure": 1787750136000,
+                  "lat": 1.3113496,
+                  "lon": 103.8368838,
+                  "name": "ENV BLDG",
+                  "stopCode": "40179",
+                  "stopId": "FERRY:40179",
+                  "stopIndex": 41,
+                  "stopSequence": 45,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787750251000,
+                  "departure": 1787750281000,
+                  "lat": 1.30732,
+                  "lon": 103.8331609,
+                  "name": "FAR EAST PLAZA",
+                  "stopCode": "09219",
+                  "stopId": "FERRY:09219",
+                  "stopIndex": 42,
+                  "stopSequence": 46,
+                  "vertexType": "TRANSIT"
+                }
+              ],
+              "legGeometry": {
+                "length": 22,
+                "points": "mgfGqziyRsFtL??pi@rx@??rc@vA??|Ge@??hcBroL??hCvT??zFhY??v\\zT??vDrF??dXfV??zPj@"
+              },
+              "mode": "BUS",
+              "pathway": false,
+              "realTime": false,
+              "route": "518",
+              "routeId": "518",
+              "routeLongName": "GAS BUS 518",
+              "routeShortName": "518",
+              "routeType": 3,
+              "serviceDate": "2026-08-26",
+              "startTime": 1787747659000,
+              "steps": [],
+              "to": {
+                "arrival": 1787750339000,
+                "departure": 1787750339000,
+                "lat": 1.3044607,
+                "lon": 103.8329447,
+                "name": "ORCHARD STN/TANG PLAZA",
+                "stopCode": "09047",
+                "stopId": "FERRY:09047",
+                "stopIndex": 43,
+                "stopSequence": 47,
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": true,
+              "tripId": "518-1-4004"
+            },
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 121.06,
+              "duration": 116,
+              "endTime": 1787750455000,
+              "from": {
+                "arrival": 1787750339000,
+                "departure": 1787750339000,
+                "lat": 1.3044607,
+                "lon": 103.8329447,
+                "name": "ORCHARD STN/TANG PLAZA",
+                "stopCode": "09047",
+                "stopId": "FERRY:09047",
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 798,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 12,
+                "points": "{w}F{zvxR??AACAABIRABCFa@`Ax@ZDBVA"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787750339000,
+              "steps": [
+                {
+                  "absoluteDirection": "NORTHEAST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 121.06,
+                  "elevation": "",
+                  "lat": 1.3044606,
+                  "lon": 103.8329446,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787750455000,
+                "lat": 1.3043,
+                "lon": 103.8322,
+                "name": "Destination",
+                "vertexType": "NORMAL"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            }
+          ],
+          "startTime": 1787745463000,
+          "tooSloped": false,
+          "transfers": 1,
+          "transitTime": 4379,
+          "waitingTime": 287,
+          "walkDistance": 338.31,
+          "walkLimitExceeded": false,
+          "walkTime": 326
+        }
+      ],
+      "to": {
+        "lat": 1.3043,
+        "lon": 103.8322,
+        "name": "Destination",
+        "vertexType": "NORMAL"
+      }
+    },
+    "previousPageCursor": "rO0ABXc1AQANUFJFVklPVVNfUEFHRQyC7eyAAAAAAAAEsAAXU1RSRUVUX0FORF9BUlJJVkFMX1RJTUU=",
+    "requestParameters": {
+      "date": "08-26-2026",
+      "fromPlace": "1.4052,103.9024",
+      "maxTransfers": "3",
+      "mode": "BUS,WALK",
+      "numItineraries": "1",
+      "showIntermediateStops": "true",
+      "time": "7:53 PM",
+      "toPlace": "1.3043,103.8322"
+    }
+  }
+}

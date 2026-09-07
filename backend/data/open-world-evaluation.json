@@ -1,0 +1,41 @@
+{
+  "version": "0.7.4",
+  "description": "Open-world Singapore errand evaluation. Templates are expanded across all terms; mappings are evaluation labels, not production concepts.",
+  "templates": ["{term}", "need {term}", "please find {term}", "where can I get {term}"],
+  "groups": {
+    "dish": [
+      "mee pok", "meepok", "fishball noodles", "hor fun", "chicken rice", "cai fan",
+      "caifan", "ban mian", "laksa", "prata", "mala", "ramen", "sushi", "dim sum",
+      "matcha", "durian", "kaya toast", "bak chor mee", "nasi lemak", "roti john"
+    ],
+    "product": [
+      "Panadol", "paracetamol", "USB-C cable", "phone charger", "printer ink", "cat litter",
+      "mosquito repellent", "umbrella", "bubble wrap", "shoe glue", "toothpaste",
+      "contact lens solution", "birthday candles", "cat food", "dog treats", "AA batteries",
+      "travel adapter", "screen protector", "light bulb", "packing tape"
+    ],
+    "service": [
+      "passport photo", "haircut", "key duplication", "printing", "spectacles repair",
+      "parcel drop-off", "ATM", "shoe repair", "watch battery replacement", "photocopy"
+    ],
+    "specific_business": [
+      "Molly Tea", "KFC", "McDonald's", "Popular", "Guardian", "Watsons",
+      "Toast Box", "Old Chang Kee", "Challenger", "FairPrice"
+    ]
+  },
+  "colloquial": [
+    "bbt", "mcd", "dabao chicken rice", "want mala", "need meds", "buy charger",
+    "get kopi", "ta pao caifan", "find specs repair", "parcel drop"
+  ],
+  "compound": [
+    "mee pok and Panadol", "coffee and printer ink", "cat food and groceries",
+    "birthday cake and flowers", "passport photo plus phone charger",
+    "mala and mosquito repellent", "haircut and bubble tea", "printing and USB-C cable",
+    "fishball noodles plus Panadol", "key duplication and groceries"
+  ],
+  "nonsense": [
+    "I like cats", "tell me a joke", "what is Singapore", "why is the sky blue",
+    "I love trains", "make me laugh", "who is the president", "how are you",
+    "I think noodles are nice", "tell me the news", "weather today", "I hate queues"
+  ]
+}
