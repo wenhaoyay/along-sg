@@ -1,0 +1,506 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:53:57.971189+08:00",
+    "captured_live": true,
+    "contains_credentials_or_token": false,
+    "expected_coverage": null,
+    "experiment": "max_walk_2000",
+    "provider_latency_ms": 94.03,
+    "request": {
+      "date": "08-26-2026",
+      "end": "1.3043,103.8322",
+      "maxWalkDistance": 2000,
+      "mode": "TRANSIT",
+      "numItineraries": 1,
+      "routeType": "pt",
+      "start": "1.4052,103.9024",
+      "time": "19:53:00"
+    },
+    "response_status": 200,
+    "scenario": "contract_reference_punggol_to_orchard"
+  },
+  "response": {
+    "debugOutput": {
+      "directStreetRouterTime": 250369910,
+      "filteringTime": 986588,
+      "precalculationTime": 18206,
+      "renderingTime": 172334,
+      "totalTime": 623819834,
+      "transitRouterTime": 372248578,
+      "transitRouterTimes": {
+        "accessEgressTime": 40549592,
+        "itineraryCreationTime": 13532246,
+        "raptorSearchTime": 287930999,
+        "tripPatternFilterTime": 30224127
+      }
+    },
+    "elevationMetadata": {
+      "ellipsoidToGeoidDifference": 7.474248868803462,
+      "geoidElevation": false
+    },
+    "metadata": {
+      "nextDateTime": 1787747580000,
+      "prevDateTime": 1787742780000,
+      "searchWindowUsed": 2400
+    },
+    "nextPageCursor": "rO0ABXcxAQAJTkVYVF9QQUdFDIL7_IAAAAAAAAlgABdTVFJFRVRfQU5EX0FSUklWQUxfVElNRQ==",
+    "plan": {
+      "date": 1787745180000,
+      "from": {
+        "lat": 1.4052,
+        "lon": 103.9024,
+        "name": "Origin",
+        "vertexType": "NORMAL"
+      },
+      "itineraries": [
+        {
+          "arrivedAtDestinationWithRentedBicycle": false,
+          "duration": 2384,
+          "elevationGained": 0,
+          "elevationLost": 0,
+          "endTime": 1787747580000,
+          "fare": "2.11",
+          "generalizedCost": 5969,
+          "legs": [
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 143.06,
+              "duration": 136,
+              "endTime": 1787745332000,
+              "from": {
+                "departure": 1787745196000,
+                "lat": 1.4052,
+                "lon": 103.9024,
+                "name": "Origin",
+                "vertexType": "NORMAL"
+              },
+              "generalizedCost": 943,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 13,
+                "points": "omqG}ldyRTHFMHQHDXLhAd@VJFBB@EHIRLD"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787745196000,
+              "steps": [
+                {
+                  "absoluteDirection": "SOUTHWEST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 143.06,
+                  "elevation": "",
+                  "lat": 1.4052012,
+                  "lon": 103.9023976,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787745332000,
+                "departure": 1787745332000,
+                "lat": 1.4042876,
+                "lon": 103.9019468,
+                "name": "PUNGGOL MRT STATION",
+                "stopCode": "NE17",
+                "stopId": "FERRY:NE17",
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            },
+            {
+              "agencyId": "1:SBST",
+              "agencyName": "SBS Transit",
+              "agencyTimeZoneOffset": 28800000,
+              "agencyUrl": "http://www.sbstransit.com.sg/",
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 13900.54,
+              "duration": 1408,
+              "endTime": 1787746740000,
+              "from": {
+                "arrival": 1787745332000,
+                "departure": 1787745332000,
+                "lat": 1.4042876,
+                "lon": 103.9019468,
+                "name": "PUNGGOL MRT STATION",
+                "stopCode": "NE17",
+                "stopId": "FERRY:NE17",
+                "stopIndex": 1,
+                "stopSequence": 2,
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 1379,
+              "interlineWithPreviousLeg": false,
+              "intermediateStops": [
+                {
+                  "arrival": 1787745467000,
+                  "departure": 1787745497000,
+                  "lat": 1.3916935,
+                  "lon": 103.8954844,
+                  "name": "SENGKANG MRT STATION",
+                  "stopCode": "NE16",
+                  "stopId": "FERRY:NE16",
+                  "stopIndex": 2,
+                  "stopSequence": 3,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787745578000,
+                  "departure": 1787745608000,
+                  "lat": 1.3829392,
+                  "lon": 103.8932181,
+                  "name": "BUANGKOK MRT STATION",
+                  "stopCode": "NE15",
+                  "stopId": "FERRY:NE15",
+                  "stopIndex": 3,
+                  "stopSequence": 4,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787745710000,
+                  "departure": 1787745740000,
+                  "lat": 1.3711572,
+                  "lon": 103.8924725,
+                  "name": "HOUGANG MRT STATION",
+                  "stopCode": "NE14",
+                  "stopId": "FERRY:NE14",
+                  "stopIndex": 4,
+                  "stopSequence": 5,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787745864000,
+                  "departure": 1787745894000,
+                  "lat": 1.3601096,
+                  "lon": 103.8848699,
+                  "name": "KOVAN MRT STATION",
+                  "stopCode": "NE13",
+                  "stopId": "FERRY:NE13",
+                  "stopIndex": 5,
+                  "stopSequence": 6,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746035000,
+                  "departure": 1787746065000,
+                  "lat": 1.3496976,
+                  "lon": 103.8735369,
+                  "name": "SERANGOON MRT STATION",
+                  "stopCode": "NE12",
+                  "stopId": "FERRY:NE12",
+                  "stopIndex": 6,
+                  "stopSequence": 7,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746162000,
+                  "departure": 1787746192000,
+                  "lat": 1.3391963,
+                  "lon": 103.8707544,
+                  "name": "WOODLEIGH MRT STATION",
+                  "stopCode": "NE11",
+                  "stopId": "FERRY:NE11",
+                  "stopIndex": 7,
+                  "stopSequence": 8,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746264000,
+                  "departure": 1787746294000,
+                  "lat": 1.3312248,
+                  "lon": 103.8690421,
+                  "name": "POTONG PASIR MRT STATION",
+                  "stopCode": "NE10",
+                  "stopId": "FERRY:NE10",
+                  "stopIndex": 8,
+                  "stopSequence": 9,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746419000,
+                  "departure": 1787746449000,
+                  "lat": 1.3193357,
+                  "lon": 103.8615695,
+                  "name": "BOON KENG MRT STATION",
+                  "stopCode": "NE9",
+                  "stopId": "FERRY:NE9",
+                  "stopIndex": 9,
+                  "stopSequence": 10,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746540000,
+                  "departure": 1787746570000,
+                  "lat": 1.3126039,
+                  "lon": 103.854361,
+                  "name": "FARRER PARK MRT STATION",
+                  "stopCode": "NE8",
+                  "stopId": "FERRY:NE8",
+                  "stopIndex": 10,
+                  "stopSequence": 11,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787746634000,
+                  "departure": 1787746664000,
+                  "lat": 1.3067411,
+                  "lon": 103.8496464,
+                  "name": "LITTLE INDIA MRT STATION",
+                  "stopCode": "NE7",
+                  "stopId": "FERRY:NE7",
+                  "stopIndex": 11,
+                  "stopSequence": 12,
+                  "vertexType": "TRANSIT"
+                }
+              ],
+              "legGeometry": {
+                "length": 733,
+                "points": "ugqGijdyRvOdHjUjKvEtB@?@@@??@@?@?@@@??@@?`Ab@@?@@@?@@??@@@?@?@@??nBx@|CtAb@PLFrAj@FBFBFBFBFDFBFBHBFBFBTHTHVHVHTHHBF@D@B@F@FBF@HBF@FBH@hGzA??ND??`RnED@D@D@D@D@D@D@D@D@D@HBD@D@D@D@D?D@D@F@D@D@l@LzB`@TF|KtBF@F@F@F@F@FBF@F@D@F@N@NBN@LBN@N@B?H@F?F@F?F@F?F?F@F?F?zBH??r@BpS~A|GLj^N@?B?@?@?B?@?B?@?@?B?~HHHA??fDGD?DAB?D?D?B?D?D?D@B?F?X?X@X@V@X@X@XBXBVBXDVBXDVDXFVDXFVFVFVFVHVFVHVJTHVJTJVJTJTJTLTLTJTNRLTLRNRNRNRNRPPNRPPPPPBBB@BBBBBBBB@BBBBBBBzSvT@@@@@@@@@@@@@@@@@@?@xFlGVX??hBrBpTnV@BBB@@BB@BB@@BxAdB^d@rHrJ@@B@@BBB@@BB@BB@@BrPjRDDDDBDDDDDBDDDDDNLLNNNNLJHtBbB??j@d@lA`ADDDBDDDBDDDBDDDBPLPLPJPLPJPJPJRJPHRJPHRHFBFBD@FBDBF@FBDBF@`JdDHBHDHBHDHBHBJDHBLDLBNDLDNBLBNBNBLBN@NBN@LBNBN@N@N?L@N@N?N?N?D?J?J?HAJ?J?H?JAJ?hFKD?D?DAD?B?D?D?D?J?^A\\?D?D?D?D?B?D?D?D?jIBN???@@d@?I?lC@@?H?F?H???F?H?F?D?B?H@F?H?F?H@F?H?F@H?F?H@F?H@F?H@F@H?F@F@H?F@H@F@H?F@H@F@F@H@F@H@F@??F@H@F@H@FBF@F@@?F@F@H@F@HBF@F@H@F@F@H@FBH@F@F@H@??F@FBH@@?D@H@F@B@B?H@FBF@H@F@H@F@F@HBF@F@H@F@F@H@FBH@F@F@H@F@FBH@F@H@F@F@H@D@@@F@H@F@H@F@??F@HBF@F@H@??F@H@F@F@H@FBF@H@F@H@F@F@H@F@HBF@F@H@F@F@H@F@H@FBF@H@F@H@F@F@H@F@F@HBF@D@B?F@@?D@D@B?F@F@H@FBH@F@XD@?B@@?B@D@F?HBH@D@@???jQnCXF\\Fd@Lb@N`A\\l@Zh@Xf@\\l@b@fAx@lBxAx@t@pAvAd@d@n@n@z@r@~@r@bAv@|@p@x@l@v@f@b@Xl@\\tAv@fBlAhA|@rAbAtDrCb@^??|C~BlBhBrBtBtBvBDDDFDDDDDFDBJLHJJLHLHLHLHLDDBFBHDFBDBFDFBFDFBFBDDFBFDFBFDFBFDFBDDFHLHLHLHLJLHJDDDFDDDFFDDFDDDDDFDD??????nF|FxEbF??z@~@GG??s@w@z@~@|DdE??DFFDDDDDDFDD??DDDDFDDFJHHHHFFDDDFDDDFDDDFBDDFD??FD`FlD@BB@BBB@B@@BB@B@BBB@VRHDBBB@B@BBB@B@@@BBB@B@??BB??B@@@B@BBB@B@BB@@B@JFVPBBB@BB@@B@BBB@@@BBB@nFxDjBrA??fChBnBtABBB@@@BBB@B@@BB@??BBB@XPVPXPXPZPXNZNRJB@B@B@B@B@B@B@BBB@??B@??fXvLrAl@"
+              },
+              "mode": "SUBWAY",
+              "pathway": false,
+              "realTime": false,
+              "route": "NE",
+              "routeId": "NE",
+              "routeLongName": "NORTH EAST LINE",
+              "routeShortName": "NE",
+              "routeType": 1,
+              "serviceDate": "2026-08-26",
+              "startTime": 1787745332000,
+              "steps": [],
+              "to": {
+                "arrival": 1787746740000,
+                "departure": 1787746740000,
+                "lat": 1.2996206,
+                "lon": 103.8453759,
+                "name": "DHOBY GHAUT MRT STATION",
+                "stopCode": "NE6",
+                "stopId": "FERRY:NE6",
+                "stopIndex": 12,
+                "stopSequence": 13,
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": true,
+              "tripId": "NE-2-5006"
+            },
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 205.03,
+              "duration": 206,
+              "endTime": 1787746946000,
+              "from": {
+                "arrival": 1787746740000,
+                "departure": 1787746740000,
+                "lat": 1.2996206,
+                "lon": 103.8453759,
+                "name": "DHOBY GHAUT MRT STATION",
+                "stopCode": "NE6",
+                "stopId": "FERRY:NE6",
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 1362,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 22,
+                "points": "sy|FqhyxRM`@BFH?T?D?DA@C@EDOFWDWH@FYBA\\HZmAFBF@\\HHc@EA"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787746740000,
+              "steps": [
+                {
+                  "absoluteDirection": "SOUTHWEST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 205.04,
+                  "elevation": "",
+                  "lat": 1.2996941,
+                  "lon": 103.845207,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787746946000,
+                "departure": 1787747215000,
+                "lat": 1.2986887,
+                "lon": 103.8461228,
+                "name": "DHOBY GHAUT MRT STATION",
+                "stopCode": "NS24",
+                "stopId": "FERRY:NS24",
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            },
+            {
+              "agencyId": "1:SMRT",
+              "agencyName": "SMRT Corporation",
+              "agencyTimeZoneOffset": 28800000,
+              "agencyUrl": "http://www.smrt.com.sg/",
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 1818.82,
+              "duration": 176,
+              "endTime": 1787747391000,
+              "from": {
+                "arrival": 1787746946000,
+                "departure": 1787747215000,
+                "lat": 1.2986887,
+                "lon": 103.8461228,
+                "name": "DHOBY GHAUT MRT STATION",
+                "stopCode": "NS24",
+                "stopId": "FERRY:NS24",
+                "stopIndex": 4,
+                "stopSequence": 5,
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 1108,
+              "interlineWithPreviousLeg": false,
+              "intermediateStops": [
+                {
+                  "arrival": 1787747279000,
+                  "departure": 1787747309000,
+                  "lat": 1.3002132,
+                  "lon": 103.8392215,
+                  "name": "SOMERSET MRT STATION",
+                  "stopCode": "NS23",
+                  "stopId": "FERRY:NS23",
+                  "stopIndex": 5,
+                  "stopSequence": 6,
+                  "vertexType": "TRANSIT"
+                }
+              ],
+              "legGeometry": {
+                "length": 43,
+                "points": "qs|FemyxR?@iA|EKh@QrAIh@Gn@{@pIm@xFmA~I??CHc@~CUvAYzAIn@Ir@Al@?j@Dr@^jDFt@Bn@Cn@Ch@Gf@Mn@Ql@Sd@OZWb@W\\[\\[V]X[R]Pa@Nw@Vs@L}@Jm@BiCH"
+              },
+              "mode": "SUBWAY",
+              "pathway": false,
+              "realTime": false,
+              "route": "NS",
+              "routeId": "NS",
+              "routeLongName": "NORTH SOUTH LINE",
+              "routeShortName": "NS",
+              "routeType": 1,
+              "serviceDate": "2026-08-26",
+              "startTime": 1787747215000,
+              "steps": [],
+              "to": {
+                "arrival": 1787747391000,
+                "departure": 1787747391000,
+                "lat": 1.303815,
+                "lon": 103.8322722,
+                "name": "ORCHARD MRT STATION",
+                "stopCode": "NS22",
+                "stopId": "FERRY:NS22",
+                "stopIndex": 6,
+                "stopSequence": 7,
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": true,
+              "tripId": "NS-1-5016"
+            },
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 188.68,
+              "duration": 189,
+              "endTime": 1787747580000,
+              "from": {
+                "arrival": 1787747391000,
+                "departure": 1787747391000,
+                "lat": 1.303815,
+                "lon": 103.8322722,
+                "name": "ORCHARD MRT STATION",
+                "stopCode": "NS22",
+                "stopId": "FERRY:NS22",
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 1250,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 27,
+                "points": "ys}FuvvxR\\JBKFOFOJIOMECCCUOCC?AOPI@K?A?UMOGCB??@@MT??NJGd@O@G@"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787747391000,
+              "steps": [
+                {
+                  "absoluteDirection": "EAST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 188.69,
+                  "elevation": "",
+                  "lat": 1.3036613,
+                  "lon": 103.8322188,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787747580000,
+                "lat": 1.3043,
+                "lon": 103.8322,
+                "name": "Destination",
+                "vertexType": "NORMAL"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            }
+          ],
+          "startTime": 1787745196000,
+          "tooSloped": false,
+          "transfers": 1,
+          "transitTime": 1584,
+          "waitingTime": 269,
+          "walkDistance": 536.77,
+          "walkLimitExceeded": false,
+          "walkTime": 531
+        }
+      ],
+      "to": {
+        "lat": 1.3043,
+        "lon": 103.8322,
+        "name": "Destination",
+        "vertexType": "NORMAL"
+      }
+    },
+    "previousPageCursor": "rO0ABXc1AQANUFJFVklPVVNfUEFHRQyC6TyAAAAAAAAJYAAXU1RSRUVUX0FORF9BUlJJVkFMX1RJTUU=",
+    "requestParameters": {
+      "arriveBy": "false",
+      "date": "08-26-2026",
+      "fromPlace": "1.4052,103.9024",
+      "maxTransfers": "3",
+      "mode": "TRANSIT,WALK",
+      "numItineraries": "1",
+      "showIntermediateStops": "true",
+      "time": "7:53 PM",
+      "toPlace": "1.3043,103.8322",
+      "transferPenalty": "1"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "_fixture_meta": {
+    "captured_live": false,
+    "purpose": "Synthetic compatibility fixture for nullable summary fields and leg-derived totals"
+  },
+  "response": {
+    "plan": {
+      "itineraries": [
+        {
+          "duration": null,
+          "walkTime": null,
+          "walkDistance": null,
+          "transfers": null,
+          "departureTime": "2026-06-28T08:00:00+08:00",
+          "arrivalTime": "2026-06-28T08:20:00+08:00",
+          "legs": [
+            {
+              "mode": "WALK",
+              "duration": 240,
+              "distance": 300,
+              "from": {},
+              "to": {},
+              "geometry": {
+                "type": "LineString",
+                "coordinates": [[103.8, 1.3], [103.81, 1.31]]
+              }
+            },
+            {
+              "mode": "SUBWAY",
+              "duration": 720,
+              "distance": 6100,
+              "from": {"name": "A"},
+              "to": {"name": "B"}
+            },
+            {
+              "mode": "WALK",
+              "duration": 240,
+              "distance": 280,
+              "from": {},
+              "to": {}
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -20,7 +20,9 @@ from app.domain import Coordinate
 
 
 class LivePlaceSearchError(RuntimeError):
-    pass
+    def __init__(self, message: str, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class LivePlaceSearchProvider(ABC):
@@ -104,7 +106,7 @@ class _CachedHttpProvider(LivePlaceSearchProvider):
                 continue
             self._latency_ms += (time.perf_counter() - started) * 1000
             if response.status_code in {401, 403}:
-                raise LivePlaceSearchError(f"{self.name} authentication failed")
+                raise LivePlaceSearchError(f"{self.name} authentication failed", response.status_code)
             if response.status_code == 429:
                 if attempt < self._max_retries:
                     await asyncio.sleep(0.25 * (2**attempt))
@@ -169,7 +171,9 @@ class TomTomPlaceSearchProvider(_CachedHttpProvider):
             payload = {"route": {"points": [{"lat": point.latitude, "lon": point.longitude} for point in route[:100]]}}
             try:
                 response = await self._request("POST", url, params=params, json=payload)
-            except LivePlaceSearchError:
+            except LivePlaceSearchError as error:
+                if error.status_code != 403 or self.calls - before >= self._hard_budget:
+                    raise
                 # Live validation found that some otherwise-valid Search API keys
                 # receive 403 for alongRouteSearch. Make one bounded fuzzy-search
                 # fallback instead of misreporting the whole provider as unusable.

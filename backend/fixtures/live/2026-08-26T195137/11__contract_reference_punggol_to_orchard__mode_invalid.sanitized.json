@@ -1,0 +1,25 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:51:37.646725+08:00",
+    "captured_live": true,
+    "contains_credentials_or_token": false,
+    "expected_coverage": null,
+    "experiment": "mode_invalid",
+    "provider_latency_ms": 93.31,
+    "request": {
+      "date": "08-26-2026",
+      "end": "1.3043,103.8322",
+      "maxWalkDistance": 1000,
+      "mode": "NOT_A_MODE",
+      "numItineraries": 1,
+      "routeType": "pt",
+      "start": "1.4052,103.9024",
+      "time": "19:51:00"
+    },
+    "response_status": 400,
+    "scenario": "contract_reference_punggol_to_orchard"
+  },
+  "response": {
+    "error": "Please specify the mode for route type, pt. Accepted values are transit, bus, rail."
+  }
+}

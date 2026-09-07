@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "concepts": [
+    {"slug":"mee-pok","display_name":"Mee pok","semantic_type":"dish","aliases":["mee pok","meepok","bak chor mee"],"category":"chinese_food","search_terms":["mee pok","bak chor mee","minced meat noodle","noodle"],"osm_tags":["cuisine=noodle","cuisine=chinese"]},
+    {"slug":"mala","display_name":"Mala","semantic_type":"dish","aliases":["mala","mala xiang guo"],"category":"chinese_food","search_terms":["mala","mala xiang guo","sichuan"],"osm_tags":["cuisine=chinese","cuisine=sichuan"]},
+    {"slug":"chicken-rice","display_name":"Chicken rice","semantic_type":"dish","aliases":["chicken rice","hainanese chicken rice"],"category":"chinese_food","search_terms":["chicken rice","hainanese"],"osm_tags":["cuisine=chicken","cuisine=chinese"]},
+    {"slug":"ban-mian","display_name":"Ban mian","semantic_type":"dish","aliases":["ban mian","banmian","handmade noodle"],"category":"chinese_food","search_terms":["ban mian","handmade noodle","noodle"],"osm_tags":["cuisine=noodle"]},
+    {"slug":"prata","display_name":"Prata","semantic_type":"dish","aliases":["prata","roti prata"],"category":"restaurants","search_terms":["prata","roti prata","indian"],"osm_tags":["cuisine=indian"]},
+    {"slug":"ramen","display_name":"Ramen","semantic_type":"dish","aliases":["ramen"],"category":"japanese_food","search_terms":["ramen","japanese noodle"],"osm_tags":["cuisine=ramen","cuisine=japanese"]},
+    {"slug":"sushi","display_name":"Sushi","semantic_type":"dish","aliases":["sushi"],"category":"japanese_food","search_terms":["sushi","japanese"],"osm_tags":["cuisine=sushi","cuisine=japanese"]},
+    {"slug":"korean-fried-chicken","display_name":"Korean fried chicken","semantic_type":"dish","aliases":["korean fried chicken","k fried chicken"],"category":"korean_food","search_terms":["korean fried chicken","korean","fried chicken"],"osm_tags":["cuisine=korean"]},
+    {"slug":"dim-sum","display_name":"Dim sum","semantic_type":"dish","aliases":["dim sum","dimsum"],"category":"chinese_food","search_terms":["dim sum","dimsum","chinese"],"osm_tags":["cuisine=chinese"]},
+    {"slug":"bubble-tea","display_name":"Bubble tea","semantic_type":"category","aliases":["bubble tea","bbt","boba","milk tea"],"category":"bubble_tea","search_terms":["bubble tea","boba","milk tea","tea"],"osm_tags":["cuisine=bubble_tea"]},
+    {"slug":"birthday-cake","display_name":"Birthday cake","semantic_type":"product","aliases":["birthday cake","cake"],"category":"bakeries","search_terms":["birthday cake","cake","bakery","patisserie"],"osm_tags":["shop=bakery","shop=pastry"]},
+    {"slug":"usb-c-cable","display_name":"USB-C cable","semantic_type":"product","aliases":["usb c cable","usb-c cable","type c cable","phone cable"],"category":"electronics","search_terms":["usb c","type c","phone accessories","computer accessories","electronics"],"osm_tags":["shop=electronics","shop=computer","shop=mobile_phone"]},
+    {"slug":"phone-charger","display_name":"Phone charger","semantic_type":"product","aliases":["phone charger","charger"],"category":"electronics","search_terms":["phone charger","phone accessories","electronics"],"osm_tags":["shop=electronics","shop=mobile_phone"]},
+    {"slug":"printer-ink","display_name":"Printer ink","semantic_type":"product","aliases":["printer ink","ink cartridge","printer cartridge"],"category":"stationery","search_terms":["printer ink","ink cartridge","printer supplies","office supplies","stationery","electronics"],"osm_tags":["shop=stationery","shop=computer"]},
+    {"slug":"stationery","display_name":"Stationery","semantic_type":"product","aliases":["stationery","office supplies"],"category":"stationery","search_terms":["stationery","office supplies"],"osm_tags":["shop=stationery"]},
+    {"slug":"flowers","display_name":"Flowers","semantic_type":"product","aliases":["flowers","flower","bouquet"],"category":"florists","search_terms":["flowers","bouquet","florist"],"osm_tags":["shop=florist"]},
+    {"slug":"cat-food","display_name":"Cat food","semantic_type":"product","aliases":["cat food","pet food"],"category":"pet_supplies","search_terms":["cat food","pet food","pet supplies","pet shop"],"osm_tags":["shop=pet"]},
+    {"slug":"medicine","display_name":"Medicine","semantic_type":"product","aliases":["medicine","medication"],"category":"pharmacy","search_terms":["medicine","pharmacy","chemist"],"osm_tags":["amenity=pharmacy","shop=chemist"]},
+    {"slug":"toothpaste","display_name":"Toothpaste","semantic_type":"product","aliases":["toothpaste"],"category":"pharmacy","search_terms":["toothpaste","pharmacy","convenience"],"osm_tags":["amenity=pharmacy","shop=chemist"]},
+    {"slug":"haircut","display_name":"Haircut","semantic_type":"service","aliases":["haircut","barber","hair salon"],"category":"haircuts","search_terms":["haircut","barber","hairdresser","hair salon"],"osm_tags":["shop=hairdresser","shop=barber"]},
+    {"slug":"atm","display_name":"ATM","semantic_type":"service","aliases":["atm","cash machine","withdraw cash"],"category":"banking","search_terms":["atm","bank","cash machine"],"osm_tags":["amenity=atm"]},
+    {"slug":"printing","display_name":"Printing","semantic_type":"service","aliases":["printing","print shop","photocopy"],"category":"printing","search_terms":["printing","print shop","copyshop","photocopy"],"osm_tags":["shop=copyshop","amenity=printer"]},
+    {"slug":"parcel-locker","display_name":"Parcel locker","semantic_type":"service","aliases":["parcel locker","collect parcel","pick up parcel"],"category":"parcel","search_terms":["parcel locker","popstation","parcel pickup"],"osm_tags":["amenity=parcel_locker"]},
+    {"slug":"optical","display_name":"Optical shop","semantic_type":"place_type","aliases":["optical shop","optician","spectacles","spectacles repair"],"category":"optical","search_terms":["optical","optician","spectacles","eyewear"],"osm_tags":["shop=optician"]},
+    {"slug":"bakery","display_name":"Bakery","semantic_type":"place_type","aliases":["bakery","bakeshop"],"category":"bakeries","search_terms":["bakery","bread","pastry"],"osm_tags":["shop=bakery"]}
+  ]
+}

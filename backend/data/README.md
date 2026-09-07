@@ -1,24 +1,27 @@
 # Singapore POI data
 
-The development build uses a Singapore-only OpenStreetMap capture obtained through the
-public Overpass API. The capture metadata records the capture time, endpoint, query,
-geographic scope, attribution and licence URL.
+`singapore-osm-pois.json` is a Singapore-only OpenStreetMap export captured through the
+public Overpass API. Its `capture_metadata` object records the capture time, endpoint,
+query, geographic scope, attribution and licence URL.
 
 Data © OpenStreetMap contributors. OpenStreetMap data is available under the Open Data
 Commons Open Database License (ODbL) 1.0:
 https://www.openstreetmap.org/copyright
 
-The large raw POI capture and generated SQLite database are intentionally excluded from
-this public portfolio repository. They are development data rather than source code.
+The generated SQLite database is a derivative database and is intentionally ignored by
+Git. If it is distributed or publicly used, preserve the OSM attribution and comply with
+the ODbL share-alike requirements. Rebuild it with:
 
-The repository layer includes a small curated seed catalog so the data model, taxonomy,
-brand normalization and candidate logic remain inspectable without committing the full
-snapshot.
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\ingest_osm_pois.py --input data\singapore-osm-pois.json
+```
 
-In the full development workspace, the OSM capture is transformed into hubs/outlets and
-indexed with SQLite FTS5. Omitted opening hours mean unknown; they are never inferred.
-Freshness timestamps represent source capture time rather than a guarantee that an
-individual business was field-checked on that date.
+Omitted opening hours mean unknown; they are never inferred. `last_verified_at` records
+the source capture time, not a guarantee that an individual business was field-checked
+on that date.
 
-Any redistributed OSM-derived database should preserve OpenStreetMap attribution and
-comply with the ODbL share-alike requirements.
+V0.7.1 broadens the ingestion taxonomy without inventing coverage. Reingesting the
+bundled 2026-08-26 capture produces 6,199 total outlets (6,198 active) across 18
+populated categories. Additional everyday-errand mappings remain available for future
+bounded captures, but the current capture does not claim categories with no matching data.

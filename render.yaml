@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: along-the-way-beta
+    runtime: docker
+    plan: starter
+    region: singapore
+    healthCheckPath: /health
+    disk:
+      name: beta-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: ONEMAP_MOCK
+        value: "false"
+      - key: ONEMAP_EMAIL
+        sync: false
+      - key: ONEMAP_PASSWORD
+        sync: false
+      - key: LLM_INTENT_ENABLED
+        value: "false"
+      - key: BETA_ADMIN_TOKEN
+        generateValue: true
+      - key: ANALYTICS_RETENTION_DAYS
+        value: "90"
+      - key: OPTIMIZATION_TIMEOUT_SECONDS
+        value: "45"
+      - key: CORS_ALLOWED_ORIGINS
+        value: ""

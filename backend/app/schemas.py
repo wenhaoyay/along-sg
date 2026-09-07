@@ -160,6 +160,7 @@ class StopResponse(BaseModel):
     context_kind: str
     location_quality: float = Field(ge=0, le=1)
     navigation_ready: bool = True
+    arrival_time: datetime | None = None
 
 
 class DisplayBusinessResponse(BaseModel):
@@ -167,6 +168,7 @@ class DisplayBusinessResponse(BaseModel):
     canonical_brand: str | None = None
     category_labels: list[str]
     location_context: str | None = None
+    opening_status: str = "unknown"
 
 
 class DwellAllowanceResponse(BaseModel):
@@ -183,6 +185,9 @@ class DetourBreakdownResponse(BaseModel):
 
 
 class RecommendationResponse(BaseModel):
+    time_dependent: bool = False
+    departure_time: datetime | None = None
+    arrival_time: datetime | None = None
     label: str
     stops: list[StopResponse]
     consolidated: bool

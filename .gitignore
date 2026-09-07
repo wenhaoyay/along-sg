@@ -28,6 +28,3 @@ work/
 *.log
 .DS_Store
 Thumbs.db
-
-# Framework-generated local metadata
-frontend/AGENTS.md

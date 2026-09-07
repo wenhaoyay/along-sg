@@ -55,3 +55,4 @@ def test_recommendation_ranking_has_distinct_objectives() -> None:
     assert ranked["best_overall"].ordered_stops[0].name == "Balanced"
     assert ranked["fastest"].ordered_stops[0].name == "Fast"
     assert ranked["least_walking"].ordered_stops[0].name == "Short walk"
+

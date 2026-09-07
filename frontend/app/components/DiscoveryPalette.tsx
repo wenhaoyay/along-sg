@@ -15,6 +15,7 @@ export function DiscoveryPalette({ apiBase, categories, selections, onChange, on
   const [results, setResults] = useState<CatalogItem[]>([]);
   const [searching, setSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const categoryBySlug = useMemo(() => new Map(categories.map((item) => [item.slug, item])), [categories]);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export function DiscoveryPalette({ apiBase, categories, selections, onChange, on
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setSearching(true);
+      setSuggestions([]);
       try {
         const [catalogResponse, discoveryResponse] = await Promise.all([
           fetch(`${apiBase}/api/catalog/search?q=${encodeURIComponent(query)}&limit=12`, { signal: controller.signal }),
@@ -29,6 +31,8 @@ export function DiscoveryPalette({ apiBase, categories, selections, onChange, on
         ]);
         const catalogItems = catalogResponse.ok ? await catalogResponse.json() : [];
         const discovery = discoveryResponse.ok ? await discoveryResponse.json() : null;
+        if (controller.signal.aborted) return;
+        if (!discovery?.places?.length && ["product", "service"].includes(discovery?.semantic_type)) setSuggestions((discovery.related_terms ?? []).filter((term: string) => term.toLowerCase() !== query.trim().toLowerCase()).slice(0, 3));
         const discoveryItems: CatalogItem[] = [];
         if (discovery?.canonical_concept && discovery?.category && discovery?.places?.length) discoveryItems.push({ display_name: discovery.canonical_concept, kind: "category", canonical_brand: null, categories: [discovery.category], outlet_count: discovery.places.length, example_location: humanType(discovery.semantic_type), semantic_type: discovery.semantic_type, discovery_concept: discovery.canonical_concept });
         for (const place of discovery?.places ?? []) discoveryItems.push({ display_name: place.display_name, kind: "place", canonical_brand: null, categories: [discovery.category ?? place.category].filter(Boolean), outlet_count: 1, example_location: place.mall_or_hub ?? place.address ?? null, coordinate: place.coordinate, address: place.address, semantic_type: discovery.semantic_type, discovery_concept: discovery.canonical_concept, suitability: place.suitability });
@@ -37,7 +41,7 @@ export function DiscoveryPalette({ apiBase, categories, selections, onChange, on
         setResults(items); setActiveIndex(items.length ? 0 : -1);
       } catch (error) {
         if ((error as Error).name !== "AbortError") { setResults([]); setActiveIndex(-1); }
-      } finally { setSearching(false); }
+      } finally { if (!controller.signal.aborted) setSearching(false); }
     }, 250);
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [apiBase, query]);
@@ -85,6 +89,7 @@ export function DiscoveryPalette({ apiBase, categories, selections, onChange, on
       </button>)}
       {!results.length && <p className="empty-search">No reliable place yet. You can still search the free-form request, try a broader category, or edit the term.</p>}
     </div>}
+    {query.trim().length >= 2 && !searching && !results.length && suggestions.length > 0 && <div className="discovery-recovery"><p>Try a related search. These are suggestions, not confirmed stock or service availability. For ink, check cartridge compatibility.</p><div>{suggestions.map((term) => <button type="button" key={term} onClick={() => { setQuery(term); setSuggestions([]); setSearching(true); }}>Search {term}</button>)}</div></div>}
     {!!selections.length && <div className="selected-needs">
       {selections.map((selection, index) => <article key={`${selection.category}-${index}`}>
         <div><span>{categoryBySlug.get(selection.category)?.name ?? selection.category.replaceAll("_", " ")}</span><strong>{selection.item?.display_name ?? `Any ${categoryBySlug.get(selection.category)?.name.toLowerCase() ?? selection.category}`}</strong></div>

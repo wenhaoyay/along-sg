@@ -1,0 +1,52 @@
+{
+  "_fixture_meta": {
+    "captured_live": false,
+    "purpose": "Synthetic compatibility fixture for nested plan, timestamps, geometry and multiple itineraries"
+  },
+  "response": {
+    "data": {
+      "plan": {
+        "itineraries": [
+          {
+            "duration": 1800,
+            "walkTime": 300,
+            "walkDistance": 390,
+            "numTransfers": 0,
+            "startTime": 1782604800000,
+            "endTime": 1782606600000,
+            "legs": [
+              {
+                "mode": "WALK",
+                "duration": 300,
+                "distance": 390,
+                "startTime": 1782604800000,
+                "endTime": 1782605100000,
+                "from": {"name": null},
+                "to": {"name": "Boarding stop"},
+                "legGeometry": {"points": "encoded-example"}
+              },
+              {
+                "mode": "BUS",
+                "duration": 1500,
+                "distance": 7200,
+                "startTime": 1782605100000,
+                "endTime": 1782606600000,
+                "from": {"name": "Boarding stop"},
+                "to": {"name": null},
+                "legGeometry": null
+              }
+            ]
+          },
+          {
+            "duration": 2100,
+            "walkTime": 180,
+            "walkDistance": 220,
+            "transfers": 1,
+            "legs": []
+          }
+        ]
+      }
+    }
+  }
+}
+

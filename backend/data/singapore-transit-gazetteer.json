@@ -1,0 +1,4447 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-08-30",
+  "source": {
+    "publisher": "Land Transport Authority of Singapore",
+    "datasets": [
+      {
+        "name": "Train Station",
+        "edition": "March 2026",
+        "url": "https://datamall.lta.gov.sg/content/datamall/en/static-data.html"
+      },
+      {
+        "name": "Train Station Codes and Chinese Names",
+        "edition": "January 2025",
+        "url": "https://datamall.lta.gov.sg/content/datamall/en/static-data.html"
+      }
+    ],
+    "licence": "Singapore Open Data Licence"
+  },
+  "station_count": 200,
+  "alias_count": 1235,
+  "stations": [
+    {
+      "id": "lta-rail-ns10",
+      "canonical_name": "Admiralty MRT Station",
+      "base_name": "Admiralty",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS10"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.4402741,
+      "longitude": 103.8009181,
+      "aliases": [
+        "Admiralty",
+        "Admiralty MRT",
+        "Admiralty MRT station",
+        "Admiralty station",
+        "NS 10",
+        "NS10"
+      ]
+    },
+    {
+      "id": "lta-rail-ew9",
+      "canonical_name": "Aljunied MRT Station",
+      "base_name": "Aljunied",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW9"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3161454,
+      "longitude": 103.8820408,
+      "aliases": [
+        "Aljunied",
+        "Aljunied MRT",
+        "Aljunied MRT station",
+        "Aljunied station",
+        "EW 9",
+        "EW9"
+      ]
+    },
+    {
+      "id": "lta-rail-ns16",
+      "canonical_name": "Ang Mo Kio MRT Station",
+      "base_name": "Ang Mo Kio",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS16"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.3692463,
+      "longitude": 103.8498852,
+      "aliases": [
+        "Ang Mo Kio",
+        "Ang Mo Kio MRT",
+        "Ang Mo Kio MRT station",
+        "Ang Mo Kio station",
+        "NS 16",
+        "NS16"
+      ]
+    },
+    {
+      "id": "lta-rail-se3",
+      "canonical_name": "Bakau LRT Station",
+      "base_name": "Bakau",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SE3"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3878629,
+      "longitude": 103.9053827,
+      "aliases": [
+        "Bakau",
+        "Bakau LRT",
+        "Bakau LRT station",
+        "Bakau station",
+        "SE 3",
+        "SE3"
+      ]
+    },
+    {
+      "id": "lta-rail-bp9",
+      "canonical_name": "Bangkit LRT Station",
+      "base_name": "Bangkit",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP9"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3798336,
+      "longitude": 103.7727404,
+      "aliases": [
+        "Bangkit",
+        "Bangkit LRT",
+        "Bangkit LRT station",
+        "Bangkit station",
+        "BP 9",
+        "BP9"
+      ]
+    },
+    {
+      "id": "lta-rail-cc12",
+      "canonical_name": "Bartley MRT Station",
+      "base_name": "Bartley",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC12"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3436088,
+      "longitude": 103.8788993,
+      "aliases": [
+        "Bartley",
+        "Bartley MRT",
+        "Bartley MRT station",
+        "Bartley station",
+        "CC 12",
+        "CC12"
+      ]
+    },
+    {
+      "id": "lta-rail-ce1",
+      "canonical_name": "Bayfront MRT Station",
+      "base_name": "Bayfront",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CE1",
+        "DT16"
+      ],
+      "lines": [
+        "Circle Line Extension",
+        "Downtown Line"
+      ],
+      "latitude": 1.2824008,
+      "longitude": 103.8596039,
+      "aliases": [
+        "Bayfront",
+        "Bayfront MRT",
+        "Bayfront MRT station",
+        "Bayfront station",
+        "CE 1",
+        "CE1",
+        "DT 16",
+        "DT16"
+      ]
+    },
+    {
+      "id": "lta-rail-te29",
+      "canonical_name": "Bayshore MRT Station",
+      "base_name": "Bayshore",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE29"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3136767,
+      "longitude": 103.9424698,
+      "aliases": [
+        "Bayshore",
+        "Bayshore MRT",
+        "Bayshore MRT station",
+        "Bayshore station",
+        "TE 29",
+        "TE29"
+      ]
+    },
+    {
+      "id": "lta-rail-dt5",
+      "canonical_name": "Beauty World MRT Station",
+      "base_name": "Beauty World",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT5"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3421573,
+      "longitude": 103.7758077,
+      "aliases": [
+        "Beauty World",
+        "Beauty World MRT",
+        "Beauty World MRT station",
+        "Beauty World station",
+        "DT 5",
+        "DT5"
+      ]
+    },
+    {
+      "id": "lta-rail-ew5",
+      "canonical_name": "Bedok MRT Station",
+      "base_name": "Bedok",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW5"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3237848,
+      "longitude": 103.9295155,
+      "aliases": [
+        "Bedok",
+        "Bedok MRT",
+        "Bedok MRT station",
+        "Bedok station",
+        "EW 5",
+        "EW5"
+      ]
+    },
+    {
+      "id": "lta-rail-dt29",
+      "canonical_name": "Bedok North MRT Station",
+      "base_name": "Bedok North",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT29"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3341185,
+      "longitude": 103.9192314,
+      "aliases": [
+        "Bedok North",
+        "Bedok North MRT",
+        "Bedok North MRT station",
+        "Bedok North station",
+        "DT 29",
+        "DT29"
+      ]
+    },
+    {
+      "id": "lta-rail-dt30",
+      "canonical_name": "Bedok Reservoir MRT Station",
+      "base_name": "Bedok Reservoir",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT30"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3368522,
+      "longitude": 103.9312075,
+      "aliases": [
+        "Bedok Reservoir",
+        "Bedok Reservoir MRT",
+        "Bedok Reservoir MRT station",
+        "Bedok Reservoir station",
+        "DT 30",
+        "DT30"
+      ]
+    },
+    {
+      "id": "lta-rail-dt21",
+      "canonical_name": "Bencoolen MRT Station",
+      "base_name": "Bencoolen",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT21"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.2994747,
+      "longitude": 103.8509785,
+      "aliases": [
+        "Bencoolen",
+        "Bencoolen MRT",
+        "Bencoolen MRT station",
+        "Bencoolen station",
+        "DT 21",
+        "DT21"
+      ]
+    },
+    {
+      "id": "lta-rail-dt23",
+      "canonical_name": "Bendemeer MRT Station",
+      "base_name": "Bendemeer",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT23"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3135459,
+      "longitude": 103.862241,
+      "aliases": [
+        "Bendemeer",
+        "Bendemeer MRT",
+        "Bendemeer MRT station",
+        "Bendemeer station",
+        "DT 23",
+        "DT23"
+      ]
+    },
+    {
+      "id": "lta-rail-cc15",
+      "canonical_name": "Bishan MRT Station",
+      "base_name": "Bishan",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC15",
+        "NS17"
+      ],
+      "lines": [
+        "Circle Line",
+        "North-South Line"
+      ],
+      "latitude": 1.3511471,
+      "longitude": 103.8493501,
+      "aliases": [
+        "Bishan",
+        "Bishan MRT",
+        "Bishan MRT station",
+        "Bishan station",
+        "CC 15",
+        "CC15",
+        "NS 17",
+        "NS17"
+      ]
+    },
+    {
+      "id": "lta-rail-bishandepot",
+      "canonical_name": "Bishan Depot MRT Station",
+      "base_name": "Bishan Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3436587,
+      "longitude": 103.8594279,
+      "aliases": [
+        "Bishan Depot",
+        "Bishan Depot MRT",
+        "Bishan Depot MRT station",
+        "Bishan Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-bocc",
+      "canonical_name": "Bocc MRT Station",
+      "base_name": "Bocc",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3339744,
+      "longitude": 103.9646343,
+      "aliases": [
+        "Bocc",
+        "Bocc MRT",
+        "Bocc MRT station",
+        "Bocc station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne9",
+      "canonical_name": "Boon Keng MRT Station",
+      "base_name": "Boon Keng",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE9"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.3178611,
+      "longitude": 103.8607158,
+      "aliases": [
+        "Boon Keng",
+        "Boon Keng MRT",
+        "Boon Keng MRT station",
+        "Boon Keng station",
+        "NE 9",
+        "NE9"
+      ]
+    },
+    {
+      "id": "lta-rail-ew27",
+      "canonical_name": "Boon Lay MRT Station",
+      "base_name": "Boon Lay",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW27"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.338114,
+      "longitude": 103.7054342,
+      "aliases": [
+        "Boon Lay",
+        "Boon Lay MRT",
+        "Boon Lay MRT station",
+        "Boon Lay station",
+        "EW 27",
+        "EW27"
+      ]
+    },
+    {
+      "id": "lta-rail-cc19",
+      "canonical_name": "Botanic Gardens MRT Station",
+      "base_name": "Botanic Gardens",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC19",
+        "DT9"
+      ],
+      "lines": [
+        "Circle Line",
+        "Downtown Line"
+      ],
+      "latitude": 1.3220991,
+      "longitude": 103.815264,
+      "aliases": [
+        "Botanic Gardens",
+        "Botanic Gardens MRT",
+        "Botanic Gardens MRT station",
+        "Botanic Gardens station",
+        "CC 19",
+        "CC19",
+        "DT 9",
+        "DT9"
+      ]
+    },
+    {
+      "id": "lta-rail-ns18",
+      "canonical_name": "Braddell MRT Station",
+      "base_name": "Braddell",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS18"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.3411279,
+      "longitude": 103.8470243,
+      "aliases": [
+        "Braddell",
+        "Braddell MRT",
+        "Braddell MRT station",
+        "Braddell station",
+        "NS 18",
+        "NS18"
+      ]
+    },
+    {
+      "id": "lta-rail-cc2",
+      "canonical_name": "Bras Basah MRT Station",
+      "base_name": "Bras Basah",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC2"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.2975687,
+      "longitude": 103.8501566,
+      "aliases": [
+        "Bras Basah",
+        "Bras Basah MRT",
+        "Bras Basah MRT station",
+        "Bras Basah station",
+        "CC 2",
+        "CC2"
+      ]
+    },
+    {
+      "id": "lta-rail-te7",
+      "canonical_name": "Bright Hill MRT Station",
+      "base_name": "Bright Hill",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE7"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3641661,
+      "longitude": 103.8341106,
+      "aliases": [
+        "Bright Hill",
+        "Bright Hill MRT",
+        "Bright Hill MRT station",
+        "Bright Hill station",
+        "TE 7",
+        "TE7"
+      ]
+    },
+    {
+      "id": "lta-rail-ne15",
+      "canonical_name": "Buangkok MRT Station",
+      "base_name": "Buangkok",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE15"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.3816581,
+      "longitude": 103.8930395,
+      "aliases": [
+        "Buangkok",
+        "Buangkok MRT",
+        "Buangkok MRT station",
+        "Buangkok station",
+        "NE 15",
+        "NE15"
+      ]
+    },
+    {
+      "id": "lta-rail-dt14",
+      "canonical_name": "Bugis MRT Station",
+      "base_name": "Bugis",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT14",
+        "EW12"
+      ],
+      "lines": [
+        "Downtown Line",
+        "East-West Line"
+      ],
+      "latitude": 1.3007991,
+      "longitude": 103.8564218,
+      "aliases": [
+        "Bugis",
+        "Bugis MRT",
+        "Bugis MRT station",
+        "Bugis station",
+        "DT 14",
+        "DT14",
+        "EW 12",
+        "EW12"
+      ]
+    },
+    {
+      "id": "lta-rail-ns2",
+      "canonical_name": "Bukit Batok MRT Station",
+      "base_name": "Bukit Batok",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS2"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.3482454,
+      "longitude": 103.7492938,
+      "aliases": [
+        "Bukit Batok",
+        "Bukit Batok MRT",
+        "Bukit Batok MRT station",
+        "Bukit Batok station",
+        "NS 2",
+        "NS2"
+      ]
+    },
+    {
+      "id": "lta-rail-bukitbrown",
+      "canonical_name": "Bukit Brown MRT Station",
+      "base_name": "Bukit Brown",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3335724,
+      "longitude": 103.8305213,
+      "aliases": [
+        "Bukit Brown",
+        "Bukit Brown MRT",
+        "Bukit Brown MRT station",
+        "Bukit Brown station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns3",
+      "canonical_name": "Bukit Gombak MRT Station",
+      "base_name": "Bukit Gombak",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS3"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.358044,
+      "longitude": 103.7520854,
+      "aliases": [
+        "Bukit Gombak",
+        "Bukit Gombak MRT",
+        "Bukit Gombak MRT station",
+        "Bukit Gombak station",
+        "NS 3",
+        "NS3"
+      ]
+    },
+    {
+      "id": "lta-rail-bp6",
+      "canonical_name": "Bukit Panjang MRT Station",
+      "base_name": "Bukit Panjang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "BP6",
+        "DT1"
+      ],
+      "lines": [
+        "Bukit Panjang LRT",
+        "Downtown Line"
+      ],
+      "latitude": 1.3785446,
+      "longitude": 103.7622036,
+      "aliases": [
+        "BP 6",
+        "BP6",
+        "Bukit Panjang",
+        "Bukit Panjang LRT",
+        "Bukit Panjang LRT station",
+        "Bukit Panjang MRT",
+        "Bukit Panjang MRT station",
+        "Bukit Panjang station",
+        "DT 1",
+        "DT1"
+      ]
+    },
+    {
+      "id": "lta-rail-bukitpanjanglrtdepot",
+      "canonical_name": "Bukit Panjang LRT Depot LRT Station",
+      "base_name": "Bukit Panjang LRT Depot",
+      "entity_type": "lrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3795588,
+      "longitude": 103.7601738,
+      "aliases": [
+        "Bukit Panjang LRT Depot",
+        "Bukit Panjang LRT Depot LRT",
+        "Bukit Panjang LRT Depot LRT station",
+        "Bukit Panjang LRT Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc22",
+      "canonical_name": "Buona Vista MRT Station",
+      "base_name": "Buona Vista",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC22",
+        "EW21"
+      ],
+      "lines": [
+        "Circle Line",
+        "East-West Line"
+      ],
+      "latitude": 1.3072112,
+      "longitude": 103.7901342,
+      "aliases": [
+        "Buona Vista",
+        "Buona Vista MRT",
+        "Buona Vista MRT station",
+        "Buona Vista station",
+        "CC 22",
+        "CC22",
+        "EW 21",
+        "EW21"
+      ]
+    },
+    {
+      "id": "lta-rail-cc17",
+      "canonical_name": "Caldecott MRT Station",
+      "base_name": "Caldecott",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC17",
+        "TE9"
+      ],
+      "lines": [
+        "Circle Line",
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3382703,
+      "longitude": 103.8400382,
+      "aliases": [
+        "Caldecott",
+        "Caldecott MRT",
+        "Caldecott MRT station",
+        "Caldecott station",
+        "CC 17",
+        "CC17",
+        "TE 9",
+        "TE9"
+      ]
+    },
+    {
+      "id": "lta-rail-ns12",
+      "canonical_name": "Canberra MRT Station",
+      "base_name": "Canberra",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS12"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.4439111,
+      "longitude": 103.8293372,
+      "aliases": [
+        "Canberra",
+        "Canberra MRT",
+        "Canberra MRT station",
+        "Canberra station",
+        "NS 12",
+        "NS12"
+      ]
+    },
+    {
+      "id": "lta-rail-dt2",
+      "canonical_name": "Cashew MRT Station",
+      "base_name": "Cashew",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT2"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3684231,
+      "longitude": 103.7650824,
+      "aliases": [
+        "Cashew",
+        "Cashew MRT",
+        "Cashew MRT station",
+        "Cashew station",
+        "DT 2",
+        "DT2"
+      ]
+    },
+    {
+      "id": "lta-rail-cg2",
+      "canonical_name": "Changi Airport MRT Station",
+      "base_name": "Changi Airport",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CG2"
+      ],
+      "lines": [
+        "Changi Airport Branch Line"
+      ],
+      "latitude": 1.3565801,
+      "longitude": 103.9892005,
+      "aliases": [
+        "Changi Airport",
+        "CG 2",
+        "CG2",
+        "Changi Airport MRT",
+        "Changi Airport MRT station",
+        "Changi Airport station"
+      ]
+    },
+    {
+      "id": "lta-rail-changidepot",
+      "canonical_name": "Changi Depot MRT Station",
+      "base_name": "Changi Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3264591,
+      "longitude": 103.9635173,
+      "aliases": [
+        "Changi Depot",
+        "Changi Depot MRT",
+        "Changi Depot MRT station",
+        "Changi Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-sw1",
+      "canonical_name": "Cheng Lim LRT Station",
+      "base_name": "Cheng Lim",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW1"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.396102,
+      "longitude": 103.8941464,
+      "aliases": [
+        "Cheng Lim",
+        "Cheng Lim LRT",
+        "Cheng Lim LRT station",
+        "Cheng Lim station",
+        "SW 1",
+        "SW1"
+      ]
+    },
+    {
+      "id": "lta-rail-dt19",
+      "canonical_name": "Chinatown MRT Station",
+      "base_name": "Chinatown",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT19",
+        "NE4"
+      ],
+      "lines": [
+        "Downtown Line",
+        "North East Line"
+      ],
+      "latitude": 1.2855037,
+      "longitude": 103.8439257,
+      "aliases": [
+        "Chinatown",
+        "Chinatown MRT",
+        "Chinatown MRT station",
+        "Chinatown station",
+        "DT 19",
+        "DT19",
+        "NE 4",
+        "NE4"
+      ]
+    },
+    {
+      "id": "lta-rail-ew25",
+      "canonical_name": "Chinese Garden MRT Station",
+      "base_name": "Chinese Garden",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW25"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3415898,
+      "longitude": 103.73346,
+      "aliases": [
+        "Chinese Garden",
+        "Chinese Garden MRT",
+        "Chinese Garden MRT station",
+        "Chinese Garden station",
+        "EW 25",
+        "EW25"
+      ]
+    },
+    {
+      "id": "lta-rail-bp1",
+      "canonical_name": "Choa Chu Kang MRT Station",
+      "base_name": "Choa Chu Kang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "BP1",
+        "NS4"
+      ],
+      "lines": [
+        "Bukit Panjang LRT",
+        "North-South Line"
+      ],
+      "latitude": 1.384814,
+      "longitude": 103.7445358,
+      "aliases": [
+        "BP 1",
+        "BP1",
+        "CCK",
+        "Choa Chu Kang",
+        "Choa Chu Kang LRT",
+        "Choa Chu Kang LRT station",
+        "Choa Chu Kang MRT",
+        "Choa Chu Kang MRT station",
+        "Choa Chu Kang station",
+        "Chua Chu Kang",
+        "Chuachukang",
+        "NS 4",
+        "NS4"
+      ]
+    },
+    {
+      "id": "lta-rail-ew13",
+      "canonical_name": "City Hall MRT Station",
+      "base_name": "City Hall",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW13",
+        "NS25"
+      ],
+      "lines": [
+        "East-West Line",
+        "North-South Line"
+      ],
+      "latitude": 1.2935529,
+      "longitude": 103.8523109,
+      "aliases": [
+        "City Hall",
+        "City Hall MRT",
+        "City Hall MRT station",
+        "City Hall station",
+        "EW 13",
+        "EW13",
+        "NS 25",
+        "NS25"
+      ]
+    },
+    {
+      "id": "lta-rail-ne5",
+      "canonical_name": "Clarke Quay MRT Station",
+      "base_name": "Clarke Quay",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE5"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.287967,
+      "longitude": 103.8465956,
+      "aliases": [
+        "Clarke Quay",
+        "Clarke Quay MRT",
+        "Clarke Quay MRT station",
+        "Clarke Quay station",
+        "NE 5",
+        "NE5"
+      ]
+    },
+    {
+      "id": "lta-rail-ew23",
+      "canonical_name": "Clementi MRT Station",
+      "base_name": "Clementi",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW23"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3144371,
+      "longitude": 103.765434,
+      "aliases": [
+        "Clementi",
+        "Clementi MRT",
+        "Clementi MRT station",
+        "Clementi station",
+        "EW 23",
+        "EW23"
+      ]
+    },
+    {
+      "id": "lta-rail-ew20",
+      "canonical_name": "Commonwealth MRT Station",
+      "base_name": "Commonwealth",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW20"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3019576,
+      "longitude": 103.79875,
+      "aliases": [
+        "Commonwealth",
+        "Commonwealth MRT",
+        "Commonwealth MRT station",
+        "Commonwealth station",
+        "EW 20",
+        "EW20"
+      ]
+    },
+    {
+      "id": "lta-rail-se1",
+      "canonical_name": "Compassvale LRT Station",
+      "base_name": "Compassvale",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SE1"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3943189,
+      "longitude": 103.9007857,
+      "aliases": [
+        "Compassvale",
+        "Compassvale LRT",
+        "Compassvale LRT station",
+        "Compassvale station",
+        "SE 1",
+        "SE1"
+      ]
+    },
+    {
+      "id": "lta-rail-pe3",
+      "canonical_name": "Coral Edge LRT Station",
+      "base_name": "Coral Edge",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PE3"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.3940736,
+      "longitude": 103.9122758,
+      "aliases": [
+        "Coral Edge",
+        "Coral Edge LRT",
+        "Coral Edge LRT station",
+        "Coral Edge station",
+        "PE 3",
+        "PE3"
+      ]
+    },
+    {
+      "id": "lta-rail-pe1",
+      "canonical_name": "Cove LRT Station",
+      "base_name": "Cove",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PE1"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.3994828,
+      "longitude": 103.9056409,
+      "aliases": [
+        "Cove",
+        "Cove LRT",
+        "Cove LRT station",
+        "Cove station",
+        "PE 1",
+        "PE1"
+      ]
+    },
+    {
+      "id": "lta-rail-cc8",
+      "canonical_name": "Dakota MRT Station",
+      "base_name": "Dakota",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC8"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3086082,
+      "longitude": 103.889399,
+      "aliases": [
+        "Dakota",
+        "CC 8",
+        "CC8",
+        "Dakota MRT",
+        "Dakota MRT station",
+        "Dakota station"
+      ]
+    },
+    {
+      "id": "lta-rail-pe7",
+      "canonical_name": "Damai LRT Station",
+      "base_name": "Damai",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PE7"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.4055422,
+      "longitude": 103.9083031,
+      "aliases": [
+        "Damai",
+        "Damai LRT",
+        "Damai LRT station",
+        "Damai station",
+        "PE 7",
+        "PE7"
+      ]
+    },
+    {
+      "id": "lta-rail-cc1",
+      "canonical_name": "Dhoby Ghaut MRT Station",
+      "base_name": "Dhoby Ghaut",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC1",
+        "NE6",
+        "NS24"
+      ],
+      "lines": [
+        "Circle Line",
+        "North East Line",
+        "North-South Line"
+      ],
+      "latitude": 1.2997136,
+      "longitude": 103.8455398,
+      "aliases": [
+        "Dhoby Ghaut",
+        "CC 1",
+        "CC1",
+        "Dhoby Ghaut MRT",
+        "Dhoby Ghaut MRT station",
+        "Dhoby Ghaut station",
+        "NE 6",
+        "NE6",
+        "NS 24",
+        "NS24"
+      ]
+    },
+    {
+      "id": "lta-rail-ew22",
+      "canonical_name": "Dover MRT Station",
+      "base_name": "Dover",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW22"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3108919,
+      "longitude": 103.7792935,
+      "aliases": [
+        "Dover",
+        "Dover MRT",
+        "Dover MRT station",
+        "Dover station",
+        "EW 22",
+        "EW22"
+      ]
+    },
+    {
+      "id": "lta-rail-dt17",
+      "canonical_name": "Downtown MRT Station",
+      "base_name": "Downtown",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT17"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.2798339,
+      "longitude": 103.8525273,
+      "aliases": [
+        "Downtown",
+        "Downtown MRT",
+        "Downtown MRT station",
+        "Downtown station",
+        "DT 17",
+        "DT17"
+      ]
+    },
+    {
+      "id": "lta-rail-cc3",
+      "canonical_name": "Esplanade MRT Station",
+      "base_name": "Esplanade",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC3"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.2938892,
+      "longitude": 103.8550886,
+      "aliases": [
+        "Esplanade",
+        "CC 3",
+        "CC3",
+        "Esplanade MRT",
+        "Esplanade MRT station",
+        "Esplanade station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew7",
+      "canonical_name": "Eunos MRT Station",
+      "base_name": "Eunos",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW7"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.319414,
+      "longitude": 103.9025478,
+      "aliases": [
+        "Eunos",
+        "Eunos MRT",
+        "Eunos MRT station",
+        "Eunos station",
+        "EW 7",
+        "EW7"
+      ]
+    },
+    {
+      "id": "lta-rail-cg1",
+      "canonical_name": "Expo MRT Station",
+      "base_name": "Expo",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CG1",
+        "DT35"
+      ],
+      "lines": [
+        "Changi Airport Branch Line",
+        "Downtown Line"
+      ],
+      "latitude": 1.3356818,
+      "longitude": 103.962114,
+      "aliases": [
+        "Expo",
+        "CG 1",
+        "CG1",
+        "DT 35",
+        "DT35",
+        "Expo MRT",
+        "Expo MRT station",
+        "Expo station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp10",
+      "canonical_name": "Fajar LRT Station",
+      "base_name": "Fajar",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP10"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3843454,
+      "longitude": 103.7706775,
+      "aliases": [
+        "Fajar",
+        "BP 10",
+        "BP10",
+        "Fajar LRT",
+        "Fajar LRT station",
+        "Fajar station"
+      ]
+    },
+    {
+      "id": "lta-rail-sw2",
+      "canonical_name": "Farmway LRT Station",
+      "base_name": "Farmway",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW2"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3970564,
+      "longitude": 103.889662,
+      "aliases": [
+        "Farmway",
+        "Farmway LRT",
+        "Farmway LRT station",
+        "Farmway station",
+        "SW 2",
+        "SW2"
+      ]
+    },
+    {
+      "id": "lta-rail-ne8",
+      "canonical_name": "Farrer Park MRT Station",
+      "base_name": "Farrer Park",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE8"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.3134623,
+      "longitude": 103.854749,
+      "aliases": [
+        "Farrer Park",
+        "Farrer Park MRT",
+        "Farrer Park MRT station",
+        "Farrer Park station",
+        "NE 8",
+        "NE8"
+      ]
+    },
+    {
+      "id": "lta-rail-cc20",
+      "canonical_name": "Farrer Road MRT Station",
+      "base_name": "Farrer Road",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC20"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3179394,
+      "longitude": 103.8077533,
+      "aliases": [
+        "Farrer Road",
+        "CC 20",
+        "CC20",
+        "Farrer Road MRT",
+        "Farrer Road MRT station",
+        "Farrer Road station"
+      ]
+    },
+    {
+      "id": "lta-rail-sw5",
+      "canonical_name": "Fernvale LRT Station",
+      "base_name": "Fernvale",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW5"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3914765,
+      "longitude": 103.8764949,
+      "aliases": [
+        "Fernvale",
+        "Fernvale LRT",
+        "Fernvale LRT station",
+        "Fernvale station",
+        "SW 5",
+        "SW5"
+      ]
+    },
+    {
+      "id": "lta-rail-dt20",
+      "canonical_name": "Fort Canning MRT Station",
+      "base_name": "Fort Canning",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT20"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.2921441,
+      "longitude": 103.8439038,
+      "aliases": [
+        "Fort Canning",
+        "DT 20",
+        "DT20",
+        "Fort Canning MRT",
+        "Fort Canning MRT station",
+        "Fort Canning station"
+      ]
+    },
+    {
+      "id": "lta-rail-foundersmemorial",
+      "canonical_name": "Founders' Memorial MRT Station",
+      "base_name": "Founders' Memorial",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.291602,
+      "longitude": 103.8685273,
+      "aliases": [
+        "Founders' Memorial",
+        "Founders' Memorial MRT",
+        "Founders' Memorial MRT station",
+        "Founders' Memorial station"
+      ]
+    },
+    {
+      "id": "lta-rail-galibatudepot",
+      "canonical_name": "Gali Batu Depot MRT Station",
+      "base_name": "Gali Batu Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3948218,
+      "longitude": 103.7543386,
+      "aliases": [
+        "Gali Batu Depot",
+        "Gali Batu Depot MRT",
+        "Gali Batu Depot MRT station",
+        "Gali Batu Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-te22",
+      "canonical_name": "Gardens By The Bay MRT Station",
+      "base_name": "Gardens By The Bay",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE22"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.279239,
+      "longitude": 103.8678602,
+      "aliases": [
+        "Gardens By The Bay",
+        "Gardens By The Bay MRT",
+        "Gardens By The Bay MRT station",
+        "Gardens By The Bay station",
+        "TE 22",
+        "TE22"
+      ]
+    },
+    {
+      "id": "lta-rail-dt24",
+      "canonical_name": "Geylang Bahru MRT Station",
+      "base_name": "Geylang Bahru",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT24"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3218594,
+      "longitude": 103.8723155,
+      "aliases": [
+        "Geylang Bahru",
+        "DT 24",
+        "DT24",
+        "Geylang Bahru MRT",
+        "Geylang Bahru MRT station",
+        "Geylang Bahru station"
+      ]
+    },
+    {
+      "id": "lta-rail-te15",
+      "canonical_name": "Great World MRT Station",
+      "base_name": "Great World",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE15"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.2960638,
+      "longitude": 103.8333734,
+      "aliases": [
+        "Great World",
+        "Great World MRT",
+        "Great World MRT station",
+        "Great World station",
+        "TE 15",
+        "TE15"
+      ]
+    },
+    {
+      "id": "lta-rail-ew30",
+      "canonical_name": "Gul Circle MRT Station",
+      "base_name": "Gul Circle",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW30"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3207342,
+      "longitude": 103.661334,
+      "aliases": [
+        "Gul Circle",
+        "EW 30",
+        "EW30",
+        "Gul Circle MRT",
+        "Gul Circle MRT station",
+        "Gul Circle station"
+      ]
+    },
+    {
+      "id": "lta-rail-halifaxsubstationcabletrough",
+      "canonical_name": "Halifax Sub Station Cable Trough MRT Station",
+      "base_name": "Halifax Sub Station Cable Trough",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.310337,
+      "longitude": 103.8451174,
+      "aliases": [
+        "Halifax Sub Station Cable Trough",
+        "Halifax Sub Station Cable Trough MRT",
+        "Halifax Sub Station Cable Trough MRT station",
+        "Halifax Sub Station Cable Trough station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc29",
+      "canonical_name": "Harbourfront MRT Station",
+      "base_name": "Harbourfront",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC29",
+        "NE1"
+      ],
+      "lines": [
+        "Circle Line",
+        "North East Line"
+      ],
+      "latitude": 1.2656479,
+      "longitude": 103.8218885,
+      "aliases": [
+        "Harbourfront",
+        "CC 29",
+        "CC29",
+        "Harbourfront MRT",
+        "Harbourfront MRT station",
+        "Harbourfront station",
+        "NE 1",
+        "NE1"
+      ]
+    },
+    {
+      "id": "lta-rail-te16",
+      "canonical_name": "Havelock MRT Station",
+      "base_name": "Havelock",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE16"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.2903737,
+      "longitude": 103.8336802,
+      "aliases": [
+        "Havelock",
+        "Havelock MRT",
+        "Havelock MRT station",
+        "Havelock station",
+        "TE 16",
+        "TE16"
+      ]
+    },
+    {
+      "id": "lta-rail-cc25",
+      "canonical_name": "Haw Par Villa MRT Station",
+      "base_name": "Haw Par Villa",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC25"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.2829293,
+      "longitude": 103.7812734,
+      "aliases": [
+        "Haw Par Villa",
+        "CC 25",
+        "CC25",
+        "Haw Par Villa MRT",
+        "Haw Par Villa MRT station",
+        "Haw Par Villa station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt3",
+      "canonical_name": "Hillview MRT Station",
+      "base_name": "Hillview",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT3"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3629176,
+      "longitude": 103.7679693,
+      "aliases": [
+        "Hillview",
+        "DT 3",
+        "DT3",
+        "Hillview MRT",
+        "Hillview MRT station",
+        "Hillview station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc21",
+      "canonical_name": "Holland Village MRT Station",
+      "base_name": "Holland Village",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC21"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3127189,
+      "longitude": 103.7965283,
+      "aliases": [
+        "Holland Village",
+        "CC 21",
+        "CC21",
+        "Holland Village MRT",
+        "Holland Village MRT station",
+        "Holland Village station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne14",
+      "canonical_name": "Hougang MRT Station",
+      "base_name": "Hougang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE14"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.372155,
+      "longitude": 103.8924957,
+      "aliases": [
+        "Hougang",
+        "Hougang MRT",
+        "Hougang MRT station",
+        "Hougang station",
+        "NE 14",
+        "NE14"
+      ]
+    },
+    {
+      "id": "lta-rail-dt4",
+      "canonical_name": "Hume MRT Station",
+      "base_name": "Hume",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT4"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3545562,
+      "longitude": 103.7692404,
+      "aliases": [
+        "Hume",
+        "DT 4",
+        "DT4",
+        "Hume MRT",
+        "Hume MRT station",
+        "Hume station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt22",
+      "canonical_name": "Jalan Besar MRT Station",
+      "base_name": "Jalan Besar",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT22"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3058698,
+      "longitude": 103.8558883,
+      "aliases": [
+        "Jalan Besar",
+        "DT 22",
+        "DT22",
+        "Jalan Besar MRT",
+        "Jalan Besar MRT station",
+        "Jalan Besar station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp12",
+      "canonical_name": "Jelapang LRT Station",
+      "base_name": "Jelapang",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP12"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3864976,
+      "longitude": 103.764398,
+      "aliases": [
+        "Jelapang",
+        "BP 12",
+        "BP12",
+        "Jelapang LRT",
+        "Jelapang LRT station",
+        "Jelapang station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew29",
+      "canonical_name": "Joo Koon MRT Station",
+      "base_name": "Joo Koon",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW29"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3278337,
+      "longitude": 103.6776131,
+      "aliases": [
+        "Joo Koon",
+        "EW 29",
+        "EW29",
+        "Joo Koon MRT",
+        "Joo Koon MRT station",
+        "Joo Koon station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew24",
+      "canonical_name": "Jurong East MRT Station",
+      "base_name": "Jurong East",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW24",
+        "NS1"
+      ],
+      "lines": [
+        "East-West Line",
+        "North-South Line"
+      ],
+      "latitude": 1.3337388,
+      "longitude": 103.7420635,
+      "aliases": [
+        "Jurong East",
+        "EW 24",
+        "EW24",
+        "Jurong East MRT",
+        "Jurong East MRT station",
+        "Jurong East station",
+        "NS 1",
+        "NS1"
+      ]
+    },
+    {
+      "id": "lta-rail-pe5",
+      "canonical_name": "Kadaloor LRT Station",
+      "base_name": "Kadaloor",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PE5"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.3994025,
+      "longitude": 103.9166152,
+      "aliases": [
+        "Kadaloor",
+        "Kadaloor LRT",
+        "Kadaloor LRT station",
+        "Kadaloor station",
+        "PE 5",
+        "PE5"
+      ]
+    },
+    {
+      "id": "lta-rail-dt28",
+      "canonical_name": "Kaki Bukit MRT Station",
+      "base_name": "Kaki Bukit",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT28"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3354569,
+      "longitude": 103.9094021,
+      "aliases": [
+        "Kaki Bukit",
+        "DT 28",
+        "DT28",
+        "Kaki Bukit MRT",
+        "Kaki Bukit MRT station",
+        "Kaki Bukit station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew10",
+      "canonical_name": "Kallang MRT Station",
+      "base_name": "Kallang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW10"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3108412,
+      "longitude": 103.8708489,
+      "aliases": [
+        "Kallang",
+        "EW 10",
+        "EW10",
+        "Kallang MRT",
+        "Kallang MRT station",
+        "Kallang station"
+      ]
+    },
+    {
+      "id": "lta-rail-se4",
+      "canonical_name": "Kangkar LRT Station",
+      "base_name": "Kangkar",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SE4"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.383741,
+      "longitude": 103.9021781,
+      "aliases": [
+        "Kangkar",
+        "Kangkar LRT",
+        "Kangkar LRT station",
+        "Kangkar station",
+        "SE 4",
+        "SE4"
+      ]
+    },
+    {
+      "id": "lta-rail-te24",
+      "canonical_name": "Katong Park MRT Station",
+      "base_name": "Katong Park",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE24"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.2977337,
+      "longitude": 103.8871056,
+      "aliases": [
+        "Katong Park",
+        "Katong Park MRT",
+        "Katong Park MRT station",
+        "Katong Park station",
+        "TE 24",
+        "TE24"
+      ]
+    },
+    {
+      "id": "lta-rail-bp3",
+      "canonical_name": "Keat Hong LRT Station",
+      "base_name": "Keat Hong",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP3"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3784495,
+      "longitude": 103.7492162,
+      "aliases": [
+        "Keat Hong",
+        "BP 3",
+        "BP3",
+        "Keat Hong LRT",
+        "Keat Hong LRT station",
+        "Keat Hong station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew6",
+      "canonical_name": "Kembangan MRT Station",
+      "base_name": "Kembangan",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW6"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3207537,
+      "longitude": 103.9122507,
+      "aliases": [
+        "Kembangan",
+        "EW 6",
+        "EW6",
+        "Kembangan MRT",
+        "Kembangan MRT station",
+        "Kembangan station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc24",
+      "canonical_name": "Kent Ridge MRT Station",
+      "base_name": "Kent Ridge",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC24"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.2942751,
+      "longitude": 103.7845317,
+      "aliases": [
+        "Kent Ridge",
+        "CC 24",
+        "CC24",
+        "Kent Ridge MRT",
+        "Kent Ridge MRT station",
+        "Kent Ridge station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns14",
+      "canonical_name": "Khatib MRT Station",
+      "base_name": "Khatib",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS14"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.4168563,
+      "longitude": 103.8328825,
+      "aliases": [
+        "Khatib",
+        "Khatib MRT",
+        "Khatib MRT station",
+        "Khatib station",
+        "NS 14",
+        "NS14"
+      ]
+    },
+    {
+      "id": "lta-rail-kimchuandepot",
+      "canonical_name": "Kim Chuan Depot MRT Station",
+      "base_name": "Kim Chuan Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3434105,
+      "longitude": 103.8924218,
+      "aliases": [
+        "Kim Chuan Depot",
+        "Kim Chuan Depot MRT",
+        "Kim Chuan Depot MRT station",
+        "Kim Chuan Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt6",
+      "canonical_name": "King Albert Park MRT Station",
+      "base_name": "King Albert Park",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT6"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.335748,
+      "longitude": 103.783963,
+      "aliases": [
+        "King Albert Park",
+        "DT 6",
+        "DT6",
+        "King Albert Park MRT",
+        "King Albert Park MRT station",
+        "King Albert Park station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne13",
+      "canonical_name": "Kovan MRT Station",
+      "base_name": "Kovan",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE13"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.359387,
+      "longitude": 103.8844618,
+      "aliases": [
+        "Kovan",
+        "Kovan MRT",
+        "Kovan MRT station",
+        "Kovan station",
+        "NE 13",
+        "NE13"
+      ]
+    },
+    {
+      "id": "lta-rail-ns7",
+      "canonical_name": "Kranji MRT Station",
+      "base_name": "Kranji",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS7"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.425052,
+      "longitude": 103.7625929,
+      "aliases": [
+        "Kranji",
+        "Kranji MRT",
+        "Kranji MRT station",
+        "Kranji station",
+        "NS 7",
+        "NS7"
+      ]
+    },
+    {
+      "id": "lta-rail-sw3",
+      "canonical_name": "Kupang LRT Station",
+      "base_name": "Kupang",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW3"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3981018,
+      "longitude": 103.8816371,
+      "aliases": [
+        "Kupang",
+        "Kupang LRT",
+        "Kupang LRT station",
+        "Kupang station",
+        "SW 3",
+        "SW3"
+      ]
+    },
+    {
+      "id": "lta-rail-cc27",
+      "canonical_name": "Labrador Park MRT Station",
+      "base_name": "Labrador Park",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC27"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.2724976,
+      "longitude": 103.8035039,
+      "aliases": [
+        "Labrador Park",
+        "CC 27",
+        "CC27",
+        "Labrador Park MRT",
+        "Labrador Park MRT station",
+        "Labrador Park station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew26",
+      "canonical_name": "Lakeside MRT Station",
+      "base_name": "Lakeside",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW26"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3438808,
+      "longitude": 103.7204407,
+      "aliases": [
+        "Lakeside",
+        "EW 26",
+        "EW26",
+        "Lakeside MRT",
+        "Lakeside MRT station",
+        "Lakeside station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew11",
+      "canonical_name": "Lavender MRT Station",
+      "base_name": "Lavender",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW11"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3078425,
+      "longitude": 103.8635618,
+      "aliases": [
+        "Lavender",
+        "EW 11",
+        "EW11",
+        "Lavender MRT",
+        "Lavender MRT station",
+        "Lavender station"
+      ]
+    },
+    {
+      "id": "lta-rail-sw6",
+      "canonical_name": "Layar LRT Station",
+      "base_name": "Layar",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW6"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.39202,
+      "longitude": 103.879887,
+      "aliases": [
+        "Layar",
+        "Layar LRT",
+        "Layar LRT station",
+        "Layar station",
+        "SW 6",
+        "SW6"
+      ]
+    },
+    {
+      "id": "lta-rail-te5",
+      "canonical_name": "Lentor MRT Station",
+      "base_name": "Lentor",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE5"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3836064,
+      "longitude": 103.8374115,
+      "aliases": [
+        "Lentor",
+        "Lentor MRT",
+        "Lentor MRT station",
+        "Lentor station",
+        "TE 5",
+        "TE5"
+      ]
+    },
+    {
+      "id": "lta-rail-dt12",
+      "canonical_name": "Little India MRT Station",
+      "base_name": "Little India",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT12",
+        "NE7"
+      ],
+      "lines": [
+        "Downtown Line",
+        "North East Line"
+      ],
+      "latitude": 1.3080237,
+      "longitude": 103.849271,
+      "aliases": [
+        "Little India",
+        "DT 12",
+        "DT12",
+        "Little India MRT",
+        "Little India MRT station",
+        "Little India station",
+        "NE 7",
+        "NE7"
+      ]
+    },
+    {
+      "id": "lta-rail-cc14",
+      "canonical_name": "Lorong Chuan MRT Station",
+      "base_name": "Lorong Chuan",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC14"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.351742,
+      "longitude": 103.8629804,
+      "aliases": [
+        "Lorong Chuan",
+        "CC 14",
+        "CC14",
+        "Lorong Chuan MRT",
+        "Lorong Chuan MRT station",
+        "Lorong Chuan station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc10",
+      "canonical_name": "Macpherson MRT Station",
+      "base_name": "Macpherson",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC10",
+        "DT26"
+      ],
+      "lines": [
+        "Circle Line",
+        "Downtown Line"
+      ],
+      "latitude": 1.3268682,
+      "longitude": 103.8901691,
+      "aliases": [
+        "Macpherson",
+        "CC 10",
+        "CC10",
+        "DT 26",
+        "DT26",
+        "Macpherson MRT",
+        "Macpherson MRT station",
+        "Macpherson station"
+      ]
+    },
+    {
+      "id": "lta-rail-mandaidepot",
+      "canonical_name": "Mandai Depot MRT Station",
+      "base_name": "Mandai Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.4220797,
+      "longitude": 103.7946133,
+      "aliases": [
+        "Mandai Depot",
+        "Mandai Depot MRT",
+        "Mandai Depot MRT station",
+        "Mandai Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-ce2",
+      "canonical_name": "Marina Bay MRT Station",
+      "base_name": "Marina Bay",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CE2",
+        "NS27",
+        "TE20"
+      ],
+      "lines": [
+        "Circle Line Extension",
+        "North-South Line",
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.276613,
+      "longitude": 103.8550468,
+      "aliases": [
+        "Marina Bay",
+        "CE 2",
+        "CE2",
+        "Marina Bay MRT",
+        "Marina Bay MRT station",
+        "Marina Bay station",
+        "NS 27",
+        "NS27",
+        "TE 20",
+        "TE20"
+      ]
+    },
+    {
+      "id": "lta-rail-marinasouth",
+      "canonical_name": "Marina South MRT Station",
+      "base_name": "Marina South",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.2740486,
+      "longitude": 103.862958,
+      "aliases": [
+        "Marina South",
+        "Marina South MRT",
+        "Marina South MRT station",
+        "Marina South station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns28",
+      "canonical_name": "Marina South Pier MRT Station",
+      "base_name": "Marina South Pier",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS28"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.2721451,
+      "longitude": 103.864135,
+      "aliases": [
+        "Marina South Pier",
+        "Marina South Pier MRT",
+        "Marina South Pier MRT station",
+        "Marina South Pier station",
+        "NS 28",
+        "NS28"
+      ]
+    },
+    {
+      "id": "lta-rail-te26",
+      "canonical_name": "Marine Parade MRT Station",
+      "base_name": "Marine Parade",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE26"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3045425,
+      "longitude": 103.9080354,
+      "aliases": [
+        "Marine Parade",
+        "Marine Parade MRT",
+        "Marine Parade MRT station",
+        "Marine Parade station",
+        "TE 26",
+        "TE26"
+      ]
+    },
+    {
+      "id": "lta-rail-te27",
+      "canonical_name": "Marine Terrace MRT Station",
+      "base_name": "Marine Terrace",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE27"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3073526,
+      "longitude": 103.9167906,
+      "aliases": [
+        "Marine Terrace",
+        "Marine Terrace MRT",
+        "Marine Terrace MRT station",
+        "Marine Terrace station",
+        "TE 27",
+        "TE27"
+      ]
+    },
+    {
+      "id": "lta-rail-ns8",
+      "canonical_name": "Marsiling MRT Station",
+      "base_name": "Marsiling",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS8"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.4328262,
+      "longitude": 103.7744593,
+      "aliases": [
+        "Marsiling",
+        "Marsiling MRT",
+        "Marsiling MRT station",
+        "Marsiling station",
+        "NS 8",
+        "NS8"
+      ]
+    },
+    {
+      "id": "lta-rail-cc16",
+      "canonical_name": "Marymount MRT Station",
+      "base_name": "Marymount",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC16"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3494953,
+      "longitude": 103.8396407,
+      "aliases": [
+        "Marymount",
+        "CC 16",
+        "CC16",
+        "Marymount MRT",
+        "Marymount MRT station",
+        "Marymount station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt25",
+      "canonical_name": "Mattar MRT Station",
+      "base_name": "Mattar",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT25"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3270139,
+      "longitude": 103.8825885,
+      "aliases": [
+        "Mattar",
+        "DT 25",
+        "DT25",
+        "Mattar MRT",
+        "Mattar MRT station",
+        "Mattar station"
+      ]
+    },
+    {
+      "id": "lta-rail-te18",
+      "canonical_name": "Maxwell MRT Station",
+      "base_name": "Maxwell",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE18"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.2810834,
+      "longitude": 103.844283,
+      "aliases": [
+        "Maxwell",
+        "Maxwell MRT",
+        "Maxwell MRT station",
+        "Maxwell station",
+        "TE 18",
+        "TE18"
+      ]
+    },
+    {
+      "id": "lta-rail-te6",
+      "canonical_name": "Mayflower MRT Station",
+      "base_name": "Mayflower",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE6"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3737951,
+      "longitude": 103.8371485,
+      "aliases": [
+        "Mayflower",
+        "Mayflower MRT",
+        "Mayflower MRT station",
+        "Mayflower station",
+        "TE 6",
+        "TE6"
+      ]
+    },
+    {
+      "id": "lta-rail-pe2",
+      "canonical_name": "Meridian LRT Station",
+      "base_name": "Meridian",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PE2"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.3967174,
+      "longitude": 103.9092611,
+      "aliases": [
+        "Meridian",
+        "Meridian LRT",
+        "Meridian LRT station",
+        "Meridian station",
+        "PE 2",
+        "PE2"
+      ]
+    },
+    {
+      "id": "lta-rail-mountpleasant",
+      "canonical_name": "Mount Pleasant MRT Station",
+      "base_name": "Mount Pleasant",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3287739,
+      "longitude": 103.8347512,
+      "aliases": [
+        "Mount Pleasant",
+        "Mount Pleasant MRT",
+        "Mount Pleasant MRT station",
+        "Mount Pleasant station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc7",
+      "canonical_name": "Mountbatten MRT Station",
+      "base_name": "Mountbatten",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC7"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3064601,
+      "longitude": 103.8827139,
+      "aliases": [
+        "Mountbatten",
+        "CC 7",
+        "CC7",
+        "Mountbatten MRT",
+        "Mountbatten MRT station",
+        "Mountbatten station"
+      ]
+    },
+    {
+      "id": "lta-rail-te12",
+      "canonical_name": "Napier MRT Station",
+      "base_name": "Napier",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE12"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.30696,
+      "longitude": 103.8195045,
+      "aliases": [
+        "Napier",
+        "Napier MRT",
+        "Napier MRT station",
+        "Napier station",
+        "TE 12",
+        "TE12"
+      ]
+    },
+    {
+      "id": "lta-rail-dt11",
+      "canonical_name": "Newton MRT Station",
+      "base_name": "Newton",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT11",
+        "NS21"
+      ],
+      "lines": [
+        "Downtown Line",
+        "North-South Line"
+      ],
+      "latitude": 1.3130198,
+      "longitude": 103.8385279,
+      "aliases": [
+        "Newton",
+        "DT 11",
+        "DT11",
+        "Newton MRT",
+        "Newton MRT station",
+        "Newton station",
+        "NS 21",
+        "NS21"
+      ]
+    },
+    {
+      "id": "lta-rail-pw5",
+      "canonical_name": "Nibong LRT Station",
+      "base_name": "Nibong",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PW5"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.412048,
+      "longitude": 103.9003774,
+      "aliases": [
+        "Nibong",
+        "Nibong LRT",
+        "Nibong LRT station",
+        "Nibong station",
+        "PW 5",
+        "PW5"
+      ]
+    },
+    {
+      "id": "lta-rail-cc5",
+      "canonical_name": "Nicoll Highway MRT Station",
+      "base_name": "Nicoll Highway",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC5"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3001859,
+      "longitude": 103.8638632,
+      "aliases": [
+        "Nicoll Highway",
+        "CC 5",
+        "CC5",
+        "Nicoll Highway MRT",
+        "Nicoll Highway MRT station",
+        "Nicoll Highway station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns20",
+      "canonical_name": "Novena MRT Station",
+      "base_name": "Novena",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS20"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.3197721,
+      "longitude": 103.8434471,
+      "aliases": [
+        "Novena",
+        "Novena MRT",
+        "Novena MRT station",
+        "Novena station",
+        "NS 20",
+        "NS20"
+      ]
+    },
+    {
+      "id": "lta-rail-pe6",
+      "canonical_name": "Oasis LRT Station",
+      "base_name": "Oasis",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PE6"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.402577,
+      "longitude": 103.9124313,
+      "aliases": [
+        "Oasis",
+        "Oasis LRT",
+        "Oasis LRT station",
+        "Oasis station",
+        "PE 6",
+        "PE6"
+      ]
+    },
+    {
+      "id": "lta-rail-cc23",
+      "canonical_name": "One-North MRT Station",
+      "base_name": "One-North",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC23"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3001616,
+      "longitude": 103.7875712,
+      "aliases": [
+        "One-North",
+        "CC 23",
+        "CC23",
+        "One-North MRT",
+        "One-North MRT station",
+        "One-North station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns22",
+      "canonical_name": "Orchard MRT Station",
+      "base_name": "Orchard",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS22",
+        "TE14"
+      ],
+      "lines": [
+        "North-South Line",
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3042331,
+      "longitude": 103.8316034,
+      "aliases": [
+        "Orchard",
+        "NS 22",
+        "NS22",
+        "Orchard MRT",
+        "Orchard MRT station",
+        "Orchard station",
+        "TE 14",
+        "TE14"
+      ]
+    },
+    {
+      "id": "lta-rail-te13",
+      "canonical_name": "Orchard Boulevard MRT Station",
+      "base_name": "Orchard Boulevard",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE13"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3025322,
+      "longitude": 103.8235956,
+      "aliases": [
+        "Orchard Boulevard",
+        "Orchard Boulevard MRT",
+        "Orchard Boulevard MRT station",
+        "Orchard Boulevard station",
+        "TE 13",
+        "TE13"
+      ]
+    },
+    {
+      "id": "lta-rail-ew16",
+      "canonical_name": "Outram Park MRT Station",
+      "base_name": "Outram Park",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW16",
+        "NE3",
+        "TE17"
+      ],
+      "lines": [
+        "East-West Line",
+        "North East Line",
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.2817264,
+      "longitude": 103.8387893,
+      "aliases": [
+        "Outram Park",
+        "EW 16",
+        "EW16",
+        "NE 3",
+        "NE3",
+        "Outram Park MRT",
+        "Outram Park MRT station",
+        "Outram Park station",
+        "TE 17",
+        "TE17"
+      ]
+    },
+    {
+      "id": "lta-rail-cc26",
+      "canonical_name": "Pasir Panjang MRT Station",
+      "base_name": "Pasir Panjang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC26"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.2764908,
+      "longitude": 103.7909713,
+      "aliases": [
+        "Pasir Panjang",
+        "CC 26",
+        "CC26",
+        "Pasir Panjang MRT",
+        "Pasir Panjang MRT station",
+        "Pasir Panjang station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew1",
+      "canonical_name": "Pasir Ris MRT Station",
+      "base_name": "Pasir Ris",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW1"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3722225,
+      "longitude": 103.9492282,
+      "aliases": [
+        "Pasir Ris",
+        "EW 1",
+        "EW1",
+        "Pasir Ris MRT",
+        "Pasir Ris MRT station",
+        "Pasir Ris station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc9",
+      "canonical_name": "Paya Lebar MRT Station",
+      "base_name": "Paya Lebar",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC9",
+        "EW8"
+      ],
+      "lines": [
+        "Circle Line",
+        "East-West Line"
+      ],
+      "latitude": 1.3183367,
+      "longitude": 103.8930718,
+      "aliases": [
+        "Paya Lebar",
+        "CC 9",
+        "CC9",
+        "EW 8",
+        "EW8",
+        "Paya Lebar MRT",
+        "Paya Lebar MRT station",
+        "Paya Lebar station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp8",
+      "canonical_name": "Pending LRT Station",
+      "base_name": "Pending",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP8"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3758521,
+      "longitude": 103.7712086,
+      "aliases": [
+        "Pending",
+        "BP 8",
+        "BP8",
+        "Pending LRT",
+        "Pending LRT station",
+        "Pending station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp7",
+      "canonical_name": "Petir LRT Station",
+      "base_name": "Petir",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP7"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3775943,
+      "longitude": 103.7667847,
+      "aliases": [
+        "Petir",
+        "BP 7",
+        "BP7",
+        "Petir LRT",
+        "Petir LRT station",
+        "Petir station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp5",
+      "canonical_name": "Phoenix LRT Station",
+      "base_name": "Phoenix",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP5"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3784583,
+      "longitude": 103.7578643,
+      "aliases": [
+        "Phoenix",
+        "BP 5",
+        "BP5",
+        "Phoenix LRT",
+        "Phoenix LRT station",
+        "Phoenix station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew28",
+      "canonical_name": "Pioneer MRT Station",
+      "base_name": "Pioneer",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW28"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3377978,
+      "longitude": 103.6968434,
+      "aliases": [
+        "Pioneer",
+        "EW 28",
+        "EW28",
+        "Pioneer MRT",
+        "Pioneer MRT station",
+        "Pioneer station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne10",
+      "canonical_name": "Potong Pasir MRT Station",
+      "base_name": "Potong Pasir",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE10"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.3321394,
+      "longitude": 103.8691564,
+      "aliases": [
+        "Potong Pasir",
+        "NE 10",
+        "NE10",
+        "Potong Pasir MRT",
+        "Potong Pasir MRT station",
+        "Potong Pasir station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc4",
+      "canonical_name": "Promenade MRT Station",
+      "base_name": "Promenade",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC4",
+        "DT15"
+      ],
+      "lines": [
+        "Circle Line",
+        "Downtown Line"
+      ],
+      "latitude": 1.2940036,
+      "longitude": 103.8610419,
+      "aliases": [
+        "Promenade",
+        "CC 4",
+        "CC4",
+        "DT 15",
+        "DT15",
+        "Promenade MRT",
+        "Promenade MRT station",
+        "Promenade station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne17",
+      "canonical_name": "Punggol MRT Station",
+      "base_name": "Punggol",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE17",
+        "PTC"
+      ],
+      "lines": [
+        "North East Line",
+        "Punggol LRT"
+      ],
+      "latitude": 1.4057779,
+      "longitude": 103.9028951,
+      "aliases": [
+        "NE 17",
+        "NE17",
+        "PTC",
+        "Punggol",
+        "Punggol LRT",
+        "Punggol LRT station",
+        "Punggol MRT",
+        "Punggol MRT station",
+        "Punggol station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne18",
+      "canonical_name": "Punggol Coast MRT Station",
+      "base_name": "Punggol Coast",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE18"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.4148653,
+      "longitude": 103.9108459,
+      "aliases": [
+        "Punggol Coast",
+        "NE 18",
+        "NE18",
+        "Punggol Coast MRT",
+        "Punggol Coast MRT station",
+        "Punggol Coast station"
+      ]
+    },
+    {
+      "id": "lta-rail-pw3",
+      "canonical_name": "Punggol Point LRT Station",
+      "base_name": "Punggol Point",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PW3"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.4171036,
+      "longitude": 103.9063027,
+      "aliases": [
+        "Punggol Point",
+        "Punggol Point LRT",
+        "Punggol Point LRT station",
+        "Punggol Point station",
+        "PW 3",
+        "PW3"
+      ]
+    },
+    {
+      "id": "lta-rail-ew19",
+      "canonical_name": "Queenstown MRT Station",
+      "base_name": "Queenstown",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW19"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.2939998,
+      "longitude": 103.8063289,
+      "aliases": [
+        "Queenstown",
+        "EW 19",
+        "EW19",
+        "Queenstown MRT",
+        "Queenstown MRT station",
+        "Queenstown station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew14",
+      "canonical_name": "Raffles Place MRT Station",
+      "base_name": "Raffles Place",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW14",
+        "NS26"
+      ],
+      "lines": [
+        "East-West Line",
+        "North-South Line"
+      ],
+      "latitude": 1.2851641,
+      "longitude": 103.8517645,
+      "aliases": [
+        "Raffles Place",
+        "EW 14",
+        "EW14",
+        "NS 26",
+        "NS26",
+        "Raffles Place MRT",
+        "Raffles Place MRT station",
+        "Raffles Place station"
+      ]
+    },
+    {
+      "id": "lta-rail-se5",
+      "canonical_name": "Ranggung LRT Station",
+      "base_name": "Ranggung",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SE5"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3836804,
+      "longitude": 103.897638,
+      "aliases": [
+        "Ranggung",
+        "Ranggung LRT",
+        "Ranggung LRT station",
+        "Ranggung station",
+        "SE 5",
+        "SE5"
+      ]
+    },
+    {
+      "id": "lta-rail-ew18",
+      "canonical_name": "Redhill MRT Station",
+      "base_name": "Redhill",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW18"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.2891263,
+      "longitude": 103.8172505,
+      "aliases": [
+        "Redhill",
+        "EW 18",
+        "EW18",
+        "Redhill MRT",
+        "Redhill MRT station",
+        "Redhill station"
+      ]
+    },
+    {
+      "id": "lta-rail-sw8",
+      "canonical_name": "Renjong LRT Station",
+      "base_name": "Renjong",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW8"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3866203,
+      "longitude": 103.890675,
+      "aliases": [
+        "Renjong",
+        "Renjong LRT",
+        "Renjong LRT station",
+        "Renjong station",
+        "SW 8",
+        "SW8"
+      ]
+    },
+    {
+      "id": "lta-rail-pe4",
+      "canonical_name": "Riviera LRT Station",
+      "base_name": "Riviera",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PE4"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.3945186,
+      "longitude": 103.9162225,
+      "aliases": [
+        "Riviera",
+        "PE 4",
+        "PE4",
+        "Riviera LRT",
+        "Riviera LRT station",
+        "Riviera station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt13",
+      "canonical_name": "Rochor MRT Station",
+      "base_name": "Rochor",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT13"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3045541,
+      "longitude": 103.851829,
+      "aliases": [
+        "Rochor",
+        "DT 13",
+        "DT13",
+        "Rochor MRT",
+        "Rochor MRT station",
+        "Rochor station"
+      ]
+    },
+    {
+      "id": "lta-rail-se2",
+      "canonical_name": "Rumbia LRT Station",
+      "base_name": "Rumbia",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SE2"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3913207,
+      "longitude": 103.9060319,
+      "aliases": [
+        "Rumbia",
+        "Rumbia LRT",
+        "Rumbia LRT station",
+        "Rumbia station",
+        "SE 2",
+        "SE2"
+      ]
+    },
+    {
+      "id": "lta-rail-pw1",
+      "canonical_name": "Sam Kee LRT Station",
+      "base_name": "Sam Kee",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PW1"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.4099264,
+      "longitude": 103.9050157,
+      "aliases": [
+        "Sam Kee",
+        "PW 1",
+        "PW1",
+        "Sam Kee LRT",
+        "Sam Kee LRT station",
+        "Sam Kee station"
+      ]
+    },
+    {
+      "id": "lta-rail-pw4",
+      "canonical_name": "Samudera LRT Station",
+      "base_name": "Samudera",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PW4"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.416084,
+      "longitude": 103.9022313,
+      "aliases": [
+        "Samudera",
+        "PW 4",
+        "PW4",
+        "Samudera LRT",
+        "Samudera LRT station",
+        "Samudera station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp11",
+      "canonical_name": "Segar LRT Station",
+      "base_name": "Segar",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP11"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3875583,
+      "longitude": 103.7699297,
+      "aliases": [
+        "Segar",
+        "BP 11",
+        "BP11",
+        "Segar LRT",
+        "Segar LRT station",
+        "Segar station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns11",
+      "canonical_name": "Sembawang MRT Station",
+      "base_name": "Sembawang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS11"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.4486307,
+      "longitude": 103.8193932,
+      "aliases": [
+        "Sembawang",
+        "NS 11",
+        "NS11",
+        "Sembawang MRT",
+        "Sembawang MRT station",
+        "Sembawang station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne16",
+      "canonical_name": "Sengkang MRT Station",
+      "base_name": "Sengkang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE16",
+        "STC"
+      ],
+      "lines": [
+        "North East Line",
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3907155,
+      "longitude": 103.8952687,
+      "aliases": [
+        "NE 16",
+        "NE16",
+        "STC",
+        "Sengkang",
+        "Sengkang LRT",
+        "Sengkang LRT station",
+        "Sengkang MRT",
+        "Sengkang MRT station",
+        "Sengkang station"
+      ]
+    },
+    {
+      "id": "lta-rail-sengkanglrtdepot",
+      "canonical_name": "Sengkang LRT Depot LRT Station",
+      "base_name": "Sengkang LRT Depot",
+      "entity_type": "lrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3885644,
+      "longitude": 103.8859218,
+      "aliases": [
+        "Sengkang LRT Depot",
+        "Sengkang LRT Depot LRT",
+        "Sengkang LRT Depot LRT station",
+        "Sengkang LRT Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-sengkangmrtdepot",
+      "canonical_name": "Sengkang MRT Depot MRT Station",
+      "base_name": "Sengkang MRT Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3897933,
+      "longitude": 103.8848963,
+      "aliases": [
+        "Sengkang MRT Depot",
+        "Sengkang MRT Depot MRT",
+        "Sengkang MRT Depot MRT station",
+        "Sengkang MRT Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp13",
+      "canonical_name": "Senja LRT Station",
+      "base_name": "Senja",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP13"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.38249,
+      "longitude": 103.7623803,
+      "aliases": [
+        "Senja",
+        "BP 13",
+        "BP13",
+        "Senja LRT",
+        "Senja LRT station",
+        "Senja station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc13",
+      "canonical_name": "Serangoon MRT Station",
+      "base_name": "Serangoon",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC13",
+        "NE12"
+      ],
+      "lines": [
+        "Circle Line",
+        "North East Line"
+      ],
+      "latitude": 1.3508386,
+      "longitude": 103.8726687,
+      "aliases": [
+        "Serangoon",
+        "CC 13",
+        "CC13",
+        "NE 12",
+        "NE12",
+        "Serangoon MRT",
+        "Serangoon MRT station",
+        "Serangoon station"
+      ]
+    },
+    {
+      "id": "lta-rail-te19",
+      "canonical_name": "Shenton Way MRT Station",
+      "base_name": "Shenton Way",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE19"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.27759,
+      "longitude": 103.8509696,
+      "aliases": [
+        "Shenton Way",
+        "Shenton Way MRT",
+        "Shenton Way MRT station",
+        "Shenton Way station",
+        "TE 19",
+        "TE19"
+      ]
+    },
+    {
+      "id": "lta-rail-te28",
+      "canonical_name": "Siglap MRT Station",
+      "base_name": "Siglap",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE28"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3097459,
+      "longitude": 103.9298806,
+      "aliases": [
+        "Siglap",
+        "Siglap MRT",
+        "Siglap MRT station",
+        "Siglap station",
+        "TE 28",
+        "TE28"
+      ]
+    },
+    {
+      "id": "lta-rail-ew3",
+      "canonical_name": "Simei MRT Station",
+      "base_name": "Simei",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW3"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3425277,
+      "longitude": 103.9537195,
+      "aliases": [
+        "Simei",
+        "EW 3",
+        "EW3",
+        "Simei MRT",
+        "Simei MRT station",
+        "Simei station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt7",
+      "canonical_name": "Sixth Avenue MRT Station",
+      "base_name": "Sixth Avenue",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT7"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3307936,
+      "longitude": 103.7978517,
+      "aliases": [
+        "Sixth Avenue",
+        "DT 7",
+        "DT7",
+        "Sixth Avenue MRT",
+        "Sixth Avenue MRT station",
+        "Sixth Avenue station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns23",
+      "canonical_name": "Somerset MRT Station",
+      "base_name": "Somerset",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS23"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.3002553,
+      "longitude": 103.8396477,
+      "aliases": [
+        "Somerset",
+        "NS 23",
+        "NS23",
+        "Somerset MRT",
+        "Somerset MRT station",
+        "Somerset station"
+      ]
+    },
+    {
+      "id": "lta-rail-pw7",
+      "canonical_name": "Soo Teck LRT Station",
+      "base_name": "Soo Teck",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PW7"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.4048848,
+      "longitude": 103.8972094,
+      "aliases": [
+        "Soo Teck",
+        "PW 7",
+        "PW7",
+        "Soo Teck LRT",
+        "Soo Teck LRT station",
+        "Soo Teck station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp2",
+      "canonical_name": "South View LRT Station",
+      "base_name": "South View",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP2"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3801521,
+      "longitude": 103.7454269,
+      "aliases": [
+        "South View",
+        "BP 2",
+        "BP2",
+        "South View LRT",
+        "South View LRT station",
+        "South View station"
+      ]
+    },
+    {
+      "id": "lta-rail-te4",
+      "canonical_name": "Springleaf MRT Station",
+      "base_name": "Springleaf",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE4"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3985417,
+      "longitude": 103.8181462,
+      "aliases": [
+        "Springleaf",
+        "Springleaf MRT",
+        "Springleaf MRT station",
+        "Springleaf station",
+        "TE 4",
+        "TE4"
+      ]
+    },
+    {
+      "id": "lta-rail-cc6",
+      "canonical_name": "Stadium MRT Station",
+      "base_name": "Stadium",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC6"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3031838,
+      "longitude": 103.8757665,
+      "aliases": [
+        "Stadium",
+        "CC 6",
+        "CC6",
+        "Stadium MRT",
+        "Stadium MRT station",
+        "Stadium station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt10",
+      "canonical_name": "Stevens MRT Station",
+      "base_name": "Stevens",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT10",
+        "TE11"
+      ],
+      "lines": [
+        "Downtown Line",
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3200894,
+      "longitude": 103.8260208,
+      "aliases": [
+        "Stevens",
+        "DT 10",
+        "DT10",
+        "Stevens MRT",
+        "Stevens MRT station",
+        "Stevens station",
+        "TE 11",
+        "TE11"
+      ]
+    },
+    {
+      "id": "lta-rail-substation",
+      "canonical_name": "Sub Station MRT Station",
+      "base_name": "Sub Station",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3347528,
+      "longitude": 103.9630911,
+      "aliases": [
+        "Sub Station",
+        "Sub Station MRT",
+        "Sub Station MRT station",
+        "Sub Station station"
+      ]
+    },
+    {
+      "id": "lta-rail-pw6",
+      "canonical_name": "Sumang LRT Station",
+      "base_name": "Sumang",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PW6"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.4080601,
+      "longitude": 103.8984297,
+      "aliases": [
+        "Sumang",
+        "PW 6",
+        "PW6",
+        "Sumang LRT",
+        "Sumang LRT station",
+        "Sumang station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc11",
+      "canonical_name": "Tai Seng MRT Station",
+      "base_name": "Tai Seng",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC11"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.3359338,
+      "longitude": 103.8875943,
+      "aliases": [
+        "Tai Seng",
+        "CC 11",
+        "CC11",
+        "Tai Seng MRT",
+        "Tai Seng MRT station",
+        "Tai Seng station"
+      ]
+    },
+    {
+      "id": "lta-rail-taisengfacilitybuilding",
+      "canonical_name": "Tai Seng Facility Building MRT Station",
+      "base_name": "Tai Seng Facility Building",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3428477,
+      "longitude": 103.8937566,
+      "aliases": [
+        "Tai Seng Facility Building",
+        "Tai Seng Facility Building MRT",
+        "Tai Seng Facility Building MRT station",
+        "Tai Seng Facility Building station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt32",
+      "canonical_name": "Tampines MRT Station",
+      "base_name": "Tampines",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT32",
+        "EW2"
+      ],
+      "lines": [
+        "Downtown Line",
+        "East-West Line"
+      ],
+      "latitude": 1.3541999,
+      "longitude": 103.9441273,
+      "aliases": [
+        "Tampines",
+        "DT 32",
+        "DT32",
+        "EW 2",
+        "EW2",
+        "Tampines MRT",
+        "Tampines MRT station",
+        "Tampines station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt33",
+      "canonical_name": "Tampines East MRT Station",
+      "base_name": "Tampines East",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT33"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3569319,
+      "longitude": 103.9557519,
+      "aliases": [
+        "Tampines East",
+        "DT 33",
+        "DT33",
+        "Tampines East MRT",
+        "Tampines East MRT station",
+        "Tampines East station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt31",
+      "canonical_name": "Tampines West MRT Station",
+      "base_name": "Tampines West",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT31"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3461451,
+      "longitude": 103.9385526,
+      "aliases": [
+        "Tampines West",
+        "DT 31",
+        "DT31",
+        "Tampines West MRT",
+        "Tampines West MRT station",
+        "Tampines West station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt8",
+      "canonical_name": "Tan Kah Kee MRT Station",
+      "base_name": "Tan Kah Kee",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT8"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3253713,
+      "longitude": 103.8081287,
+      "aliases": [
+        "Tan Kah Kee",
+        "DT 8",
+        "DT8",
+        "Tan Kah Kee MRT",
+        "Tan Kah Kee MRT station",
+        "Tan Kah Kee station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew4",
+      "canonical_name": "Tanah Merah MRT Station",
+      "base_name": "Tanah Merah",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW4"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3268109,
+      "longitude": 103.9458593,
+      "aliases": [
+        "Tanah Merah",
+        "EW 4",
+        "EW4",
+        "Tanah Merah MRT",
+        "Tanah Merah MRT station",
+        "Tanah Merah station"
+      ]
+    },
+    {
+      "id": "lta-rail-te25",
+      "canonical_name": "Tanjong Katong MRT Station",
+      "base_name": "Tanjong Katong",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE25"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.2990179,
+      "longitude": 103.8973131,
+      "aliases": [
+        "Tanjong Katong",
+        "Tanjong Katong MRT",
+        "Tanjong Katong MRT station",
+        "Tanjong Katong station",
+        "TE 25",
+        "TE25"
+      ]
+    },
+    {
+      "id": "lta-rail-ew15",
+      "canonical_name": "Tanjong Pagar MRT Station",
+      "base_name": "Tanjong Pagar",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW15"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.2768038,
+      "longitude": 103.8463757,
+      "aliases": [
+        "Tanjong Pagar",
+        "EW 15",
+        "EW15",
+        "Tanjong Pagar MRT",
+        "Tanjong Pagar MRT station",
+        "Tanjong Pagar station"
+      ]
+    },
+    {
+      "id": "lta-rail-te23",
+      "canonical_name": "Tanjong Rhu MRT Station",
+      "base_name": "Tanjong Rhu",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE23"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.2964647,
+      "longitude": 103.8731902,
+      "aliases": [
+        "Tanjong Rhu",
+        "Tanjong Rhu MRT",
+        "Tanjong Rhu MRT station",
+        "Tanjong Rhu station",
+        "TE 23",
+        "TE23"
+      ]
+    },
+    {
+      "id": "lta-rail-pw2",
+      "canonical_name": "Teck Lee LRT Station",
+      "base_name": "Teck Lee",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "PW2"
+      ],
+      "lines": [
+        "Punggol LRT"
+      ],
+      "latitude": 1.4126473,
+      "longitude": 103.9064247,
+      "aliases": [
+        "Teck Lee",
+        "PW 2",
+        "PW2",
+        "Teck Lee LRT",
+        "Teck Lee LRT station",
+        "Teck Lee station"
+      ]
+    },
+    {
+      "id": "lta-rail-bp4",
+      "canonical_name": "Teck Whye LRT Station",
+      "base_name": "Teck Whye",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "BP4"
+      ],
+      "lines": [
+        "Bukit Panjang LRT"
+      ],
+      "latitude": 1.3765211,
+      "longitude": 103.7537038,
+      "aliases": [
+        "Teck Whye",
+        "BP 4",
+        "BP4",
+        "Teck Whye LRT",
+        "Teck Whye LRT station",
+        "Teck Whye station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt18",
+      "canonical_name": "Telok Ayer MRT Station",
+      "base_name": "Telok Ayer",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT18"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.2826393,
+      "longitude": 103.847988,
+      "aliases": [
+        "Telok Ayer",
+        "DT 18",
+        "DT18",
+        "Telok Ayer MRT",
+        "Telok Ayer MRT station",
+        "Telok Ayer station"
+      ]
+    },
+    {
+      "id": "lta-rail-cc28",
+      "canonical_name": "Telok Blangah MRT Station",
+      "base_name": "Telok Blangah",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "CC28"
+      ],
+      "lines": [
+        "Circle Line"
+      ],
+      "latitude": 1.2707374,
+      "longitude": 103.809566,
+      "aliases": [
+        "Telok Blangah",
+        "CC 28",
+        "CC28",
+        "Telok Blangah MRT",
+        "Telok Blangah MRT station",
+        "Telok Blangah station"
+      ]
+    },
+    {
+      "id": "lta-rail-sw4",
+      "canonical_name": "Thanggam LRT Station",
+      "base_name": "Thanggam",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW4"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.3971582,
+      "longitude": 103.8756972,
+      "aliases": [
+        "Thanggam",
+        "SW 4",
+        "SW4",
+        "Thanggam LRT",
+        "Thanggam LRT station",
+        "Thanggam station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew17",
+      "canonical_name": "Tiong Bahru MRT Station",
+      "base_name": "Tiong Bahru",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW17"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.2865396,
+      "longitude": 103.8261879,
+      "aliases": [
+        "Tiong Bahru",
+        "EW 17",
+        "EW17",
+        "Tiong Bahru MRT",
+        "Tiong Bahru MRT station",
+        "Tiong Bahru station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns19",
+      "canonical_name": "Toa Payoh MRT Station",
+      "base_name": "Toa Payoh",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS19"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.333454,
+      "longitude": 103.8475033,
+      "aliases": [
+        "Toa Payoh",
+        "NS 19",
+        "NS19",
+        "Toa Payoh MRT",
+        "Toa Payoh MRT station",
+        "Toa Payoh station"
+      ]
+    },
+    {
+      "id": "lta-rail-sw7",
+      "canonical_name": "Tongkang LRT Station",
+      "base_name": "Tongkang",
+      "entity_type": "lrt_station",
+      "station_codes": [
+        "SW7"
+      ],
+      "lines": [
+        "Sengkang LRT"
+      ],
+      "latitude": 1.38914,
+      "longitude": 103.8861337,
+      "aliases": [
+        "Tongkang",
+        "SW 7",
+        "SW7",
+        "Tongkang LRT",
+        "Tongkang LRT station",
+        "Tongkang station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew31",
+      "canonical_name": "Tuas Crescent MRT Station",
+      "base_name": "Tuas Crescent",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW31"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3216143,
+      "longitude": 103.648298,
+      "aliases": [
+        "Tuas Crescent",
+        "EW 31",
+        "EW31",
+        "Tuas Crescent MRT",
+        "Tuas Crescent MRT station",
+        "Tuas Crescent station"
+      ]
+    },
+    {
+      "id": "lta-rail-tuasdepot",
+      "canonical_name": "Tuas Depot MRT Station",
+      "base_name": "Tuas Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3438859,
+      "longitude": 103.6383827,
+      "aliases": [
+        "Tuas Depot",
+        "Tuas Depot MRT",
+        "Tuas Depot MRT station",
+        "Tuas Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew33",
+      "canonical_name": "Tuas Link MRT Station",
+      "base_name": "Tuas Link",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW33"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3414556,
+      "longitude": 103.6369679,
+      "aliases": [
+        "Tuas Link",
+        "EW 33",
+        "EW33",
+        "Tuas Link MRT",
+        "Tuas Link MRT station",
+        "Tuas Link station"
+      ]
+    },
+    {
+      "id": "lta-rail-ew32",
+      "canonical_name": "Tuas West Road MRT Station",
+      "base_name": "Tuas West Road",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "EW32"
+      ],
+      "lines": [
+        "East-West Line"
+      ],
+      "latitude": 1.3306724,
+      "longitude": 103.6390707,
+      "aliases": [
+        "Tuas West Road",
+        "EW 32",
+        "EW32",
+        "Tuas West Road MRT",
+        "Tuas West Road MRT station",
+        "Tuas West Road station"
+      ]
+    },
+    {
+      "id": "lta-rail-tunnelstructureconnectingdepottofacilitybuilding",
+      "canonical_name": "Tunnel Structure Connecting Depot To Facility Building MRT Station",
+      "base_name": "Tunnel Structure Connecting Depot To Facility Building",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3430108,
+      "longitude": 103.8938702,
+      "aliases": [
+        "Tunnel Structure Connecting Depot To Facility Building",
+        "Tunnel Structure Connecting Depot To Facility Building MRT",
+        "Tunnel Structure Connecting Depot To Facility Building MRT station",
+        "Tunnel Structure Connecting Depot To Facility Building station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt27",
+      "canonical_name": "Ubi MRT Station",
+      "base_name": "Ubi",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT27"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3298828,
+      "longitude": 103.8986224,
+      "aliases": [
+        "Ubi",
+        "DT 27",
+        "DT27",
+        "Ubi MRT",
+        "Ubi MRT station",
+        "Ubi station"
+      ]
+    },
+    {
+      "id": "lta-rail-ulupandandepot",
+      "canonical_name": "Ulu Pandan Depot MRT Station",
+      "base_name": "Ulu Pandan Depot",
+      "entity_type": "mrt_station",
+      "station_codes": [],
+      "lines": [],
+      "latitude": 1.3247753,
+      "longitude": 103.7598401,
+      "aliases": [
+        "Ulu Pandan Depot",
+        "Ulu Pandan Depot MRT",
+        "Ulu Pandan Depot MRT station",
+        "Ulu Pandan Depot station"
+      ]
+    },
+    {
+      "id": "lta-rail-dt34",
+      "canonical_name": "Upper Changi MRT Station",
+      "base_name": "Upper Changi",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "DT34"
+      ],
+      "lines": [
+        "Downtown Line"
+      ],
+      "latitude": 1.3431535,
+      "longitude": 103.9617844,
+      "aliases": [
+        "Upper Changi",
+        "DT 34",
+        "DT34",
+        "Upper Changi MRT",
+        "Upper Changi MRT station",
+        "Upper Changi station"
+      ]
+    },
+    {
+      "id": "lta-rail-te8",
+      "canonical_name": "Upper Thomson MRT Station",
+      "base_name": "Upper Thomson",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE8"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.3557815,
+      "longitude": 103.8318459,
+      "aliases": [
+        "Upper Thomson",
+        "TE 8",
+        "TE8",
+        "Upper Thomson MRT",
+        "Upper Thomson MRT station",
+        "Upper Thomson station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns9",
+      "canonical_name": "Woodlands MRT Station",
+      "base_name": "Woodlands",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS9",
+        "TE2"
+      ],
+      "lines": [
+        "North-South Line",
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.4373168,
+      "longitude": 103.7876073,
+      "aliases": [
+        "Woodlands",
+        "NS 9",
+        "NS9",
+        "TE 2",
+        "TE2",
+        "Woodlands MRT",
+        "Woodlands MRT station",
+        "Woodlands station"
+      ]
+    },
+    {
+      "id": "lta-rail-te1",
+      "canonical_name": "Woodlands North MRT Station",
+      "base_name": "Woodlands North",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE1"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.4491912,
+      "longitude": 103.7849741,
+      "aliases": [
+        "Woodlands North",
+        "TE 1",
+        "TE1",
+        "Woodlands North MRT",
+        "Woodlands North MRT station",
+        "Woodlands North station"
+      ]
+    },
+    {
+      "id": "lta-rail-te3",
+      "canonical_name": "Woodlands South MRT Station",
+      "base_name": "Woodlands South",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "TE3"
+      ],
+      "lines": [
+        "Thomson-East Coast Line"
+      ],
+      "latitude": 1.4277394,
+      "longitude": 103.7931523,
+      "aliases": [
+        "Woodlands South",
+        "TE 3",
+        "TE3",
+        "Woodlands South MRT",
+        "Woodlands South MRT station",
+        "Woodlands South station"
+      ]
+    },
+    {
+      "id": "lta-rail-ne11",
+      "canonical_name": "Woodleigh MRT Station",
+      "base_name": "Woodleigh",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NE11"
+      ],
+      "lines": [
+        "North East Line"
+      ],
+      "latitude": 1.3401238,
+      "longitude": 103.8711274,
+      "aliases": [
+        "Woodleigh",
+        "NE 11",
+        "NE11",
+        "Woodleigh MRT",
+        "Woodleigh MRT station",
+        "Woodleigh station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns5",
+      "canonical_name": "Yew Tee MRT Station",
+      "base_name": "Yew Tee",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS5"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.3981863,
+      "longitude": 103.7478039,
+      "aliases": [
+        "Yew Tee",
+        "NS 5",
+        "NS5",
+        "Yew Tee MRT",
+        "Yew Tee MRT station",
+        "Yew Tee station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns15",
+      "canonical_name": "Yio Chu Kang MRT Station",
+      "base_name": "Yio Chu Kang",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS15"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.3808549,
+      "longitude": 103.8452924,
+      "aliases": [
+        "Yio Chu Kang",
+        "NS 15",
+        "NS15",
+        "Yio Chu Kang MRT",
+        "Yio Chu Kang MRT station",
+        "Yio Chu Kang station"
+      ]
+    },
+    {
+      "id": "lta-rail-ns13",
+      "canonical_name": "Yishun MRT Station",
+      "base_name": "Yishun",
+      "entity_type": "mrt_station",
+      "station_codes": [
+        "NS13"
+      ],
+      "lines": [
+        "North-South Line"
+      ],
+      "latitude": 1.4291888,
+      "longitude": 103.8351474,
+      "aliases": [
+        "Yishun",
+        "NS 13",
+        "NS13",
+        "Yishun MRT",
+        "Yishun MRT station",
+        "Yishun station"
+      ]
+    }
+  ]
+}

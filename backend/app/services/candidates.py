@@ -227,6 +227,17 @@ def staged_candidate_pipeline(
     if not transit_hubs:
         transit_hubs = corridor_hubs
 
+    # Spatial filters are a shortlist heuristic. Preserve coverage of each
+    # requested need when filtering would otherwise erase an entire errand.
+    # Actual route time and the existing detour/request budgets remain decisive.
+    for category in categories:
+        if not any(category in hub.categories for hub in transit_hubs):
+            alternatives = sorted(
+                (hub for hub in category_hubs if category in hub.categories),
+                key=lambda hub: _coverage_rank(hub, categories, origin, destination),
+            )[:min(2, max_hubs_per_category)]
+            transit_hubs.extend(hub for hub in alternatives if hub not in transit_hubs)
+
     ranked_hubs = sorted(
         transit_hubs,
         key=lambda hub: _coverage_rank(hub, categories, origin, destination),

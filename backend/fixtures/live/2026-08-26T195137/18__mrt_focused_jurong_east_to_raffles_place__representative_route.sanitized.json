@@ -1,0 +1,369 @@
+{
+  "_fixture_meta": {
+    "captured_at": "2026-08-26T19:51:37.646725+08:00",
+    "captured_live": true,
+    "contains_credentials_or_token": false,
+    "expected_coverage": "MRT-focused",
+    "experiment": "representative_route",
+    "provider_latency_ms": 387.84,
+    "request": {
+      "date": "08-27-2026",
+      "end": "1.2840,103.8515",
+      "maxWalkDistance": 1000,
+      "mode": "TRANSIT",
+      "numItineraries": 1,
+      "routeType": "pt",
+      "start": "1.3331,103.7422",
+      "time": "08:00:00"
+    },
+    "response_status": 200,
+    "scenario": "mrt_focused_jurong_east_to_raffles_place"
+  },
+  "response": {
+    "debugOutput": {
+      "directStreetRouterTime": 144428238,
+      "filteringTime": 475202,
+      "precalculationTime": 17396,
+      "renderingTime": 154270,
+      "totalTime": 289794810,
+      "transitRouterTime": 144705860,
+      "transitRouterTimes": {
+        "accessEgressTime": 34308607,
+        "itineraryCreationTime": 2469745,
+        "raptorSearchTime": 78650708,
+        "tripPatternFilterTime": 29262673
+      }
+    },
+    "elevationMetadata": {
+      "ellipsoidToGeoidDifference": 7.474248868803462,
+      "geoidElevation": false
+    },
+    "metadata": {
+      "nextDateTime": 1787790600000,
+      "prevDateTime": 1787787000000,
+      "searchWindowUsed": 1800
+    },
+    "nextPageCursor": "rO0ABXcxAQAJTkVYVF9QQUdFDIOkCIAAAAAAAAcIABdTVFJFRVRfQU5EX0FSUklWQUxfVElNRQ==",
+    "plan": {
+      "date": 1787788800000,
+      "from": {
+        "lat": 1.3331,
+        "lon": 103.7422,
+        "name": "Origin",
+        "vertexType": "NORMAL"
+      },
+      "itineraries": [
+        {
+          "arrivedAtDestinationWithRentedBicycle": false,
+          "duration": 1511,
+          "elevationGained": 0,
+          "elevationLost": 0,
+          "endTime": 1787790378000,
+          "fare": "2.07",
+          "generalizedCost": 1529,
+          "legs": [
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 19.42,
+              "duration": 21,
+              "endTime": 1787788888000,
+              "from": {
+                "departure": 1787788867000,
+                "lat": 1.3331,
+                "lon": 103.7422,
+                "name": "Origin",
+                "vertexType": "NORMAL"
+              },
+              "generalizedCost": 131,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 4,
+                "points": "ujcGocexRLGGOEB"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787788867000,
+              "steps": [
+                {
+                  "absoluteDirection": "SOUTHEAST",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 19.42,
+                  "elevation": "",
+                  "lat": 1.3330785,
+                  "lon": 103.7421604,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787788888000,
+                "departure": 1787788888000,
+                "lat": 1.3330748,
+                "lon": 103.7422654,
+                "name": "JURONG EAST MRT STATION",
+                "stopCode": "EW24",
+                "stopId": "FERRY:EW24",
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            },
+            {
+              "agencyId": "1:SMRT",
+              "agencyName": "SMRT Corporation",
+              "agencyTimeZoneOffset": 28800000,
+              "agencyUrl": "http://www.smrt.com.sg/",
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 15117.14,
+              "duration": 1482,
+              "endTime": 1787790370000,
+              "from": {
+                "arrival": 1787788888000,
+                "departure": 1787788888000,
+                "lat": 1.3330748,
+                "lon": 103.7422654,
+                "name": "JURONG EAST MRT STATION",
+                "stopCode": "EW24",
+                "stopId": "FERRY:EW24",
+                "stopIndex": 9,
+                "stopSequence": 10,
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 1416,
+              "interlineWithPreviousLeg": false,
+              "intermediateStops": [
+                {
+                  "arrival": 1787789168000,
+                  "departure": 1787789198000,
+                  "lat": 1.3151999,
+                  "lon": 103.7652135,
+                  "name": "CLEMENTI MRT STATION",
+                  "stopCode": "EW23",
+                  "stopId": "FERRY:EW23",
+                  "stopIndex": 10,
+                  "stopSequence": 11,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789333000,
+                  "departure": 1787789363000,
+                  "lat": 1.3114548,
+                  "lon": 103.7785844,
+                  "name": "DOVER MRT STATION",
+                  "stopCode": "EW22",
+                  "stopId": "FERRY:EW22",
+                  "stopIndex": 11,
+                  "stopSequence": 12,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789472000,
+                  "departure": 1787789502000,
+                  "lat": 1.3072658,
+                  "lon": 103.790017,
+                  "name": "BUONA VISTA MRT STATION",
+                  "stopCode": "EW21",
+                  "stopId": "FERRY:EW21",
+                  "stopIndex": 12,
+                  "stopSequence": 13,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789591000,
+                  "departure": 1787789621000,
+                  "lat": 1.3024474,
+                  "lon": 103.798295,
+                  "name": "COMMONWEALTH MRT STATION",
+                  "stopCode": "EW20",
+                  "stopId": "FERRY:EW20",
+                  "stopIndex": 13,
+                  "stopSequence": 14,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789720000,
+                  "departure": 1787789750000,
+                  "lat": 1.2948146,
+                  "lon": 103.8059227,
+                  "name": "QUEENSTOWN MRT STATION",
+                  "stopCode": "EW19",
+                  "stopId": "FERRY:EW19",
+                  "stopIndex": 14,
+                  "stopSequence": 15,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789859000,
+                  "departure": 1787789889000,
+                  "lat": 1.2896751,
+                  "lon": 103.8166904,
+                  "name": "REDHILL MRT STATION",
+                  "stopCode": "EW18",
+                  "stopId": "FERRY:EW18",
+                  "stopIndex": 15,
+                  "stopSequence": 16,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787789987000,
+                  "departure": 1787790017000,
+                  "lat": 1.2862186,
+                  "lon": 103.8269134,
+                  "name": "TIONG BAHRU MRT STATION",
+                  "stopCode": "EW17",
+                  "stopId": "FERRY:EW17",
+                  "stopIndex": 16,
+                  "stopSequence": 17,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787790139000,
+                  "departure": 1787790169000,
+                  "lat": 1.2815273,
+                  "lon": 103.8389844,
+                  "name": "OUTRAM PARK MRT STATION",
+                  "stopCode": "EW16",
+                  "stopId": "FERRY:EW16",
+                  "stopIndex": 17,
+                  "stopSequence": 18,
+                  "vertexType": "TRANSIT"
+                },
+                {
+                  "arrival": 1787790248000,
+                  "departure": 1787790278000,
+                  "lat": 1.2766035,
+                  "lon": 103.8459617,
+                  "name": "TANJONG PAGAR MRT STATION",
+                  "stopCode": "EW15",
+                  "stopId": "FERRY:EW15",
+                  "stopIndex": 18,
+                  "stopSequence": 19,
+                  "vertexType": "TRANSIT"
+                }
+              ],
+              "legGeometry": {
+                "length": 608,
+                "points": "akcGydexRlCoANGNGNINGLINIDCHELILKLILKLKLKJKLKJMJMJKHMJOHM??HMHOHMHOHOFMDGBGv@{AFOHOFO??HODK@AFOFOFOBEBKrE_LFOFOFOFQFODOBGBGDQDODQDODQBOBQBQBQBOBQ@Q@Q@Q@Q@Q?M?C@Q?Q?Q?Q?Q?Q?MAC?u@?Q?Q?Q?Q?Q?Q?C@K?Q@Q@Q@Q@QBQBQBQBOBQBQ??DODQDODQDODQDO?ADOPq@DODQFO@I@GDODQDOBQDQBODQBQ@G@GBQBQBQ@G@IrB{NBOBQBQDQBO@EBKDODQDODQFOFOFOFOHOHMFOHMJOHMJMJMHMLKJMJKLKLKLKLKLILILININILING@?LGPGNGNGNGHCDAlMoENGPGDAHCNGNGNGNINGNGNILGNININIHEBANILIHGDAbSqLLIHEDCNILGNINILGNINGNGNGNGNGPGNGHEDANGPE??NG|@Y|Ag@??TIhDiANGNGPENGNGHEDANILGNINILILKLILKLKLKJKLKJMJMJMJMHMHK?AJMHO??FMHOFOHOFODOFOFQDOBQDODQBOBQDQ@QBQ@OBQ@Q?Q@Q?Q@Q?K?EAQ?QAQ?QAQAQAQAM?Ci@yKAQAQAQAQAM?C{@aNAQAQAQAQ?OAQAQ???Q?Q?Q?Q@Q@Q@Q@Q@QBQ@QBOBQBQDQDOBQFODQDOFOFOFO?AFMFOFOHOFOHMHO??`AkB??BGxBcFnNaXZy@Xy@z@cKRiFJ{AFq@JuARkCLmC?A??LmDXqDR{BVuAViARs@d@}@lA{A`CeCzFaH`DwDbBuBpA}A????rA}AvDmEvKsMrJ{Kt@y@v@q@fAs@hH}D??f@WtEeCdAw@z@aAfCsCxAoBf@iAd@uA\\sAN{@Fk@??dCaYPiBRgAXaA?Ab@mAn@cB??DMt@oBdAqDT_BN{AXqFHuD@c@@S@Q@Q@OBQBQBQBQBMDQDQDQDOFOFOFOFOFOHMFOHOHMJMT]HMV[dAqAT[PWLSHMHOFMHOFOFOFQDOFODQDOBQDODQFa@n@}E????l@iEJcADc@@QBc@@Q@Q?c@?Q?SAa@?QIiBAc@AWAo@I_H?c@?Q?Q@Q?Q@QBQ@OBQDQBODQDOFQFOFOFOHMHOHMJMJMJMJKJKLKLKZWfAs@LKXSNMLKJMJKJMJMRWLQR]nDoG`BwC`AiBbB{C??R_@tBuDr@aA|@}@z@o@r@a@z@_@dEuA`C{@bAm@fAeAf@s@^u@Xw@Py@JiABgACw@I}AIoAGkA??ImAEa@Ie@Ia@I]KWQ_@S]QWWYUUSQSOUOi@[qBcAkCuAoDiB_Ai@c@Y_@YSOEEMIEEMIECKIOIYSMKYSMK????????????????????????????A??A??A???]WWOOISKUKQGKEKEOEUGOCUESCSC_EQ"
+              },
+              "mode": "SUBWAY",
+              "pathway": false,
+              "realTime": false,
+              "route": "EW",
+              "routeId": "EW",
+              "routeLongName": "EAST WEST LINE",
+              "routeShortName": "EW",
+              "routeType": 1,
+              "serviceDate": "2026-08-27",
+              "startTime": 1787788888000,
+              "steps": [],
+              "to": {
+                "arrival": 1787790370000,
+                "departure": 1787790370000,
+                "lat": 1.2839333,
+                "lon": 103.8514631,
+                "name": "RAFFLES PLACE MRT STATION",
+                "stopCode": "EW14",
+                "stopId": "FERRY:EW14",
+                "stopIndex": 19,
+                "stopSequence": 20,
+                "vertexType": "TRANSIT"
+              },
+              "transitLeg": true,
+              "tripId": "EW-1-2003"
+            },
+            {
+              "agencyTimeZoneOffset": 28800000,
+              "arrivalDelay": 0,
+              "departureDelay": 0,
+              "distance": 8.32,
+              "duration": 8,
+              "endTime": 1787790378000,
+              "from": {
+                "arrival": 1787790370000,
+                "departure": 1787790370000,
+                "lat": 1.2839333,
+                "lon": 103.8514631,
+                "name": "RAFFLES PLACE MRT STATION",
+                "stopCode": "EW14",
+                "stopId": "FERRY:EW14",
+                "vertexType": "TRANSIT"
+              },
+              "generalizedCost": 56,
+              "interlineWithPreviousLeg": false,
+              "legGeometry": {
+                "length": 4,
+                "points": "qwyFsnzxR??I?CA"
+              },
+              "mode": "WALK",
+              "pathway": false,
+              "realTime": false,
+              "rentedBike": false,
+              "route": "",
+              "startTime": 1787790370000,
+              "steps": [
+                {
+                  "absoluteDirection": "NORTH",
+                  "area": false,
+                  "bogusName": true,
+                  "distance": 8.32,
+                  "elevation": "",
+                  "lat": 1.2839332,
+                  "lon": 103.851463,
+                  "relativeDirection": "DEPART",
+                  "stayOn": false,
+                  "streetName": "path",
+                  "walkingBike": false
+                }
+              ],
+              "to": {
+                "arrival": 1787790378000,
+                "lat": 1.284,
+                "lon": 103.8515,
+                "name": "Destination",
+                "vertexType": "NORMAL"
+              },
+              "transitLeg": false,
+              "walkingBike": false
+            }
+          ],
+          "startTime": 1787788867000,
+          "tooSloped": false,
+          "transfers": 0,
+          "transitTime": 1482,
+          "waitingTime": 0,
+          "walkDistance": 27.74,
+          "walkLimitExceeded": false,
+          "walkTime": 29
+        }
+      ],
+      "to": {
+        "lat": 1.284,
+        "lon": 103.8515,
+        "name": "Destination",
+        "vertexType": "NORMAL"
+      }
+    },
+    "previousPageCursor": "rO0ABXc1AQANUFJFVklPVVNfUEFHRQyDlfiAAAAAAAAHCAAXU1RSRUVUX0FORF9BUlJJVkFMX1RJTUU=",
+    "requestParameters": {
+      "arriveBy": "false",
+      "date": "08-27-2026",
+      "fromPlace": "1.3331,103.7422",
+      "maxTransfers": "3",
+      "mode": "TRANSIT,WALK",
+      "numItineraries": "1",
+      "showIntermediateStops": "true",
+      "time": "8:00 AM",
+      "toPlace": "1.284,103.8515",
+      "transferPenalty": "1"
+    }
+  }
+}

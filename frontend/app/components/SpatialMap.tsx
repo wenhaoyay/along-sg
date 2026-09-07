@@ -5,10 +5,14 @@ import type { Coordinate, ResolvedLocation } from "./LocationField";
 
 type Stop = { display_name: string; coordinate: Coordinate };
 
-export function SpatialMap({ origin, destination, stops = [], baselineGeometry = [], routeGeometry = [] }: { origin: ResolvedLocation | null; destination: ResolvedLocation | null; stops?: Stop[]; baselineGeometry?: Coordinate[]; routeGeometry?: Coordinate[] }) {
+export function SpatialMap({ origin, destination, stops = [], baselineGeometry = [], routeGeometry = [], activeStop, onStopSelect }: { origin: ResolvedLocation | null; destination: ResolvedLocation | null; stops?: Stop[]; baselineGeometry?: Coordinate[]; routeGeometry?: Coordinate[]; activeStop?: number | null; onStopSelect?: (index: number) => void }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const layerRef = useRef<import("leaflet").LayerGroup | null>(null);
+  const markersRef = useRef<import("leaflet").Marker[]>([]);
+  const selectionRef = useRef(activeStop);
+
+  useEffect(() => { selectionRef.current = activeStop; markersRef.current.forEach((marker, index) => { marker.getElement()?.classList.toggle("selected-stop", index === activeStop); }); }, [activeStop]);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +33,13 @@ export function SpatialMap({ origin, destination, stops = [], baselineGeometry =
       if (recommendedPoints.length > 1 && stops.length) L.polyline(recommendedPoints.map((point) => [point.latitude, point.longitude]), { color: "#0d6b57", weight: 5, opacity: .9 }).addTo(layer);
       const marker = (coordinate: Coordinate, kind: string, label: string, glyph: string) => L.marker([coordinate.latitude, coordinate.longitude], { icon: L.divIcon({ className: `along-marker ${kind}`, html: `<span>${glyph}</span>`, iconSize: [30, 30], iconAnchor: [15, 15] }) }).bindTooltip(label, { direction: "top", offset: [0, -12] }).addTo(layer);
       if (origin) marker(origin.coordinate, "origin", origin.label, "A");
-      stops.forEach((stop, index) => marker(stop.coordinate, "stop", stop.display_name, `${index + 1}`));
+      markersRef.current = stops.map((stop, index) => {
+        const item = marker(stop.coordinate, "stop", stop.display_name, `${index + 1}`);
+        item.getElement()?.setAttribute("aria-label", `Show stop ${index + 1}: ${stop.display_name}`);
+        item.getElement()?.classList.toggle("selected-stop", index === selectionRef.current);
+        item.on("click", () => onStopSelect?.(index));
+        return item;
+      });
       if (destination) marker(destination.coordinate, "destination", destination.label, "B");
       const framingPoints = [...points, ...baselinePoints, ...recommendedPoints];
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -52,7 +62,7 @@ export function SpatialMap({ origin, destination, stops = [], baselineGeometry =
       window.setTimeout(() => mapRef.current?.invalidateSize(), 50);
     });
     return () => { cancelled = true; };
-  }, [origin, destination, stops, baselineGeometry, routeGeometry]);
+  }, [origin, destination, stops, baselineGeometry, routeGeometry, onStopSelect]);
 
   useEffect(() => () => { mapRef.current?.remove(); mapRef.current = null; }, []);
   return <div className="map" ref={elementRef} role="region" aria-label="Journey map" />;

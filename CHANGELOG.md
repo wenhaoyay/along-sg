@@ -2,6 +2,10 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.7.5 — September journey and discovery improvements
+
+Added Singapore-time departure planning, arrival-aware opening-hours warnings, cancellable/retryable searches, route-proximity candidate ranking, stricter business grounding, related-search recovery, journey timeline/map synchronization, clearer recommendation explanations, mobile result controls and a repeatable six-case offline benchmark.
+
 ## 0.7.4 — Open-world discovery
 
 Added plausible free-form need parsing, independent compound resolution, route-corridor place search, bounded TomTom/Geoapify/Tavily escalation and offline discovery evaluation.

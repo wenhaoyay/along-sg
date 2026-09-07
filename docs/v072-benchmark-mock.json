@@ -1,0 +1,217 @@
+{
+  "stage": "V0.7.2",
+  "mode": "deterministic-mock",
+  "captured_at": "2026-08-29T15:26:40.360996+08:00",
+  "departure": "2026-08-30T10:00:00+08:00",
+  "poi_database": {
+    "outlets": 6199,
+    "active_outlets": 6198,
+    "brands": 21,
+    "categories": 18,
+    "hubs": 6145,
+    "malls": 15,
+    "transport_nodes": 132,
+    "known_hours": 1384,
+    "known_freshness": 6169,
+    "closed_outlets": 1
+  },
+  "summary": {
+    "case_count": 6,
+    "average_route_calls": 8,
+    "worst_route_calls": 9,
+    "cache_hit_rate": 0.0769,
+    "p50_latency_ms": 46.19,
+    "p95_latency_ms": 49.81,
+    "average_provider_latency_ms": 0.12,
+    "recommendations_lacking_location_context": 0
+  },
+  "cases": [
+    {
+      "case": "Punggol-Orchard fried chicken",
+      "errands": [
+        "fried_chicken"
+      ],
+      "baseline_minutes": 47.22,
+      "outcome": "ok",
+      "winner": [
+        "KFC"
+      ],
+      "winner_location_context": [
+        "1 Sengkang Square, Singapore 545078"
+      ],
+      "detour_minutes": 20.85,
+      "walking_minutes": 13.01,
+      "transfers": 1,
+      "raw_poi_count": 6198,
+      "category_match_hubs": 101,
+      "corridor_hubs": 31,
+      "transit_proximity_hubs": 18,
+      "hub_coverage_candidates": 12,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 4,
+      "evaluated_candidates": 4,
+      "route_calls": 9,
+      "cache_hits": 0,
+      "provider_latency_ms": 0.18,
+      "total_latency_ms": 38.18,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Jurong East-Bugis coffee",
+      "errands": [
+        "coffee"
+      ],
+      "baseline_minutes": 45.72,
+      "outcome": "ok",
+      "winner": [
+        "Starbucks"
+      ],
+      "winner_location_context": [
+        "50 Jurong Gateway Road, Singapore 608549"
+      ],
+      "detour_minutes": 17.92,
+      "walking_minutes": 12.74,
+      "transfers": 1,
+      "raw_poi_count": 6198,
+      "category_match_hubs": 1846,
+      "corridor_hubs": 895,
+      "transit_proximity_hubs": 696,
+      "hub_coverage_candidates": 12,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 4,
+      "evaluated_candidates": 4,
+      "route_calls": 9,
+      "cache_hits": 0,
+      "provider_latency_ms": 0.1,
+      "total_latency_ms": 41.44,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Tampines-Orchard bubble tea",
+      "errands": [
+        "bubble_tea"
+      ],
+      "baseline_minutes": 47.26,
+      "outcome": "ok",
+      "winner": [
+        "Mixue"
+      ],
+      "winner_location_context": [
+        "#B1-33 Century Square"
+      ],
+      "detour_minutes": 13.85,
+      "walking_minutes": 13.02,
+      "transfers": 1,
+      "raw_poi_count": 6198,
+      "category_match_hubs": 225,
+      "corridor_hubs": 83,
+      "transit_proximity_hubs": 41,
+      "hub_coverage_candidates": 12,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 4,
+      "evaluated_candidates": 4,
+      "route_calls": 9,
+      "cache_hits": 0,
+      "provider_latency_ms": 0.17,
+      "total_latency_ms": 49.85,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Punggol-Orchard groceries and pharmacy",
+      "errands": [
+        "groceries",
+        "pharmacy"
+      ],
+      "baseline_minutes": 47.22,
+      "outcome": "ok",
+      "winner": [
+        "ION Orchard"
+      ],
+      "winner_location_context": [
+        "ION Orchard"
+      ],
+      "detour_minutes": 36.13,
+      "walking_minutes": 13.06,
+      "transfers": 1,
+      "raw_poi_count": 6198,
+      "category_match_hubs": 738,
+      "corridor_hubs": 270,
+      "transit_proximity_hubs": 148,
+      "hub_coverage_candidates": 43,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 3,
+      "evaluated_candidates": 4,
+      "route_calls": 8,
+      "cache_hits": 3,
+      "provider_latency_ms": 0.08,
+      "total_latency_ms": 49.68,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Jurong East-Tampines convenience and ATM",
+      "errands": [
+        "convenience",
+        "banking"
+      ],
+      "baseline_minutes": 71.85,
+      "outcome": "ok",
+      "winner": [
+        "OCBC",
+        "7-Eleven"
+      ],
+      "winner_location_context": [
+        "50 Jurong Gateway Road, Singapore 608549",
+        "Near Tampines Interchange · 310 m"
+      ],
+      "detour_minutes": 31.93,
+      "walking_minutes": 17.47,
+      "transfers": 2,
+      "raw_poi_count": 6198,
+      "category_match_hubs": 1946,
+      "corridor_hubs": 516,
+      "transit_proximity_hubs": 221,
+      "hub_coverage_candidates": 64,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 1,
+      "evaluated_candidates": 2,
+      "route_calls": 7,
+      "cache_hits": 0,
+      "provider_latency_ms": 0.09,
+      "total_latency_ms": 45.2,
+      "hard_budget_reached": false
+    },
+    {
+      "case": "Bugis-VivoCity electronics and coffee",
+      "errands": [
+        "electronics",
+        "coffee"
+      ],
+      "baseline_minutes": 21.52,
+      "outcome": "ok",
+      "winner": [
+        "Central Hong Kong Café",
+        "VivoCity"
+      ],
+      "winner_location_context": [
+        "#B2-13/14 VivoCity",
+        "VivoCity"
+      ],
+      "detour_minutes": 38.65,
+      "walking_minutes": 11.44,
+      "transfers": 0,
+      "raw_poi_count": 6198,
+      "category_match_hubs": 2105,
+      "corridor_hubs": 972,
+      "transit_proximity_hubs": 788,
+      "hub_coverage_candidates": 64,
+      "approximate_detour_candidates": 4,
+      "routing_budget_candidates": 1,
+      "evaluated_candidates": 2,
+      "route_calls": 6,
+      "cache_hits": 1,
+      "provider_latency_ms": 0.07,
+      "total_latency_ms": 47.17,
+      "hard_budget_reached": false
+    }
+  ]
+}

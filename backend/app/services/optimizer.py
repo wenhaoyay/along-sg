@@ -382,6 +382,8 @@ class Optimizer:
                 current_coordinate = origin
                 segments: list[RouteResult] = []
                 dwell_total = 0.0
+                stop_arrivals = []
+                stop_dwells = []
                 try:
                     for stop in stop_order:
                         segment = await route(
@@ -392,12 +394,15 @@ class Optimizer:
                             option.categories_at(stop.id)
                         )
                         dwell_total += dwell
+                        stop_dwells.append(dwell)
+                        arrival = None
                         if time_aware:
                             arrival = segment.arrival_time or (
                                 current_departure
                                 + timedelta(minutes=segment.duration_minutes)
                             )
                             current_departure = arrival + timedelta(minutes=dwell)
+                        stop_arrivals.append(arrival)
                         current_coordinate = stop.coordinate
                     segments.append(
                         await route(
@@ -507,6 +512,8 @@ class Optimizer:
                     ) - preference_adjustment),
                     incremental_walking_distance_m=extra_walking_distance,
                     routed_segment_count=len(segments),
+                    stop_arrivals=tuple(stop_arrivals),
+                    stop_dwell_minutes=tuple(stop_dwells),
                     explanation=(
                         f"{relationship_text}. Adds {detour:.1f} minutes, "
                         f"{extra_walking:.1f} walking minutes and "
