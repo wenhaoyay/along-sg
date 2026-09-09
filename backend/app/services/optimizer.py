@@ -137,10 +137,40 @@ def rank_recommendations(
             round(item.incremental_walking_distance_m / 50),
             item.incremental_transfers,
         )
-        if signature not in seen:
-            unique[key] = item
-            seen.add(signature)
+        if signature in seen:
+            continue
+        # The signature keys on stop identity, so two different buildings always
+        # both survived it - including a pair six seconds apart. Offering those
+        # as a choice spends the user's attention on a difference they cannot
+        # act on, and invites them to distrust the ranking. `best_overall` is
+        # always kept; a later option has to earn its place by differing.
+        if key != "best_overall" and any(
+            _outcomes_are_indistinguishable(item, kept) for kept in unique.values()
+        ):
+            continue
+        unique[key] = item
+        seen.add(signature)
     return unique
+
+
+# A different mall is a different answer only if the journey it produces differs
+# by something a traveller would notice. Below these, it is noise.
+INDISTINGUISHABLE_DETOUR_MINUTES = 2.0
+INDISTINGUISHABLE_WALKING_METRES = 100.0
+
+
+def _outcomes_are_indistinguishable(
+    candidate: ScoredCandidate, other: ScoredCandidate
+) -> bool:
+    return (
+        candidate.incremental_transfers == other.incremental_transfers
+        and abs(candidate.incremental_detour_minutes - other.incremental_detour_minutes)
+        < INDISTINGUISHABLE_DETOUR_MINUTES
+        and abs(
+            candidate.incremental_walking_distance_m - other.incremental_walking_distance_m
+        )
+        < INDISTINGUISHABLE_WALKING_METRES
+    )
 
 
 def _relationship_explanation(relationship: str) -> str:
