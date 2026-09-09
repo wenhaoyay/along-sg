@@ -1243,6 +1243,11 @@ test("an alternative that differs only in dwell does not claim less travel", asy
  * transit leg, and for a bus leg that is the five-digit LTA BusStopCode - so
  * arrivals join by code rather than by name. Codes were being discarded by the
  * leg parser, the same way the service names were before 0.7.8. */
+/* Bus times arrive over the network and the hook does not retry a dropped
+ * first attempt until its poll, so these assertions get more room than the
+ * 5s default. What they assert is unchanged. */
+const ARRIVAL_TIMEOUT = 15_000;
+
 const minutesFromNow = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
 
 const busResult = {
@@ -1369,7 +1374,7 @@ async function busJourney(page: Page, arrivalBody: unknown, statusCode = 200) {
 test("the bus you are about to board shows when it is next due", async ({ page }) => {
   await busJourney(page, arrivalsFor("44009"));
   const arrivals = page.locator(".next-buses").first();
-  await expect(arrivals).toContainText("3 min");
+  await expect(arrivals).toContainText("3 min", { timeout: ARRIVAL_TIMEOUT });
   await expect(arrivals).toContainText("11 min");
   // Crowding is a dot beside the first time, described in words for a reader
   // who cannot see the colour.
@@ -1388,7 +1393,7 @@ test("arrivals are only fetched for a boarding that is close", async ({ page }) 
    * build issues one request per stop. */
   expect(new Set(seen)).toEqual(new Set(["44009"]));
   expect(seen).not.toContain("44331");
-  await expect(page.locator(".next-buses")).toHaveCount(1);
+  await expect(page.locator(".next-buses")).toHaveCount(1, { timeout: ARRIVAL_TIMEOUT });
 });
 
 test("a timetable estimate is not shown in the same voice as a live one", async ({ page }) => {
@@ -1399,23 +1404,93 @@ test("a timetable estimate is not shown in the same voice as a live one", async 
   }));
   await busJourney(page, scheduled);
   const arrivals = page.locator(".next-buses").first();
-  await expect(arrivals).toHaveClass(/scheduled/);
+  await expect(arrivals).toHaveClass(/scheduled/, { timeout: ARRIVAL_TIMEOUT });
   await expect(arrivals).toContainText("timetable");
 });
 
 test("sample bus times say they are samples", async ({ page }) => {
   await busJourney(page, arrivalsFor("44009", "mock"));
-  await expect(page.locator(".next-buses em.sample")).toHaveCount(1);
+  await expect(page.locator(".next-buses em.sample")).toHaveCount(1, {
+    timeout: ARRIVAL_TIMEOUT,
+  });
   await busJourney(page, arrivalsFor("44009", "lta_datamall"));
   await expect(page.locator(".next-buses em.sample")).toHaveCount(0);
 });
 
 test("a stop with nothing due says so, and one that errors stays quiet", async ({ page }) => {
   await busJourney(page, { ...arrivalsFor("44009"), services: [] });
-  await expect(page.locator(".next-buses.none")).toContainText("No live times");
+  await expect(page.locator(".next-buses.none")).toContainText("No live times", {
+    timeout: ARRIVAL_TIMEOUT,
+  });
   // A failed request must leave the plan intact rather than showing an error
   // where a bus time would go: the timeline was complete without it.
   await busJourney(page, { detail: "upstream down" }, 502);
   await expect(page.locator(".next-buses")).toHaveCount(0);
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+});
+
+test("a service that has stopped for the night says so, not just nothing", async ({ page }) => {
+  /* LTA's advisement separates "no estimate available" from "not in
+   * operation", and only the second is something a traveller can act on. The
+   * distinction comes from the ingested timetable, so with no timetable held
+   * the app has to stay vague rather than pick one. */
+  const stopped = {
+    ...arrivalsFor("44009"),
+    services: [],
+    in_operation: false,
+    operating_hours: "First bus 05:30, last bus 23:52",
+  };
+  await busJourney(page, stopped);
+  const note = page.locator(".next-buses.none");
+  await expect(note).toContainText("Not running now", { timeout: ARRIVAL_TIMEOUT });
+  await expect(note).toHaveAttribute("title", "First bus 05:30, last bus 23:52");
+
+  const unknown = { ...arrivalsFor("44009"), services: [], in_operation: null };
+  await busJourney(page, unknown);
+  await expect(page.locator(".next-buses.none")).toContainText("No live times", {
+    timeout: ARRIVAL_TIMEOUT,
+  });
+});
+
+test("the service being ridden is what gets asked about", async ({ page }) => {
+  // Without it the endpoint cannot say whether that service is running, and the
+  // answer would cover every route at the stop rather than the one you board.
+  const seen: string[] = [];
+  await commonRoutes(page);
+  await page.route("**/api/bus-arrivals**", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    seen.push(`${params.get("stop_code")}|${params.get("service")}`);
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(arrivalsFor("44009")),
+    });
+  });
+  await page.route("**/api/intent/parse", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "resolved",
+        intent,
+        diagnostics: {},
+        journey_mentions: [],
+        journey_conflicts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/optimize-intent", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(busResult),
+    }),
+  );
+  await page.goto("/");
+  await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+  await page.waitForTimeout(1200);
+  expect(new Set(seen)).toEqual(new Set(["44009|190"]));
 });

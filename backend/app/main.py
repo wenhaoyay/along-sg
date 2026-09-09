@@ -42,6 +42,7 @@ from app.providers.datamall import (
     LtaDataMallProvider,
     MockBusArrivalProvider,
 )
+from app.bus_network import is_in_operation, operating_hours_text, stop_display_name
 from app.providers.mock import MockOneMapProvider
 from app.providers.onemap import OneMapProvider
 from app.providers.llm import OpenAIIntentProvider
@@ -295,7 +296,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise provider_http_error(error) from error
         now = datetime.now(SINGAPORE_TZ)
         live = not isinstance(provider, MockBusArrivalProvider)
+        # The static network, if it has been ingested. Its only job here is to
+        # let an empty answer explain itself: "nothing due" and "stopped for the
+        # night" look identical on the arrivals feed.
+        repository: HubRepository = request.app.state.repository
+        stop = repository.bus_stop(stop_code)
+        in_operation: bool | None = None
+        operating_hours: str | None = None
+        if service:
+            for row in repository.bus_routes_at_stop(stop_code):
+                if row["service_no"] != service:
+                    continue
+                scheduled = is_in_operation(row, now)
+                # A service can pass a stop in one direction only, so any
+                # direction that is running means the service is running here.
+                if scheduled:
+                    in_operation, operating_hours = True, operating_hours_text(row, now)
+                    break
+                if in_operation is None:
+                    in_operation = scheduled
+                    operating_hours = operating_hours_text(row, now)
         return BusArrivalsResponse(
+            stop_name=stop_display_name(stop) if stop else None,
+            in_operation=in_operation,
+            operating_hours=operating_hours,
             stop_code=stop_code,
             checked_at=now,
             source="lta_datamall" if live else "mock",

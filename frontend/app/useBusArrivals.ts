@@ -17,7 +17,15 @@ export type StopArrivals = {
   services: Array<{ service_no: string; operator: string | null; estimates: ArrivalEstimate[] }>;
   source: string;
   attribution: string | null;
+  stop_name?: string | null;
+  /** Whether this service is scheduled to be calling here now. Null means the
+   *  timetable is not held, which is not the same as "not running" and must
+   *  never be rendered as it. */
+  in_operation?: boolean | null;
+  operating_hours?: string | null;
 };
+
+export type Boarding = { stopCode: string; service: string };
 
 /** A BusStopCode is exactly five digits. A rail leg carries a station code
  *  (NE17), which is not a bus stop and must never be sent as one. */
@@ -56,8 +64,14 @@ const POLL_MS = 30_000;
  * fetched and answers with nothing is recorded as an empty service list, which
  * is how the caller tells "no buses due" from "not asked".
  */
-export function useBusArrivals(apiBase: string, stopCodes: string[]) {
-  const key = stopCodes.join(",");
+export function useBusArrivals(apiBase: string, boardings: Boarding[]) {
+  /* Keyed by stop and service together.
+   *
+   * The service has to reach the endpoint, or it cannot say whether that
+   * service is running here - which is the difference between "nothing due"
+   * and "stopped for the night". It also narrows LTA's answer from every route
+   * at the stop to the one being ridden. */
+  const key = boardings.map((item) => `${item.stopCode}|${item.service}`).join(",");
   const [arrivals, setArrivals] = useState<Record<string, StopArrivals>>({});
 
   useEffect(() => {
@@ -68,13 +82,15 @@ export function useBusArrivals(apiBase: string, stopCodes: string[]) {
 
     async function load() {
       const results = await Promise.all(
-        codes.map(async (code) => {
+        codes.map(async (pair) => {
+          const [code, service] = pair.split("|");
           try {
-            const response = await fetch(`${apiBase}/api/bus-arrivals?stop_code=${code}`, {
+            const query = new URLSearchParams({ stop_code: code, service });
+            const response = await fetch(`${apiBase}/api/bus-arrivals?${query}`, {
               signal: controller.signal,
             });
             if (!response.ok) return null;
-            return (await response.json()) as StopArrivals;
+            return [pair, (await response.json()) as StopArrivals] as const;
           } catch {
             // Offline, aborted, or the provider is down. The timeline is
             // complete without this.
@@ -85,7 +101,7 @@ export function useBusArrivals(apiBase: string, stopCodes: string[]) {
       if (cancelled) return;
       const next: Record<string, StopArrivals> = {};
       results.forEach((result) => {
-        if (result) next[result.stop_code] = result;
+        if (result) next[result[0]] = result[1];
       });
       setArrivals(next);
     }
@@ -109,4 +125,9 @@ export function useBusArrivals(apiBase: string, stopCodes: string[]) {
       Object.entries(arrivals).filter(([code]) => wanted.has(code)),
     ) as Record<string, StopArrivals>;
   }, [arrivals, key]);
+}
+
+/** The lookup key the hook returns its results under. */
+export function boardingKey(stopCode: string, service: string) {
+  return `${stopCode}|${service}`;
 }

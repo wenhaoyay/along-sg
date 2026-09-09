@@ -16,9 +16,11 @@ import {
 import type { ResolvedLocation } from "./LocationField";
 import {
   boardingIsImminent,
+  boardingKey,
   isBusStopCode,
   useBusArrivals,
   type ArrivalEstimate,
+  type Boarding,
   type StopArrivals,
 } from "../useBusArrivals";
 
@@ -156,19 +158,28 @@ export function RecommendationPanel({
   const routedCount = otherOptions.length + compared.length + 1;
   /* Only the bus legs of the plan on screen, and only while boarding is close
    * enough for "next in 4 min" to be about the bus you will actually catch. */
-  const arrivalStops = useMemo(() => {
-    const codes = (recommendation.legs ?? [])
-      .filter(
-        (leg) =>
-          !isRail(leg) &&
-          !WALKING_MODES.has(leg.mode.toUpperCase()) &&
-          isBusStopCode(leg.from_stop_code) &&
-          boardingIsImminent(leg.departure_time),
-      )
-      .map((leg) => leg.from_stop_code as string);
-    return Array.from(new Set(codes));
+  const boardings = useMemo<Boarding[]>(() => {
+    const seen = new Set<string>();
+    const wanted: Boarding[] = [];
+    for (const leg of recommendation.legs ?? []) {
+      const service = leg.route_short_name?.trim();
+      if (
+        isRail(leg) ||
+        WALKING_MODES.has(leg.mode.toUpperCase()) ||
+        !service ||
+        !isBusStopCode(leg.from_stop_code) ||
+        !boardingIsImminent(leg.departure_time)
+      ) {
+        continue;
+      }
+      const key = boardingKey(leg.from_stop_code, service);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      wanted.push({ stopCode: leg.from_stop_code, service });
+    }
+    return wanted;
   }, [recommendation]);
-  const arrivals = useBusArrivals(apiBase, arrivalStops);
+  const arrivals = useBusArrivals(apiBase, boardings);
 
   return (
     <section className="recommendation" aria-live="polite" data-testid="recommendation-sheet">
@@ -708,16 +719,24 @@ function RideLegs({
  * launder one into the other. */
 function NextBuses({ leg, arrivals }: { leg: Leg; arrivals: Record<string, StopArrivals> }) {
   const code = leg.from_stop_code;
-  if (!isBusStopCode(code)) return null;
-  const stop = arrivals[code];
-  if (!stop) return null;
   const service = leg.route_short_name?.trim();
+  if (!isBusStopCode(code) || !service) return null;
+  const stop = arrivals[boardingKey(code, service)];
+  if (!stop) return null;
   const match = stop.services.find((item) => item.service_no === service);
   if (!match?.estimates.length) {
-    // Asked, and answered with nothing. Say so rather than staying silent, but
-    // do not guess why: separating "none due" from "not running" needs the
-    // per-stop operating hours in the Bus Routes dataset, which is not held
-    // here yet.
+    /* Asked, and answered with nothing. Which of the two reasons it is comes
+     * from the ingested timetable: LTA's advisement separates "no estimate
+     * available" from "not in operation", and only the second is something the
+     * traveller can act on. With no timetable held, `in_operation` is null and
+     * the app declines to pick one. */
+    if (stop.in_operation === false) {
+      return (
+        <span className="next-buses none" title={stop.operating_hours ?? undefined}>
+          Not running now
+        </span>
+      );
+    }
     return <span className="next-buses none">No live times</span>;
   }
   const shown = match.estimates.slice(0, 3);

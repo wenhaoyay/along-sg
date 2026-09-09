@@ -139,6 +139,28 @@ class HubRepository:
                     source_id TEXT NOT NULL, last_verified_at TEXT,
                     UNIQUE(source, source_id)
                 );
+                -- The static bus network, keyed on LTA's five-digit stop code -
+                -- the same code OneMap returns on every bus leg, which is what
+                -- makes an arrival lookup a join rather than a guess.
+                CREATE TABLE IF NOT EXISTS bus_stops (
+                    stop_code TEXT PRIMARY KEY,
+                    road_name TEXT, description TEXT,
+                    latitude REAL NOT NULL, longitude REAL NOT NULL,
+                    last_verified_at TEXT
+                );
+                CREATE TABLE IF NOT EXISTS bus_routes (
+                    service_no TEXT NOT NULL,
+                    direction INTEGER NOT NULL,
+                    stop_sequence INTEGER NOT NULL,
+                    stop_code TEXT NOT NULL,
+                    operator TEXT, distance_km REAL,
+                    weekday_first TEXT, weekday_last TEXT,
+                    saturday_first TEXT, saturday_last TEXT,
+                    sunday_first TEXT, sunday_last TEXT,
+                    last_verified_at TEXT,
+                    PRIMARY KEY (service_no, direction, stop_sequence)
+                );
+                CREATE INDEX IF NOT EXISTS idx_bus_routes_stop ON bus_routes(stop_code);
                 """
             )
             self._migrate_columns(connection, "hubs", {
@@ -612,6 +634,84 @@ class HubRepository:
                 data["address"], data["transport_node_name"], nearby_name,
                 nearby_distance))
         return result
+
+    def replace_bus_network(
+        self,
+        stops: Iterable[dict[str, Any]],
+        routes: Iterable[dict[str, Any]],
+        verified_at: str | None = None,
+    ) -> tuple[int, int]:
+        """Swap in a fresh capture of the static bus network.
+
+        Replaced wholesale rather than merged: LTA publishes the network as a
+        complete snapshot, and a retired stop or a rerouted service has to
+        disappear rather than linger. Empty input is refused so that a failed
+        or truncated fetch cannot quietly empty the tables.
+        """
+        stop_records, route_records = list(stops), list(routes)
+        if not stop_records or not route_records:
+            raise ValueError(
+                "Refusing to replace the bus network with an empty capture "
+                f"({len(stop_records)} stops, {len(route_records)} route rows)"
+            )
+        with self._connect() as connection:
+            connection.execute("DELETE FROM bus_routes")
+            connection.execute("DELETE FROM bus_stops")
+            connection.executemany(
+                """
+                INSERT INTO bus_stops(stop_code, road_name, description,
+                    latitude, longitude, last_verified_at)
+                VALUES (:stop_code, :road_name, :description, :latitude,
+                    :longitude, :last_verified_at)
+                """,
+                [{**row, "last_verified_at": verified_at} for row in stop_records],
+            )
+            connection.executemany(
+                """
+                INSERT INTO bus_routes(service_no, direction, stop_sequence,
+                    stop_code, operator, distance_km, weekday_first, weekday_last,
+                    saturday_first, saturday_last, sunday_first, sunday_last,
+                    last_verified_at)
+                VALUES (:service_no, :direction, :stop_sequence, :stop_code,
+                    :operator, :distance_km, :weekday_first, :weekday_last,
+                    :saturday_first, :saturday_last, :sunday_first, :sunday_last,
+                    :last_verified_at)
+                """,
+                [{**row, "last_verified_at": verified_at} for row in route_records],
+            )
+        return len(stop_records), len(route_records)
+
+    def bus_stop(self, stop_code: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(
+                "SELECT stop_code, road_name, description, latitude, longitude"
+                " FROM bus_stops WHERE stop_code=?",
+                (stop_code,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def bus_routes_at_stop(self, stop_code: str) -> list[dict[str, Any]]:
+        """Every service calling here, with its published operating window.
+
+        One row per direction, because a service can pass a stop outbound and
+        not inbound, and the first and last bus differ between them.
+        """
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(
+                "SELECT service_no, direction, operator, weekday_first, weekday_last,"
+                " saturday_first, saturday_last, sunday_first, sunday_last"
+                " FROM bus_routes WHERE stop_code=? ORDER BY service_no, direction",
+                (stop_code,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def bus_network_counts(self) -> tuple[int, int]:
+        with self._connect() as connection:
+            stops = connection.execute("SELECT COUNT(*) FROM bus_stops").fetchone()[0]
+            routes = connection.execute("SELECT COUNT(*) FROM bus_routes").fetchone()[0]
+        return stops, routes
 
     def replace_source_data(
         self, source: str, transport_nodes: Iterable[dict[str, Any]],

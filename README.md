@@ -175,6 +175,20 @@ says when that bus is next due at the stop you board from. Register free at
 under the Singapore Open Data Licence - then set `LTA_ACCOUNT_KEY` and
 `DATAMALL_MOCK=false`.
 
+With the same key you can also ingest the static bus network - every stop, and which
+services call at each of them with their first and last bus:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\ingest_bus_network.py
+```
+
+That is what lets an empty arrivals answer explain itself. LTA's own advisement separates
+"no estimate available" from "not in operation", and only the second is something you can
+act on - without the timetable the app says "no live times" and declines to guess which.
+It also gives the transit graph authoritative identity: OpenStreetMap's bus stops carry no
+stop code, so nothing in the database could be joined to an arrival.
+
 Without a key the app serves deterministic sample times, labelled `sample` on screen so
 they cannot be mistaken for real ones. Times sourced from an operator's timetable rather
 than a bus's position are labelled `timetable`, because LTA reports which it is and the

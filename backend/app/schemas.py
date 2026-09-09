@@ -322,6 +322,15 @@ class BusArrivalsResponse(BaseModel):
     stop_code: str
     checked_at: datetime
     services: list[BusArrivalResponse]
+    # LTA's name for the stop, from the ingested network. Absent until the bus
+    # network has been ingested, which needs an AccountKey.
+    stop_name: str | None = None
+    # Whether the requested service is scheduled to be calling here right now.
+    # None means the timetable is not held, which the client must not render as
+    # "not running" - LTA's advisement separates "No Est. Available" from "Not
+    # In Operation" and that distinction is the whole reason this field exists.
+    in_operation: bool | None = None
+    operating_hours: str | None = None
     # "lta_datamall" or "mock". The client says which out loud, because sample
     # bus times shown as real ones would be the worst kind of wrong here.
     source: str

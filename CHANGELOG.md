@@ -2,6 +2,35 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.8.1 - The static bus network, so an empty answer can explain itself
+
+Added `bus_stops` and `bus_routes` tables, a transform for LTA's BusStops and BusRoutes
+datasets, and `scripts/ingest_bus_network.py` to fetch and store them. The arrivals
+endpoint now reports the stop's LTA name and, for the service being ridden, whether it is
+scheduled to be calling there at all.
+
+That is the difference between "nothing due" and "stopped for the night", which LTA's
+front-end advisement names as separate states and which the arrivals feed alone cannot
+distinguish - it returns no body for either. Where the timetable is not held the answer
+stays `null` rather than `false`, because reporting a service as not running on the
+strength of a missing row would invent the very fact this dataset was added to establish.
+
+Three details cost thought. A last bus after midnight is published as a smaller number
+than the first ("0015" against "0530"), so the window wraps and a naive comparison marks
+the service closed for twenty-three hours a day. `$skip` paging is not documented in
+v6.9, so the fetcher stops when a page repeats rather than trusting a page size - a server
+ignoring the parameter would otherwise return page one until the cap. And an empty capture
+is refused outright: half a bus network is worse than none, because every missing row
+reads as a cancelled service.
+
+The client now sends the service it is riding, which both narrows LTA's answer and is what
+makes the operating-hours lookup possible at all.
+
+Field names are LTA's own, read from the guide rather than from third-party bindings,
+which use different ones. None of this is verified against the live API yet: fetching
+requires an AccountKey, so the tests pin the transform and the storage against the
+documented shapes.
+
 ## 0.8.0 - When the bus is coming, and whether that is a guess
 
 The leg parser was discarding the operator's stop code the same way it had been
