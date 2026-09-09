@@ -1,16 +1,49 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
+
+import { ServiceWorker } from "./ServiceWorker";
+import { THEME_BOOTSTRAP } from "./theme";
 
 export const metadata: Metadata = {
   title: "Along the Way — Singapore errand optimiser",
   description: "Fit one or two errands into a Singapore public-transport journey with less detour.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "Along",
+  appleWebApp: { capable: true, title: "Along", statusBarStyle: "default" },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // The planner is a bottom sheet over a full-bleed map, so the browser chrome
+  // should tint to the page ground rather than to the brand green.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#dfe7e3" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c1211" },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-SG">
-      <body>{children}</body>
+    <html lang="en-SG" suppressHydrationWarning>
+      <head>
+        {/* Stamps data-theme before the first paint. Without a blocking script
+            here the page renders light and then flips, which is worse at night
+            than having no dark mode at all. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
+      <body>
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

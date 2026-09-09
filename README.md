@@ -52,6 +52,9 @@ The core optimiser is deterministic. LLM support is optional and limited to inte
 The September iteration focused on making recommendations more practical and easier to trust:
 
 - **Leave now / Leave later** planning in Singapore time.
+- A headline that reads **extra travel time**, with in-store time disclosed separately.
+- Alternatives offered only when they are a genuine choice, each stating its trade-off.
+- **Dark mode** with an auto/light/dark button that overrides the device scheme, and an **installable, offline-capable** shell.
 - Arrival-aware **opening-hours warnings**, including explicit unknown-hours states.
 - Clear direct-versus-errand journey comparisons.
 - **Cancel and retry** without losing the journey request.
@@ -129,9 +132,9 @@ docs/                  architecture, routing contracts, QA and design notes
 
 The September integration was checked with:
 
-- **206 backend tests passed**
+- **220 backend tests passed**
 - **4 explicitly gated integration tests skipped by default**
-- **32 browser tests passed** across mobile and desktop
+- **80 browser tests passed** across mobile and desktop, in both light and dark schemes
 - frontend ESLint, TypeScript checks and production build passed
 - repository/source credential scan passed
 - six-case offline benchmark and repeatability regression passed
@@ -150,6 +153,18 @@ The offline benchmark is a regression tool, not a claim of real-world recommenda
 
 The project uses a Singapore OpenStreetMap-derived POI capture with source metadata and ODbL attribution, together with a local LTA rail gazetteer and deterministic seed data for repeatable development/testing.
 
+The catalog is a derived database and is **not** committed. A fresh clone starts on the
+30-outlet seed, which is enough to boot but not to judge a recommendation. Build the
+real catalog before evaluating anything:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\ingest_osm_pois.py --input data\singapore-osm-pois.json
+```
+
+That yields 14,777 outlets across 27 categories, 252 malls and 5,978 transport nodes.
+Coverage limits and the licensing boundary are in [`backend/data/README.md`](backend/data/README.md).
+
 See [`backend/data/README.md`](backend/data/README.md) for the data and licensing boundary.
 
 ## Current limitations
@@ -158,6 +173,8 @@ See [`backend/data/README.md`](backend/data/README.md) for the data and licensin
 - No public hosted demo yet.
 - Real routing quality and availability depend on OneMap.
 - Place coverage is not a guaranteed real-time business directory.
+- Opening hours are published for only about 20% of outlets; the rest are shown as unknown rather than guessed.
+- Bus stops come from OpenStreetMap. LTA DataMall is the authoritative source and would additionally supply real-time arrivals, but needs a registered AccountKey.
 - Opening hours, product stock and business availability may be incomplete or unknown.
 - No turn-by-turn navigation; selected stops hand off to an external navigation app.
 - The project is designed for personal/beta-scale use rather than high-traffic production infrastructure.

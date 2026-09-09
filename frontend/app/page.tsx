@@ -7,6 +7,7 @@ import { CatalogCategory, DiscoveryPalette, DiscoverySelection } from "./compone
 import { LocationField, ResolvedLocation } from "./components/LocationField";
 import { deduplicatedAlternatives, RecommendationPanel, type Recommendation, type Result } from "./components/RecommendationPanel";
 import { SpatialMap } from "./components/SpatialMap";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const QUICK_NEEDS = [["fast_food", "Food"], ["coffee", "Coffee"], ["bubble_tea", "Bubble tea"], ["groceries", "Groceries"], ["pharmacy", "Pharmacy"]] as const;
@@ -142,17 +143,17 @@ export default function Home() {
   return <main className={`app-shell ${result ? "has-result" : "input-state"}`}>
     <header className="app-bar">
       <a href="#planner" className="logo" aria-label="Along home"><span aria-hidden="true">A</span><strong>Along</strong></a>
-      <div><span className="beta-label">Singapore beta</span><a className="icon-link" href="/privacy"><Info size={17} aria-hidden="true" /><span>Privacy</span></a></div>
+      <div><span className="beta-label">Singapore beta</span><ThemeToggle /><a className="icon-link" href="/privacy"><Info size={17} aria-hidden="true" /><span>Privacy</span></a></div>
     </header>
 
     <section className="map-area">
       <SpatialMap origin={origin} destination={destination} stops={selected?.stops ?? []} baselineGeometry={result?.baseline.geometry ?? []} routeGeometry={selected?.route_geometry ?? []} activeStop={activeStop} onStopSelect={setActiveStop} />
-      {selected && <div className="map-key" aria-label="Map route key"><span><i className="baseline" />Straight</span><span><i className="recommended" />With stop</span></div>}
+      {selected && <div className="map-key" aria-label="Map route key"><span><i className="baseline" />Direct</span><span><i className="recommended" />With stop</span></div>}
     </section>
 
     <aside ref={plannerRef} className={`planner ${result ? `result-mode sheet-${sheet}` : ""}`} id="planner" aria-label={result ? "Recommendation" : "Plan your journey"}>
       <div className="sheet-handle" aria-hidden="true" />
-      {result && selected && <><div className="sheet-controls" role="group" aria-label="Result sheet size">{([ ["peek", "Map"], ["half", "Summary"], ["full", "Details"] ] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={sheet === value} onClick={() => { setSheet(value); plannerRef.current?.scrollTo({ top: 0 }); }}>{label}</button>)}</div><div className="sheet-peek"><strong>{selected.stops[0]?.display_name ?? "Your journey"}</strong><span>+{Math.round(selected.incremental_detour_minutes)} min including stops</span></div></>}
+      {result && selected && <><div className="sheet-controls" role="group" aria-label="Result sheet size">{([ ["peek", "Map"], ["half", "Summary"], ["full", "Details"] ] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={sheet === value} onClick={() => { setSheet(value); plannerRef.current?.scrollTo({ top: 0 }); }}>{label}</button>)}</div><div className="sheet-peek"><strong>{selected.stops[0]?.display_name ?? "Your journey"}</strong><span>+{Math.round(selected.detour_breakdown.extra_transport_minutes)} min extra travel &middot; +{Math.round(selected.incremental_detour_minutes)} min in total</span></div></>}
       {!result && <form onSubmit={submit}>
         <div className="planner-intro"><span className="intro-eyebrow"><i aria-hidden="true" />Your journey, a little more useful</span><h1>Find what you need <br /><em>along the way.</em></h1><p>One journey. A better way to get things done.</p></div>
         <fieldset className="planner-controls" disabled={loading}>
