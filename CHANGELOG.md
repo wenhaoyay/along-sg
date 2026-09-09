@@ -2,6 +2,35 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.8.0 - When the bus is coming, and whether that is a guess
+
+The leg parser was discarding the operator's stop code the same way it had been
+discarding service names before 0.7.8. OneMap returns `stopCode` on every transit leg,
+and for a bus leg that is the five-digit LTA BusStopCode - so live arrivals join by code
+rather than by name or coordinate, and no matching heuristic is involved.
+
+Added an LTA DataMall provider and a `/api/bus-arrivals` endpoint, so the timeline shows
+when the next buses on that service are due at the stop you board from. Free: DataMall
+allows 10 million calls a day under the Singapore Open Data Licence, which unlike the
+place providers weighed up for opening hours permits storing and serving the data on.
+Without a key the app serves deterministic sample times, labelled as samples, so the
+whole path is developable and testable offline.
+
+Three honesty rules govern it. `Monitored` distinguishes a time derived from the bus's
+position from one read off the operator's timetable, and the second is dimmed and
+labelled rather than shown in the same voice. Arrivals are requested only for a leg
+boarding within the next half hour, because a live time about a bus you will catch in two
+hours is a true number about the wrong bus. And durations round down with anything under
+a minute shown as arriving, per LTA's own front-end advisement.
+
+Crowding is a coloured dot beside the first time rather than a tint on the times
+themselves: LTA permits colouring the timings, but three differently coloured numbers in a
+row with no legend reads as urgency, and amber for 8 min beside red for 16 min looks like
+a claim about lateness. The level is also given in words for a reader who cannot see the
+colour. A stop that answers with nothing says "no live times" without guessing whether
+the service has stopped running - telling those apart needs per-stop operating hours from
+the Bus Routes dataset, which this app does not hold yet.
+
 ## 0.7.11 — Pick your own stop, and say what matters
 
 A compared option is now a recommendation the app did not volunteer, rather than a

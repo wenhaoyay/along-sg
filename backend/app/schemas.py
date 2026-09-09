@@ -90,6 +90,11 @@ class RouteLegResponse(BaseModel):
     route_long_name: str | None = None
     agency: str | None = None
     stop_count: int | None = None
+    # For a bus leg these are LTA five-digit BusStopCodes, which is what makes
+    # live arrivals an exact lookup rather than a name match. A rail leg carries
+    # a station code (NE17) instead, so the client checks the shape.
+    from_stop_code: str | None = None
+    to_stop_code: str | None = None
     segment_index: int | None = None
 
 
@@ -292,6 +297,35 @@ class OptimizeResponse(BaseModel):
     intent: IntentV1 | None = None
     near_misses: list[NearMissResponse] = Field(default_factory=list)
 
+
+
+class ArrivalEstimateResponse(BaseModel):
+    # Whole minutes rounded down, per LTA's front-end advisement: 3:49 is "3",
+    # and anything under a minute is 0, which the client renders as arriving.
+    minutes: int
+    arrival_time: datetime
+    # LTA's Monitored flag. True means the time came from where the bus is;
+    # False means it came from the timetable. Different claims, said apart.
+    live: bool
+    load: Literal["SEA", "SDA", "LSD"] | None = None
+    wheelchair_accessible: bool = False
+    vehicle_type: Literal["SD", "DD", "BD"] | None = None
+
+
+class BusArrivalResponse(BaseModel):
+    service_no: str
+    operator: str | None = None
+    estimates: list[ArrivalEstimateResponse]
+
+
+class BusArrivalsResponse(BaseModel):
+    stop_code: str
+    checked_at: datetime
+    services: list[BusArrivalResponse]
+    # "lta_datamall" or "mock". The client says which out loud, because sample
+    # bus times shown as real ones would be the worst kind of wrong here.
+    source: str
+    attribution: str | None = None
 
 
 class AnalyticsEventType(StrEnum):

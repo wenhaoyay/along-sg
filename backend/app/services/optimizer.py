@@ -11,7 +11,15 @@ from zoneinfo import ZoneInfo
 
 from app.config import DwellTimes, ScoringWeights
 from app.db import HubRepository
-from app.domain import CandidateFallback, Coordinate, Hub, OptimizationPreferences, RouteResult, ScoredCandidate
+from app.domain import (
+    SINGAPORE_TZ,
+    CandidateFallback,
+    Coordinate,
+    Hub,
+    OptimizationPreferences,
+    RouteResult,
+    ScoredCandidate,
+)
 from app.presentation import hub_data_quality
 from app.providers.base import MapProvider, ProviderNoRouteError
 from app.services.candidates import baseline_geometry, normalize_categories, staged_candidate_pipeline
@@ -19,7 +27,6 @@ from app.discovery_models import DiscoverySearchContext
 
 
 logger = logging.getLogger("journey_optimizer")
-SINGAPORE_TZ = ZoneInfo("Asia/Singapore")
 
 
 class RoutingBudgetExceeded(RuntimeError):

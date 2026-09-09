@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 import asyncio
 import hmac
 import logging
@@ -13,6 +15,7 @@ from app.config import Settings
 from app.analytics import AnalyticsRepository
 from app.db import HubRepository
 from app.domain import (
+    SINGAPORE_TZ,
     Coordinate, GeocodeMatch, Hub, RouteLeg, RouteResult, ScoredCandidate, Store,
 )
 from app.discovery_models import (
@@ -33,6 +36,12 @@ from app.providers.base import (
     ProviderTimeoutError,
     ProviderUpstreamError,
 )
+from app.providers.datamall import (
+    ATTRIBUTION as DATAMALL_ATTRIBUTION,
+    BusArrivalProvider,
+    LtaDataMallProvider,
+    MockBusArrivalProvider,
+)
 from app.providers.mock import MockOneMapProvider
 from app.providers.onemap import OneMapProvider
 from app.providers.llm import OpenAIIntentProvider
@@ -40,6 +49,9 @@ from app.providers.place_search import GeoapifyPlaceSearchProvider, TomTomPlaceS
 from app.providers.semantic_expansion import OpenAISemanticExpansionProvider
 from app.providers.web_search import TavilyWebDiscoveryProvider
 from app.schemas import (
+    BusArrivalResponse,
+    BusArrivalsResponse,
+    ArrivalEstimateResponse,
     CoordinateResponse,
     AnalyticsEventRequest,
     AnalyticsEventResponse,
@@ -81,6 +93,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 # httpx's INFO request line includes the full URL. Some upstream APIs require
 # credentials in query parameters, so never allow that logger to emit at INFO.
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+def build_bus_arrival_provider(settings: Settings) -> BusArrivalProvider:
+    """Mock unless a key is present and mock mode is off.
+
+    Deliberately not "live whenever a key exists": switching a demo onto real
+    quota as a side effect of setting an environment variable is the kind of
+    surprise this project avoids. `DATAMALL_MOCK=false` is the explicit opt-in.
+    """
+    if settings.datamall_mock or not settings.lta_account_key:
+        return MockBusArrivalProvider()
+    return LtaDataMallProvider(
+        settings.lta_account_key,
+        timeout_seconds=settings.datamall_timeout_seconds,
+    )
 
 
 def build_provider(settings: Settings) -> MapProvider:
@@ -159,6 +186,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.repository = repository
         app.state.analytics = analytics
         app.state.provider = provider
+        app.state.bus_arrival_provider = build_bus_arrival_provider(app_settings)
         app.state.location_resolver = LocationResolver(repository, provider)
         app.state.need_resolver = NeedResolver(
             repository, live_place_provider,
@@ -241,6 +269,55 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             query=q,
             results=[resolved_location_response(match) for match in matches],
             provider="along-discovery",
+        )
+
+    @app.get("/api/bus-arrivals", response_model=BusArrivalsResponse)
+    async def bus_arrivals(
+        request: Request,
+        stop_code: str = Query(min_length=5, max_length=5, pattern=r"^\d{5}$"),
+        service: str | None = Query(default=None, max_length=8),
+    ):
+        """Live arrivals at one bus stop.
+
+        Five digits exactly, because that is what a BusStopCode is - a rail
+        leg's `NE17` is not a bus stop and must not reach DataMall as one.
+
+        An empty `services` list is a normal answer, not an error: LTA returns
+        no body at all when nothing is running, and a stop with nothing due
+        looks identical. The client says "no live times" rather than inventing
+        a reason, because telling the two apart needs each service's operating
+        hours from the Bus Routes dataset, which this app does not hold yet.
+        """
+        provider: BusArrivalProvider = request.app.state.bus_arrival_provider
+        try:
+            arrivals = await provider.arrivals(stop_code, service)
+        except ProviderError as error:
+            raise provider_http_error(error) from error
+        now = datetime.now(SINGAPORE_TZ)
+        live = not isinstance(provider, MockBusArrivalProvider)
+        return BusArrivalsResponse(
+            stop_code=stop_code,
+            checked_at=now,
+            source="lta_datamall" if live else "mock",
+            attribution=DATAMALL_ATTRIBUTION if live else None,
+            services=[
+                BusArrivalResponse(
+                    service_no=arrival.service_no,
+                    operator=arrival.operator,
+                    estimates=[
+                        ArrivalEstimateResponse(
+                            minutes=estimate.minutes_away(now),
+                            arrival_time=estimate.arrival_time,
+                            live=estimate.live,
+                            load=estimate.load,
+                            wheelchair_accessible=estimate.wheelchair_accessible,
+                            vehicle_type=estimate.vehicle_type,
+                        )
+                        for estimate in arrival.estimates
+                    ],
+                )
+                for arrival in arrivals
+            ],
         )
 
     @app.get("/api/discovery/needs", response_model=NeedDiscoveryResponse)
@@ -784,6 +861,8 @@ def leg_response(leg: RouteLeg) -> RouteLegResponse:
         route_long_name=leg.route_long_name,
         agency=leg.agency,
         stop_count=leg.stop_count,
+        from_stop_code=leg.from_stop_code,
+        to_stop_code=leg.to_stop_code,
         segment_index=leg.segment_index,
     )
 

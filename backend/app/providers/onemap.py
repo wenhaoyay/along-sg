@@ -229,6 +229,8 @@ class OneMapNormalizer:
                         if isinstance(raw_leg.get("intermediateStops"), list)
                         else None
                     ),
+                    from_stop_code=_text(from_place.get("stopCode")),
+                    to_stop_code=_text(to_place.get("stopCode")),
                 )
             )
 

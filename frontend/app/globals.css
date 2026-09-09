@@ -11,8 +11,10 @@
   --surface-soft: #f5f7f6;
   --line: rgba(34, 59, 50, 0.11);
   --warning: #7a4b0d;
+  --warning-wash: #fbf0dc;
   --warning-bg: #fff7e7;
   --danger: #98382f;
+  --danger-wash: #fbe6e3;
   --danger-bg: #fff0ee;
   --panel-shadow: 0 24px 70px rgba(23, 48, 39, 0.18), 0 2px 10px rgba(23, 48, 39, 0.08);
   --control-shadow: 0 8px 24px rgba(23, 48, 39, 0.14);
@@ -73,8 +75,10 @@
   --surface-soft: #1b2422;
   --line: rgba(150, 190, 175, 0.16);
   --warning: #f0c079;
+  --warning-wash: #33280f;
   --warning-bg: #33260f;
   --danger: #f2a49b;
+  --danger-wash: #3a201c;
   --danger-bg: #37201d;
   --panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.4);
   --control-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -1635,6 +1639,77 @@ summary:focus-visible {
 }
 .ride-leg .ride-detail {
   color: var(--muted);
+}
+
+/* Next buses at the stop you board. Load colours follow LTA's own suggested
+ * scheme - seats green, standing amber, limited standing red - so a rider who
+ * knows the convention from other apps reads it without a legend. */
+.next-buses {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.next-buses b {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+}
+/* Crowding, as a dot beside the first time rather than a tint on it. */
+.next-buses b > i {
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  display: inline-block;
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+.next-buses b > i.load-seats {
+  background: var(--green);
+}
+.next-buses b > i.load-standing {
+  background: var(--warning);
+}
+.next-buses b > i.load-full {
+  background: var(--danger);
+}
+/* A timetable figure is not a live one, so it is dimmed and labelled rather
+ * than shown in the same voice. */
+.next-buses.scheduled b {
+  color: var(--muted);
+  background: var(--track);
+}
+.next-buses em {
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.next-buses em.sample {
+  color: var(--warning);
+}
+.next-buses.none {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* Text for a screen reader only. The crowding dot is decoration, so the level
+ * it stands for has to be readable some other way. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 .journey-timeline .stop-summary-row {
   grid-template-columns: 44px minmax(0, 1fr);

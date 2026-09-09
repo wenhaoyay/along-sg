@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   ArrowRight,
   Bus,
@@ -13,6 +14,13 @@ import {
 } from "lucide-react";
 
 import type { ResolvedLocation } from "./LocationField";
+import {
+  boardingIsImminent,
+  isBusStopCode,
+  useBusArrivals,
+  type ArrivalEstimate,
+  type StopArrivals,
+} from "../useBusArrivals";
 
 export type Business = {
   display_name: string;
@@ -79,6 +87,11 @@ export type Leg = {
   route_long_name: string | null;
   agency: string | null;
   stop_count: number | null;
+  from_stop_code: string | null;
+  to_stop_code: string | null;
+  // Needed to decide whether a live arrival is about the bus you will catch.
+  departure_time?: string | null;
+  arrival_time?: string | null;
   segment_index: number | null;
 };
 
@@ -116,6 +129,7 @@ type Props = {
   onComparedHover?: (key: string | null) => void;
   rankBy: RankKey;
   onRankChange: (rank: RankKey) => void;
+  apiBase?: string;
 };
 
 export function RecommendationPanel({
@@ -126,6 +140,7 @@ export function RecommendationPanel({
   onComparedHover,
   rankBy,
   onRankChange,
+  apiBase = "",
   selectedKey,
   onSelect,
   onEdit,
@@ -139,6 +154,21 @@ export function RecommendationPanel({
   // Everything routed, the plan on screen included - the number the ranking
   // note quotes has to be the size of the set being reordered.
   const routedCount = otherOptions.length + compared.length + 1;
+  /* Only the bus legs of the plan on screen, and only while boarding is close
+   * enough for "next in 4 min" to be about the bus you will actually catch. */
+  const arrivalStops = useMemo(() => {
+    const codes = (recommendation.legs ?? [])
+      .filter(
+        (leg) =>
+          !isRail(leg) &&
+          !WALKING_MODES.has(leg.mode.toUpperCase()) &&
+          isBusStopCode(leg.from_stop_code) &&
+          boardingIsImminent(leg.departure_time),
+      )
+      .map((leg) => leg.from_stop_code as string);
+    return Array.from(new Set(codes));
+  }, [recommendation]);
+  const arrivals = useBusArrivals(apiBase, arrivalStops);
 
   return (
     <section className="recommendation" aria-live="polite" data-testid="recommendation-sheet">
@@ -200,7 +230,7 @@ export function RecommendationPanel({
         </p>
         {recommendation.stops.map((stop, stopIndex) => (
           <div key={`segment-${stopIndex}`}>
-            <RideLegs legs={recommendation.legs} segment={stopIndex} />
+            <RideLegs arrivals={arrivals} legs={recommendation.legs} segment={stopIndex} />
             <div
               className={`stop-summary-row ${activeStop === stopIndex ? "selected-stop-card" : ""}`}
             >
@@ -244,7 +274,11 @@ export function RecommendationPanel({
             </div>
           </div>
         ))}
-        <RideLegs legs={recommendation.legs} segment={recommendation.stops.length} />
+        <RideLegs
+          arrivals={arrivals}
+          legs={recommendation.legs}
+          segment={recommendation.stops.length}
+        />
         <p className="timeline-endpoint">
           B · {destinationLabel ?? result.destination.label}
           {recommendation.arrival_time ? ` · Est. ${sgTime(recommendation.arrival_time)}` : ""}
@@ -631,7 +665,15 @@ const WALKING_MODES = new Set(["WALK", "BICYCLE", "SCOOTER"]);
  * `intermediateStops` on every transit leg, and all of it was being discarded
  * - so a plan could say "37 minutes" without ever saying which train or bus to
  * get on, which is the one thing the traveller has to act on. */
-function RideLegs({ legs, segment }: { legs?: Leg[]; segment: number }) {
+function RideLegs({
+  legs,
+  segment,
+  arrivals = {},
+}: {
+  legs?: Leg[];
+  segment: number;
+  arrivals?: Record<string, StopArrivals>;
+}) {
   const rides = (legs ?? []).filter(
     (leg) => leg.segment_index === segment && !WALKING_MODES.has(leg.mode.toUpperCase()),
   );
@@ -647,10 +689,93 @@ function RideLegs({ legs, segment }: { legs?: Leg[]; segment: number }) {
           )}
           <span className="service">{serviceName(leg)}</span>
           <span className="ride-detail">{rideDetail(leg)}</span>
+          <NextBuses leg={leg} arrivals={arrivals} />
         </p>
       ))}
     </>
   );
+}
+
+/* When the next buses on this service are due at the stop you board.
+ *
+ * Renders nothing unless there is something true to say - no skeleton, no
+ * "loading", no dash. A timeline that was complete a moment ago should not
+ * grow a hole while a request is in flight.
+ *
+ * The two states that do appear are deliberately different. A time LTA derived
+ * from the bus's position is stated plainly; a time from the operator's
+ * timetable is marked, because it is a different claim and this app does not
+ * launder one into the other. */
+function NextBuses({ leg, arrivals }: { leg: Leg; arrivals: Record<string, StopArrivals> }) {
+  const code = leg.from_stop_code;
+  if (!isBusStopCode(code)) return null;
+  const stop = arrivals[code];
+  if (!stop) return null;
+  const service = leg.route_short_name?.trim();
+  const match = stop.services.find((item) => item.service_no === service);
+  if (!match?.estimates.length) {
+    // Asked, and answered with nothing. Say so rather than staying silent, but
+    // do not guess why: separating "none due" from "not running" needs the
+    // per-stop operating hours in the Bus Routes dataset, which is not held
+    // here yet.
+    return <span className="next-buses none">No live times</span>;
+  }
+  const shown = match.estimates.slice(0, 3);
+  const scheduled = shown.every((estimate) => !estimate.live);
+  return (
+    <span
+      className={`next-buses${scheduled ? " scheduled" : ""}`}
+      title={
+        scheduled
+          ? "From the operator's timetable, not the bus's position"
+          : `Live, checked ${new Date(stop.checked_at).toLocaleTimeString("en-SG", {
+              hour: "numeric",
+              minute: "2-digit",
+            })}`
+      }
+    >
+      {shown.map((estimate, index) => (
+        <b key={index}>
+          {/* Crowding sits beside the time, never on it. LTA sanctions
+              colouring the timings themselves, but three differently coloured
+              numbers in a row and no legend reads as urgency - amber for 8 min
+              and red for 16 min looks like a claim about lateness. Only the bus
+              you would actually catch carries the dot. */}
+          {index === 0 && estimate.load && (
+            <i className={loadClass(estimate.load)} aria-hidden="true" />
+          )}
+          {arrivalText(estimate)}
+          {index === 0 && estimate.load && (
+            <span className="sr-only">{`, ${loadLabel(estimate.load)}`}</span>
+          )}
+        </b>
+      ))}
+      {scheduled && <em>timetable</em>}
+      {stop.source === "mock" && <em className="sample">sample</em>}
+    </span>
+  );
+}
+
+/** LTA's advisement is explicit: round down, and under a minute is arriving
+ *  rather than "0 min". */
+function arrivalText(estimate: ArrivalEstimate) {
+  return estimate.minutes <= 0 ? "Arr" : `${estimate.minutes} min`;
+}
+
+/** LTA's suggested scheme: seats green, standing amber, limited standing red. */
+function loadClass(load: ArrivalEstimate["load"]) {
+  if (load === "SEA") return "load-seats";
+  if (load === "SDA") return "load-standing";
+  if (load === "LSD") return "load-full";
+  return "";
+}
+
+/** The colour is decoration; this is the actual information. */
+function loadLabel(load: ArrivalEstimate["load"]) {
+  if (load === "SEA") return "seats available";
+  if (load === "SDA") return "standing room";
+  if (load === "LSD") return "very full";
+  return "";
 }
 
 const RAIL_MODES = new Set(["SUBWAY", "RAIL", "TRAM", "METRO", "TRAIN", "LIGHT_RAIL", "FUNICULAR"]);

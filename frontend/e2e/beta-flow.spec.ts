@@ -1238,3 +1238,184 @@ test("an alternative that differs only in dwell does not claim less travel", asy
   await expect(list).toContainText("Easier option");
   expect((await list.allTextContents()).join(" ")).not.toMatch(/less travel/i);
 });
+
+/* Idea 1: OneMap already hands back the operator's own stopCode on every
+ * transit leg, and for a bus leg that is the five-digit LTA BusStopCode - so
+ * arrivals join by code rather than by name. Codes were being discarded by the
+ * leg parser, the same way the service names were before 0.7.8. */
+const minutesFromNow = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
+
+const busResult = {
+  ...result,
+  recommendations: {
+    best_overall: {
+      ...recommendation,
+      legs: [
+        {
+          ...recommendation.legs[0],
+          segment_index: 0,
+          departure_time: minutesFromNow(0),
+        },
+        {
+          mode: "BUS",
+          duration_minutes: 9,
+          distance_m: 3100,
+          from_name: "CHOA CHU KANG AVE 4",
+          to_name: "LOT ONE",
+          route_short_name: "190",
+          route_long_name: "SBST BUS 190",
+          agency: "SBS Transit",
+          stop_count: 3,
+          from_stop_code: "44009",
+          to_stop_code: "44069",
+          // Boarding in four minutes: a live time here is about the bus you
+          // will actually catch.
+          departure_time: minutesFromNow(4),
+          segment_index: 0,
+        },
+        {
+          mode: "BUS",
+          duration_minutes: 12,
+          distance_m: 4200,
+          from_name: "LOT ONE",
+          to_name: "FAJAR LRT",
+          route_short_name: "975",
+          route_long_name: "SBST BUS 975",
+          agency: "SBS Transit",
+          stop_count: 5,
+          from_stop_code: "44331",
+          to_stop_code: "44401",
+          // Boarding in an hour and a half. "Next in 4 min" would be true,
+          // current, and about a different bus.
+          departure_time: minutesFromNow(95),
+          segment_index: 1,
+        },
+      ],
+    },
+  },
+};
+
+const arrivalsFor = (stopCode: string, source = "mock") => ({
+  stop_code: stopCode,
+  checked_at: new Date().toISOString(),
+  source,
+  attribution: source === "mock" ? null : "Bus arrival data (c) Land Transport Authority",
+  services: [
+    {
+      service_no: "190",
+      operator: "SBS Transit",
+      estimates: [
+        {
+          minutes: 3,
+          arrival_time: minutesFromNow(3),
+          live: true,
+          load: "SDA",
+          wheelchair_accessible: true,
+          vehicle_type: "SD",
+        },
+        {
+          minutes: 11,
+          arrival_time: minutesFromNow(11),
+          live: true,
+          load: "SEA",
+          wheelchair_accessible: false,
+          vehicle_type: "DD",
+        },
+      ],
+    },
+  ],
+});
+
+async function busJourney(page: Page, arrivalBody: unknown, statusCode = 200) {
+  await commonRoutes(page);
+  const seen: string[] = [];
+  await page.route("**/api/bus-arrivals**", (route) => {
+    seen.push(new URL(route.request().url()).searchParams.get("stop_code") ?? "");
+    return route.fulfill({
+      status: statusCode,
+      contentType: "application/json",
+      body: JSON.stringify(arrivalBody),
+    });
+  });
+  await page.route("**/api/intent/parse", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "resolved",
+        intent,
+        diagnostics: {},
+        journey_mentions: [],
+        journey_conflicts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/optimize-intent", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(busResult),
+    }),
+  );
+  await page.goto("/");
+  await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+  await page.waitForTimeout(1200);
+  return seen;
+}
+
+test("the bus you are about to board shows when it is next due", async ({ page }) => {
+  await busJourney(page, arrivalsFor("44009"));
+  const arrivals = page.locator(".next-buses").first();
+  await expect(arrivals).toContainText("3 min");
+  await expect(arrivals).toContainText("11 min");
+  // Crowding is a dot beside the first time, described in words for a reader
+  // who cannot see the colour.
+  await expect(arrivals.locator("b").first().locator("i.load-standing")).toHaveCount(1);
+  await expect(arrivals).toContainText("standing room");
+});
+
+test("arrivals are only fetched for a boarding that is close", async ({ page }) => {
+  /* The second bus leg boards in 95 minutes. A live arrival for it would be a
+   * real number about a bus the traveller will not be on, which is worse than
+   * no number at all. */
+  const seen = await busJourney(page, arrivalsFor("44009"));
+  /* Which stops, not how many calls: the suite runs against `next dev` with
+   * reactStrictMode on, so React deliberately double-invokes the effect and a
+   * count would be asserting React's development behaviour. The production
+   * build issues one request per stop. */
+  expect(new Set(seen)).toEqual(new Set(["44009"]));
+  expect(seen).not.toContain("44331");
+  await expect(page.locator(".next-buses")).toHaveCount(1);
+});
+
+test("a timetable estimate is not shown in the same voice as a live one", async ({ page }) => {
+  const scheduled = arrivalsFor("44009");
+  scheduled.services[0].estimates = scheduled.services[0].estimates.map((estimate) => ({
+    ...estimate,
+    live: false,
+  }));
+  await busJourney(page, scheduled);
+  const arrivals = page.locator(".next-buses").first();
+  await expect(arrivals).toHaveClass(/scheduled/);
+  await expect(arrivals).toContainText("timetable");
+});
+
+test("sample bus times say they are samples", async ({ page }) => {
+  await busJourney(page, arrivalsFor("44009", "mock"));
+  await expect(page.locator(".next-buses em.sample")).toHaveCount(1);
+  await busJourney(page, arrivalsFor("44009", "lta_datamall"));
+  await expect(page.locator(".next-buses em.sample")).toHaveCount(0);
+});
+
+test("a stop with nothing due says so, and one that errors stays quiet", async ({ page }) => {
+  await busJourney(page, { ...arrivalsFor("44009"), services: [] });
+  await expect(page.locator(".next-buses.none")).toContainText("No live times");
+  // A failed request must leave the plan intact rather than showing an error
+  // where a bus time would go: the timeline was complete without it.
+  await busJourney(page, { detail: "upstream down" }, 502);
+  await expect(page.locator(".next-buses")).toHaveCount(0);
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+});
