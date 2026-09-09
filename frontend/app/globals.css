@@ -45,6 +45,8 @@
   --marker-bg: #34443e;
   --marker-dest: #202d29;
   --marker-ring: #fff;
+  --marker-considered: #94a8a0;
+  --marker-considered-ring: #f3f7f5;
   --selected-outline: #ffdc83;
   --tile-filter: none;
 }
@@ -101,6 +103,8 @@
   --marker-bg: #cdd9d4;
   --marker-dest: #e8efec;
   --marker-ring: #131a18;
+  --marker-considered: #5d6f68;
+  --marker-considered-ring: #1b2422;
   --selected-outline: #ffcf5c;
   --tile-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
 }
@@ -1320,6 +1324,50 @@ summary:focus-visible {
   font-size: 11px;
   white-space: nowrap;
 }
+/* Deliberately quieter than .alternative-list, and rows rather than buttons:
+ * these places were compared and rejected, so they must not look pressable. */
+.considered-list {
+  margin: 0;
+  padding: 0 0 5px;
+  display: grid;
+  gap: 3px;
+  list-style: none;
+}
+.considered-list li {
+  padding: 7px 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  border-radius: 9px;
+  transition: background 0.16s ease;
+}
+.considered-list li:hover {
+  background: var(--surface-soft);
+}
+.considered-list strong,
+.considered-list small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.considered-list strong {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+.considered-list small {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.considered-list b {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
 .empty-result > span {
   color: var(--green);
   font-size: 10px;
@@ -1366,7 +1414,16 @@ summary:focus-visible {
   border-top-style: dashed;
   opacity: 0.68;
 }
+.map-key i.considered {
+  width: 9px;
+  height: 9px;
+  background: var(--marker-considered);
+  border: 2px solid var(--marker-considered-ring);
+  border-radius: 50%;
+}
 .along-marker {
+  display: grid;
+  place-items: center;
   background: transparent;
   border: 0;
 }
@@ -1395,6 +1452,32 @@ summary:focus-visible {
 .along-marker.destination span {
   background: var(--marker-dest);
   border-radius: 8px;
+}
+/* A compared place is evidence, not an offer: small, muted and unlabelled, so
+ * it reads as "we looked here too" without competing with the numbered plan.
+ * The whole point of #9 was that the map showed one line and asked to be
+ * trusted; these are what it was trusted about. */
+.along-marker.considered span {
+  width: 15px;
+  height: 15px;
+  border-width: 2px;
+  background: var(--marker-considered);
+  border-color: var(--marker-considered-ring);
+  box-shadow: 0 2px 7px rgba(21, 44, 36, 0.22);
+}
+/* Ringed rather than filled: a solid green disc reads as another numbered stop,
+ * and a compared place is precisely not one. */
+.along-marker.considered.highlighted span {
+  background: var(--marker-ring);
+  border-color: var(--green);
+  border-width: 3px;
+  box-shadow:
+    0 0 0 4px rgba(8, 122, 95, 0.16),
+    0 4px 12px rgba(21, 44, 36, 0.28);
+  transform: translate(var(--fan-x, 0px), var(--fan-y, 0px)) scale(1.4);
+}
+.along-marker.considered.highlighted {
+  z-index: 900 !important;
 }
 .leaflet-control-zoom {
   margin-right: 18px !important;

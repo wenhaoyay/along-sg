@@ -40,6 +40,7 @@ from app.providers.place_search import GeoapifyPlaceSearchProvider, TomTomPlaceS
 from app.providers.semantic_expansion import OpenAISemanticExpansionProvider
 from app.providers.web_search import TavilyWebDiscoveryProvider
 from app.schemas import (
+    ConsideredOptionResponse,
     CoordinateResponse,
     AnalyticsEventRequest,
     AnalyticsEventResponse,
@@ -310,7 +311,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             origin = await resolve_location(request.app.state.location_resolver, payload.origin)
             destination = await resolve_location(request.app.state.location_resolver, payload.destination)
-            baseline, recommendations, diagnostics = await optimizer.optimize(
+            baseline, recommendations, diagnostics, considered = await optimizer.optimize(
                 origin.coordinate,
                 destination.coordinate,
                 payload.errands,
@@ -336,6 +337,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
                 for key, candidate in recommendations.items()
             },
+            considered=[considered_response(candidate) for candidate in considered],
             diagnostics=diagnostics,
             outcome=str(diagnostics["outcome"]),
             message=(
@@ -514,7 +516,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 request.app.state.need_resolver, canonical, payload.confirmed_discovery_places,
                 route_context,
             )
-            baseline, recommendations, diagnostics, optimized_categories = (
+            baseline, recommendations, diagnostics, optimized_categories, considered = (
                 await asyncio.wait_for(optimize_intent(
                     optimizer,
                     origin.coordinate,
@@ -557,6 +559,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
                 for key, candidate in recommendations.items()
             },
+            considered=[considered_response(candidate) for candidate in considered],
             diagnostics=diagnostics,
             outcome=str(diagnostics["outcome"]),
             message=(
@@ -788,6 +791,32 @@ def route_geometry_response(route: RouteResult) -> list[CoordinateResponse]:
         if leg.geometry and leg.geometry_format in {None, "encoded_polyline"}:
             points.extend(decode_polyline(leg.geometry))
     return [CoordinateResponse(latitude=point.latitude, longitude=point.longitude) for point in points]
+
+
+def considered_response(candidate: ScoredCandidate) -> ConsideredOptionResponse:
+    """A routed candidate that lost, reported at its primary stop.
+
+    One marker per option rather than one per stop: a two-stop option is a
+    single decision, and plotting both halves of a rejected pair would imply the
+    map is offering them separately. The stop count says what was involved.
+    """
+    stops = candidate.ordered_stops
+    primary = stops[0]
+    return ConsideredOptionResponse(
+        display_name=" + ".join(hub_display_name(hub) for hub in stops),
+        coordinate=CoordinateResponse(
+            latitude=primary.coordinate.latitude,
+            longitude=primary.coordinate.longitude,
+        ),
+        stop_count=len(stops),
+        extra_transport_minutes=max(
+            0.0, candidate.incremental_detour_minutes - candidate.total_route.dwell_minutes
+        ),
+        incremental_detour_minutes=candidate.incremental_detour_minutes,
+        incremental_walking_distance_m=candidate.incremental_walking_distance_m,
+        incremental_transfers=candidate.incremental_transfers,
+        consolidated=candidate.option.consolidated,
+    )
 
 
 def recommendation_response(

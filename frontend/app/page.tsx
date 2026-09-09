@@ -95,6 +95,8 @@ export default function Home() {
   const [leaveAt, setLeaveAt] = useState("");
   const [cancelled, setCancelled] = useState(false);
   const [activeStop, setActiveStop] = useState<number | null>(null);
+  // Which compared place the pointer is over, so its map marker can lift.
+  const [activeConsidered, setActiveConsidered] = useState<string | null>(null);
   const searchRef = useRef<AbortController | null>(null);
   const [loadingSlow, setLoadingSlow] = useState(false);
   const [searchStage, setSearchStage] = useState<"discovery" | "routing">("discovery");
@@ -329,6 +331,49 @@ export default function Home() {
     () => deduplicatedAlternatives(result?.recommendations ?? {}),
     [result],
   );
+  /* Every routed place that is not the plan on screen, as one set.
+   *
+   * The map's job here is to show the comparison that was made, and from the
+   * map's point of view an offered alternative and a rejected candidate are the
+   * same thing: somewhere that was routed and is not where you are being sent.
+   * Which of them you can still choose is a question the panel answers. Before
+   * this, the map drew the winner alone - a single line and two markers over
+   * most of a 1440px viewport - so the one thing this app does that a nearest-
+   * shop search cannot was the one thing it never showed. */
+  /* Ordered by the figure the row actually shows.
+   *
+   * The backend returns them in ranking order, which weights walking and
+   * transfers as well as time, so a list labelled only with added minutes read
+   * 7, 7, 6, 9, 11 - which looks like a bug rather than a ranking the reader
+   * cannot see. */
+  const consideredSorted = useMemo(
+    () =>
+      [...(result?.considered ?? [])].sort(
+        (first, second) => first.extra_transport_minutes - second.extra_transport_minutes,
+      ),
+    [result],
+  );
+  const comparedPoints = useMemo(
+    () => [
+      ...alternatives
+        .filter(([key]) => key !== selectedKey)
+        .flatMap(([key, item]) =>
+          item.stops.map((stop, index) => ({
+            key: `alt:${key}:${index}`,
+            display_name: stop.display_name,
+            coordinate: stop.coordinate,
+            extra_transport_minutes: item.detour_breakdown.extra_transport_minutes,
+          })),
+        ),
+      ...consideredSorted.map((option, index) => ({
+        key: `cmp:${index}`,
+        display_name: option.display_name,
+        coordinate: option.coordinate,
+        extra_transport_minutes: option.extra_transport_minutes,
+      })),
+    ],
+    [alternatives, selectedKey, consideredSorted],
+  );
 
   return (
     <main className={`app-shell ${result ? "has-result" : "input-state"}`}>
@@ -352,9 +397,11 @@ export default function Home() {
           origin={origin}
           destination={destination}
           stops={selected?.stops ?? []}
+          considered={comparedPoints}
           baselineGeometry={result?.baseline.geometry ?? []}
           routeGeometry={selected?.route_geometry ?? []}
           activeStop={activeStop}
+          activeConsidered={activeConsidered}
           onStopSelect={setActiveStop}
         />
         {selected && (
@@ -367,6 +414,12 @@ export default function Home() {
               <i className="recommended" />
               With stop
             </span>
+            {comparedPoints.length > 0 && (
+              <span>
+                <i className="considered" />
+                Compared
+              </span>
+            )}
           </div>
         )}
       </section>
@@ -745,6 +798,8 @@ export default function Home() {
             recommendation={selected}
             result={result}
             alternatives={alternatives}
+            considered={consideredSorted}
+            onConsideredHover={setActiveConsidered}
             selectedKey={selectedKey}
             onSelect={(key) => {
               setSelectedKey(key);

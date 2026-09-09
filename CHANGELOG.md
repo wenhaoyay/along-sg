@@ -2,6 +2,24 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.7.10 — The map shows the comparison it made
+
+`optimize` routed several candidates and returned only the winners, so a live
+Punggol-Orchard run generated 465 candidates, routed 6 and drew 1 marker across most
+of a 1440px viewport. The routed-but-rejected candidates are now returned alongside the
+recommendations, deduplicated by stop set because a two-stop option is evaluated once per
+permutation, and capped at six. The map draws every routed place that is not the plan on
+screen - offered alternatives included, since from the map's point of view an alternative
+and a rejected candidate are the same thing - and a panel section states what each would
+have cost, ordered by the figure it displays and summarised so that six options within a
+minute of each other reads as the near-tie it is. Pointing at a row lifts its marker.
+
+Compared options report extra travel rather than total added time, so the number sits
+beside the recommendation headline and means the same thing. Fixing that exposed the same
+confusion in the alternatives trade-off copy, which compared total added time while
+labelling it travel: a live run offered ION Orchard as "15 min less travel" when its
+travel differed by 0.15 min and the whole fifteen minutes was one fewer shop to stand in.
+
 ## 0.7.9 — Prettier and an enforced line length
 
 Adopted Prettier for the frontend at `printWidth: 100`, matching the backend's ruff

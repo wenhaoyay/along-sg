@@ -122,7 +122,7 @@ async def run(output: Path) -> dict:
                 continue
             intent = IntentV1(original_text=query, required_errands=errands)
             hubs = await discovery_hubs_for_intent(resolver, intent, [], context)
-            baseline, recommendations, diagnostics, categories = await optimize_intent(
+            baseline, recommendations, diagnostics, categories, _ = await optimize_intent(
                 optimizer, ORIGIN, DESTINATION, intent, departure, hubs,
                 routing_call_offset=baseline_calls,
             )

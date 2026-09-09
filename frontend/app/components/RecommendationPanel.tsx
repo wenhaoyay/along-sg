@@ -78,6 +78,17 @@ export type Leg = {
   segment_index: number | null;
 };
 
+export type ConsideredOption = {
+  display_name: string;
+  coordinate: { latitude: number; longitude: number };
+  stop_count: number;
+  extra_transport_minutes: number;
+  incremental_detour_minutes: number;
+  incremental_walking_distance_m: number;
+  incremental_transfers: number;
+  consolidated: boolean;
+};
+
 export type Result = {
   origin: ResolvedLocation;
   destination: ResolvedLocation;
@@ -88,6 +99,7 @@ export type Result = {
     geometry: Array<{ latitude: number; longitude: number }>;
   };
   recommendations: Record<string, Recommendation>;
+  considered?: ConsideredOption[];
   outcome: string;
   message: string | null;
 };
@@ -106,12 +118,16 @@ type Props = {
    * The client already resolved a real name for each endpoint; prefer it. */
   originLabel?: string;
   destinationLabel?: string;
+  considered?: ConsideredOption[];
+  onConsideredHover?: (key: string | null) => void;
 };
 
 export function RecommendationPanel({
   recommendation,
   result,
   alternatives,
+  considered = [],
+  onConsideredHover,
   selectedKey,
   onSelect,
   onEdit,
@@ -308,7 +324,15 @@ export function RecommendationPanel({
           </summary>
           <div className="alternative-list">
             {otherOptions.map(([key, item]) => (
-              <button type="button" onClick={() => onSelect(key)} key={key}>
+              <button
+                type="button"
+                onClick={() => onSelect(key)}
+                onMouseEnter={() => onConsideredHover?.(`alt:${key}:0`)}
+                onFocus={() => onConsideredHover?.(`alt:${key}:0`)}
+                onMouseLeave={() => onConsideredHover?.(null)}
+                onBlur={() => onConsideredHover?.(null)}
+                key={key}
+              >
                 <span>
                   <strong>{alternativeLabel(key, item)}</strong>
                   <small>{item.stops.map((stop) => stop.display_name).join(" then ")}</small>
@@ -325,8 +349,86 @@ export function RecommendationPanel({
           </div>
         </details>
       )}
+
+      {considered.length > 0 && (
+        <details className="result-disclosure considered-disclosure">
+          <summary>
+            <span>
+              Also compared <small>{considered.length}</small>
+            </span>
+            <ChevronDown size={18} aria-hidden="true" />
+          </summary>
+          {/* Rows are plain text, not buttons: these are not offers, and
+              nothing here is selectable. The marker highlight is a pointer-only
+              enhancement, so it may carry no information the row does not
+              already state. */}
+          <ul className="considered-list" onMouseLeave={() => onConsideredHover?.(null)}>
+            {considered.map((option, index) => (
+              <li
+                key={`${option.display_name}-${index}`}
+                onMouseEnter={() => onConsideredHover?.(`cmp:${index}`)}
+              >
+                <span>
+                  <strong>{option.display_name}</strong>
+                  <small>{comparedDetail(option, recommendation)}</small>
+                </span>
+                <b>+{Math.round(option.extra_transport_minutes)} min</b>
+              </li>
+            ))}
+          </ul>
+          <p className="precision-note">
+            <Clock3 size={13} aria-hidden="true" />
+            {comparedSummary(considered, recommendation, otherOptions)}
+          </p>
+        </details>
+      )}
     </section>
   );
+}
+
+/** Why a compared place is not the plan, in the figures the ranking used.
+ *
+ * Below a minute there is no honest difference to report, and inventing one
+ * ("slightly slower") would misrepresent a tie as a decision. */
+function comparedDetail(option: ConsideredOption, chosen: Recommendation) {
+  const slower = option.extra_transport_minutes - chosen.detour_breakdown.extra_transport_minutes;
+  const further = option.incremental_walking_distance_m - chosen.incremental_walking_distance_m;
+  const transfers = option.incremental_transfers - chosen.incremental_transfers;
+  const parts: string[] = [];
+  if (transfers > 0) parts.push(`${transfers} more transfer${transfers > 1 ? "s" : ""}`);
+  if (slower >= 1) parts.push(`${Math.round(slower)} min more travel`);
+  if (further >= 100) parts.push(`${Math.round(further)} m more walking`);
+  if (parts.length) return parts.join(", ");
+  if (option.stop_count > chosen.stops.length) return "Needs an extra stop";
+  return "Within a minute of the plan above";
+}
+
+/** The comparison is only evidence if its shape is stated. Five places within
+ *  half a minute of each other is a different fact from one clear winner, and
+ *  the reader cannot tell which from a list of rounded numbers. */
+function comparedSummary(
+  considered: ConsideredOption[],
+  chosen: Recommendation,
+  otherOptions: Array<[string, Recommendation]>,
+) {
+  // Everything routed, not just the rejected half: the offered alternatives
+  // were compared too, and counting only what is in this list would understate
+  // the work by exactly the number of options the panel is already showing.
+  const total = considered.length + otherOptions.length + 1;
+  const spread = Math.max(
+    ...considered.map(
+      (option) => option.extra_transport_minutes - chosen.detour_breakdown.extra_transport_minutes,
+    ),
+    ...otherOptions.map(
+      ([, item]) =>
+        item.detour_breakdown.extra_transport_minutes -
+        chosen.detour_breakdown.extra_transport_minutes,
+    ),
+    0,
+  );
+  if (spread < 1)
+    return `All ${total} routed options landed within a minute of each other, so this pick is close to a tie.`;
+  return `${total} options were routed and compared; the rest cost up to ${Math.round(spread)} min more travel.`;
 }
 
 export function deduplicatedAlternatives(
@@ -372,7 +474,15 @@ export function tradeoffCopy(item: Recommendation, selected: Recommendation): st
   // A partial option covers fewer errands, so "20 min less travel" would read
   // as strictly better when it is simply doing less. Its label says so instead.
   if (item.match_classification === "partial_option") return null;
-  const minutes = item.incremental_detour_minutes - selected.incremental_detour_minutes;
+  // Extra travel, not total added time - the same figure the row displays and
+  // the headline leads with. Comparing total added time here called a dwell
+  // difference "less travel": a live run offered ION Orchard as "15 min less
+  // travel" when its travel differed by 0.15 min and the whole 15 minutes was
+  // one fewer shop to stand in. That is the mislabelling 0.7.7 removed from the
+  // headline, left behind in the alternatives.
+  const minutes =
+    item.detour_breakdown.extra_transport_minutes -
+    selected.detour_breakdown.extra_transport_minutes;
   const metres = item.incremental_walking_distance_m - selected.incremental_walking_distance_m;
   const transfers = item.incremental_transfers - selected.incremental_transfers;
   const gains: string[] = [];

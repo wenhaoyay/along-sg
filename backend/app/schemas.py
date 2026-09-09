@@ -243,6 +243,26 @@ class NearMissResponse(BaseModel):
     explanation: str
 
 
+class ConsideredOptionResponse(BaseModel):
+    """A candidate that was genuinely routed and lost.
+
+    Every figure here is the one the ranking used, so the map and the panel can
+    state what an option would have cost without recomputing anything.
+    """
+
+    display_name: str
+    coordinate: CoordinateResponse
+    stop_count: int
+    # The same figure the recommendation headline leads with, so the two are
+    # actually comparable. Total added time is dominated by dwell, which is near
+    # constant across options - see 0.7.7.
+    extra_transport_minutes: float
+    incremental_detour_minutes: float
+    incremental_walking_distance_m: float
+    incremental_transfers: int
+    consolidated: bool = False
+
+
 class DiagnosticsResponse(BaseModel):
     generated_candidate_count: int
     pruned_candidate_count: int
@@ -285,6 +305,7 @@ class OptimizeResponse(BaseModel):
     data_attribution: str = "POI data © OpenStreetMap contributors, ODbL 1.0"
     intent: IntentV1 | None = None
     near_misses: list[NearMissResponse] = Field(default_factory=list)
+    considered: list[ConsideredOptionResponse] = Field(default_factory=list)
 
 
 class AnalyticsEventType(StrEnum):

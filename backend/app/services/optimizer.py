@@ -159,6 +159,11 @@ def rank_recommendations(
 
 # A different mall is a different answer only if the journey it produces differs
 # by something a traveller would notice. Below these, it is noise.
+# How many also-compared candidates are worth reporting. Enough to make the
+# comparison legible on the map; beyond this the markers stop being readable and
+# start being noise.
+MAX_CONSIDERED_REPORTED = 6
+
 INDISTINGUISHABLE_DETOUR_MINUTES = 2.0
 INDISTINGUISHABLE_WALKING_METRES = 100.0
 
@@ -276,7 +281,12 @@ class Optimizer:
         routing_call_offset: int = 0,
         fallbacks: tuple[CandidateFallback, ...] = (),
         extra_hubs: tuple[Hub, ...] = (),
-    ) -> tuple[RouteResult, dict[str, ScoredCandidate], dict[str, float | int | bool | str | None]]:
+    ) -> tuple[
+        RouteResult,
+        dict[str, ScoredCandidate],
+        dict[str, float | int | bool | str | None],
+        tuple[ScoredCandidate, ...],
+    ]:
         started = time.perf_counter()
         routing_calls = 0
         cache_hits = 0
@@ -592,6 +602,34 @@ class Optimizer:
                 seen_stops.add(signature)
             if len(recommendations) >= 5:
                 break
+
+        # The comparison the optimiser performs is this product's whole claim,
+        # and until now it ended in the bin: every candidate that was actually
+        # routed but did not become a recommendation was dropped right here. So
+        # the map drew one line and asked to be trusted. Keeping them lets it
+        # say which places were compared and what each would have cost.
+        #
+        # Keyed on the set of stops rather than their order, because a two-stop
+        # option is evaluated once per permutation and those are the same
+        # buildings twice over.
+        recommended_stop_sets = {
+            frozenset(stop.id for stop in item.ordered_stops)
+            for item in recommendations.values()
+        }
+        by_stop_set: dict[frozenset[int], ScoredCandidate] = {}
+        for item in sorted(
+            evaluated,
+            key=lambda candidate: (
+                candidate.overall_score,
+                candidate.incremental_detour_minutes,
+            ),
+        ):
+            stop_set = frozenset(stop.id for stop in item.ordered_stops)
+            if stop_set in recommended_stop_sets or stop_set in by_stop_set:
+                continue
+            by_stop_set[stop_set] = item
+        considered = tuple(by_stop_set.values())[:MAX_CONSIDERED_REPORTED]
+
         if accepted_full:
             outcome = "best_available" if all(item.match_classification == "best_available" for item in accepted_full) else "ok"
         elif full:
@@ -653,4 +691,4 @@ class Optimizer:
             latency_ms,
             hard_budget_reached,
         )
-        return baseline, recommendations, diagnostics
+        return baseline, recommendations, diagnostics, considered

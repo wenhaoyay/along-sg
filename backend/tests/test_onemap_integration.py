@@ -84,7 +84,7 @@ async def test_live_one_and_two_errand_optimizations(tmp_path: Path) -> None:
     departure = datetime.now(ZoneInfo("Asia/Singapore"))
     try:
         for errands in (["parcel"], ["groceries", "pharmacy"]):
-            baseline, recommendations, diagnostics = await optimizer.optimize(
+            baseline, recommendations, diagnostics, _ = await optimizer.optimize(
                 Coordinate(1.4052, 103.9024),
                 Coordinate(1.3043, 103.8322),
                 list(errands),

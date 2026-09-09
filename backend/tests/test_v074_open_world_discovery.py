@@ -334,7 +334,7 @@ async def test_two_open_needs_reach_bounded_optimizer(tmp_path: Path) -> None:
     )
     hubs = await discovery_hubs_for_intent(resolver, intent, [], DiscoverySearchContext())
     optimizer = Optimizer(MockOneMapProvider(), repo, Settings().scoring, 4, 12)
-    _, recommendations, diagnostics, categories = await optimize_intent(
+    _, recommendations, diagnostics, categories, _considered = await optimize_intent(
         optimizer, Coordinate(1.3828, 103.7624), Coordinate(1.3043, 103.8322), intent, None, hubs,
     )
     assert categories == [open_category("meepok"), open_category("panadol", 1)]

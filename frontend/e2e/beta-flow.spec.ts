@@ -1016,3 +1016,155 @@ test("markers that would overlap are fanned apart", async ({ page }) => {
     }
   expect(Math.min(...gaps)).toBeGreaterThan(20);
 });
+
+/* Finding #9: the map drew the winner alone - one line and two markers across
+ * most of a 1440px viewport - while the optimiser had routed and rejected
+ * several other places. A live Punggol->Orchard run generated 465 candidates,
+ * routed 6 and showed 1. */
+const comparedResult = {
+  ...result,
+  recommendations: { best_overall: recommendation, least_walking: walkingAlternative },
+  considered: [
+    {
+      display_name: "Yew Tee Point",
+      coordinate: { latitude: 1.3974, longitude: 103.747 },
+      stop_count: 1,
+      extra_transport_minutes: 14,
+      incremental_detour_minutes: 37,
+      incremental_walking_distance_m: 240,
+      incremental_transfers: 1,
+      consolidated: false,
+    },
+    {
+      display_name: "Bukit Panjang Plaza",
+      coordinate: { latitude: 1.3796, longitude: 103.7638 },
+      stop_count: 1,
+      extra_transport_minutes: 9,
+      incremental_detour_minutes: 32,
+      incremental_walking_distance_m: 200,
+      incremental_transfers: 0,
+      consolidated: false,
+    },
+  ],
+};
+
+async function comparedJourney(page: Page) {
+  await commonRoutes(page);
+  await page.route("**/api/intent/parse", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "resolved",
+        intent,
+        diagnostics: {},
+        journey_mentions: [],
+        journey_conflicts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/optimize-intent", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(comparedResult),
+    }),
+  );
+  await page.goto("/");
+  await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+  await page.waitForTimeout(1200);
+}
+
+test("the map shows every routed place that is not the plan", async ({ page }) => {
+  await comparedJourney(page);
+  // One offered alternative plus two rejected candidates. Without this the map
+  // carried the winning stop and nothing else.
+  await expect(page.locator(".along-marker.considered")).toHaveCount(3);
+  await expect(page.locator(".map-key")).toContainText("Compared");
+});
+
+test("the compared list states its cost and is ordered by it", async ({ page }) => {
+  await comparedJourney(page);
+  await page.getByText(/^Also compared/).click();
+  const rows = page.locator(".considered-list li");
+  await expect(rows).toHaveCount(2);
+  // Sorted by the figure the row displays, not by the ranking score behind it.
+  await expect(rows.first()).toContainText("Bukit Panjang Plaza");
+  await expect(rows.first()).toContainText("+9 min");
+  await expect(rows.last()).toContainText("Yew Tee Point");
+  // Deltas against the plan on screen, in the figures the ranking used.
+  await expect(rows.last()).toContainText("1 more transfer");
+  await expect(rows.last()).toContainText("6 min more travel");
+});
+
+test("pointing at a compared place lifts its own marker only", async ({ page }) => {
+  await comparedJourney(page);
+  await page.getByText(/^Also compared/).click();
+  await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(0);
+  await page.locator(".considered-list li").first().hover();
+  await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(1);
+  // An offered alternative is on the map too, and its row highlights it.
+  await page.getByText(/^Other options/).click();
+  await page.locator(".alternative-list button").first().hover();
+  await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(1);
+});
+
+test("an alternative that differs only in dwell does not claim less travel", async ({ page }) => {
+  /* A live run offered ION Orchard as "15 min less travel" when its travel
+   * differed by 0.15 min - the whole 15 minutes was one fewer shop to stand in.
+   * The trade-off copy was comparing total added time while the row displayed
+   * extra travel. */
+  const dwellOnly = {
+    ...result,
+    recommendations: {
+      // 8 min of extra travel plus 23 min of dwell. The shared fixture carries
+      // 8 in `incremental_detour_minutes` too, which cannot be right and is
+      // what let this pass either way; stated consistently here.
+      best_overall: { ...recommendation, incremental_detour_minutes: 31 },
+      easier_alternative: {
+        ...walkingAlternative,
+        quality_label: "Easier option",
+        match_classification: "easier_alternative",
+        // Identical travel, one fewer shop to stand in: 8 + 8 rather than
+        // 8 + 23. The only honest thing to say about it is nothing.
+        detour_breakdown: { ...recommendation.detour_breakdown, dwell_minutes: 8 },
+        incremental_detour_minutes: 16,
+        incremental_walking_distance_m: recommendation.incremental_walking_distance_m,
+        incremental_transfers: recommendation.incremental_transfers,
+      },
+    },
+  };
+  await commonRoutes(page);
+  await page.route("**/api/intent/parse", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "resolved",
+        intent,
+        diagnostics: {},
+        journey_mentions: [],
+        journey_conflicts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/optimize-intent", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(dwellOnly),
+    }),
+  );
+  await page.goto("/");
+  await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+  await page.getByText(/^Other options/).click();
+  const list = page.locator(".alternative-list");
+  await expect(list).toContainText("Easier option");
+  expect((await list.allTextContents()).join(" ")).not.toMatch(/less travel/i);
+});

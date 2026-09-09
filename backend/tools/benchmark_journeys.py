@@ -34,7 +34,7 @@ async def run():
             for errands in [('groceries',), ('groceries', 'pharmacy')]:
                 optimizer = Optimizer(MockOneMapProvider(), repo, ScoringWeights(),
                     max_candidates=6, max_straight_line_detour_km=20, routing_soft_budget=12, routing_hard_budget=18)
-                baseline, recommendations, diagnostics = await optimizer.optimize(Coordinate(*origin), Coordinate(*destination),
+                baseline, recommendations, diagnostics, _ = await optimizer.optimize(Coordinate(*origin), Coordinate(*destination),
                     list(errands), datetime.fromisoformat('2026-09-08T10:00:00+08:00'))
                 best = recommendations.get('best_overall')
                 rows.append({'id': case_id + '-' + '-'.join(errands), 'origin': origin, 'destination': destination,

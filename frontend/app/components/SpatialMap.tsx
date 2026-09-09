@@ -5,21 +5,36 @@ import type { Coordinate, ResolvedLocation } from "./LocationField";
 
 type Stop = { display_name: string; coordinate: Coordinate };
 
+/** A candidate that was routed and lost. Drawn so the map can show the
+ *  comparison it made rather than a single line to be taken on trust. */
+type Considered = {
+  /** Stable across re-renders, because highlighting is driven from two
+   *  different lists in the panel and index alone would not distinguish them. */
+  key: string;
+  display_name: string;
+  coordinate: Coordinate;
+  extra_transport_minutes: number;
+};
+
 export function SpatialMap({
   origin,
   destination,
   stops = [],
+  considered = [],
   baselineGeometry = [],
   routeGeometry = [],
   activeStop,
+  activeConsidered,
   onStopSelect,
 }: {
   origin: ResolvedLocation | null;
   destination: ResolvedLocation | null;
   stops?: Stop[];
+  considered?: Considered[];
   baselineGeometry?: Coordinate[];
   routeGeometry?: Coordinate[];
   activeStop?: number | null;
+  activeConsidered?: string | null;
   onStopSelect?: (index: number) => void;
 }) {
   const elementRef = useRef<HTMLDivElement>(null);
@@ -27,6 +42,7 @@ export function SpatialMap({
   const layerRef = useRef<import("leaflet").LayerGroup | null>(null);
   const markersRef = useRef<import("leaflet").Marker[]>([]);
   const allMarkersRef = useRef<import("leaflet").Marker[]>([]);
+  const consideredRef = useRef<import("leaflet").Marker[]>([]);
   const selectionRef = useRef(activeStop);
 
   useEffect(() => {
@@ -35,6 +51,16 @@ export function SpatialMap({
       marker.getElement()?.classList.toggle("selected-stop", index === activeStop);
     });
   }, [activeStop]);
+
+  // Pointing at a row in the compared list lifts its marker out of the dimmed
+  // set, which is what makes a list of names on the left and a scatter of dots
+  // on the right into one thing.
+  useEffect(() => {
+    consideredRef.current.forEach((marker) => {
+      const element = marker.getElement();
+      element?.classList.toggle("highlighted", element?.dataset.comparedKey === activeConsidered);
+    });
+  }, [activeConsidered]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +124,22 @@ export function SpatialMap({
           .bindTooltip(label, { direction: "top", offset: [0, -12] })
           .addTo(layer);
       allMarkersRef.current = [];
+      // Drawn before the plan's own markers so a compared place can never
+      // cover the stop that won.
+      consideredRef.current = considered.map((option) => {
+        const item = marker(
+          option.coordinate,
+          "considered",
+          `${option.display_name} · +${Math.round(option.extra_transport_minutes)} min`,
+          "",
+        );
+        const element = item.getElement();
+        if (element) {
+          element.dataset.comparedKey = option.key;
+          element.classList.toggle("highlighted", option.key === activeConsidered);
+        }
+        return item;
+      });
       if (origin)
         allMarkersRef.current.push(marker(origin.coordinate, "origin", origin.label, "A"));
       markersRef.current = stops.map((stop, index) => {
@@ -114,9 +156,16 @@ export function SpatialMap({
         allMarkersRef.current.push(
           marker(destination.coordinate, "destination", destination.label, "B"),
         );
-      allMarkersRef.current.push(...markersRef.current);
+      allMarkersRef.current.push(...markersRef.current, ...consideredRef.current);
       spreadColliding(mapRef.current, allMarkersRef.current);
-      const framingPoints = [...points, ...baselinePoints, ...recommendedPoints];
+      // Compared places frame too, or the evidence sits outside the viewport
+      // and the map is back to showing one line.
+      const framingPoints = [
+        ...points,
+        ...baselinePoints,
+        ...recommendedPoints,
+        ...considered.map((option) => option.coordinate),
+      ];
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const compact = window.innerWidth <= 820;
       if (origin && !destination && !stops.length) {
@@ -148,7 +197,10 @@ export function SpatialMap({
     return () => {
       cancelled = true;
     };
-  }, [origin, destination, stops, baselineGeometry, routeGeometry, onStopSelect]);
+    // `activeConsidered` is deliberately absent: highlighting is handled by the
+    // effect above, and rebuilding every layer on hover would refit the map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origin, destination, stops, considered, baselineGeometry, routeGeometry, onStopSelect]);
 
   useEffect(
     () => () => {
