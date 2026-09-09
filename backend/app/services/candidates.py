@@ -283,7 +283,8 @@ def staged_candidate_pipeline(
             and option_satisfies_exact_places(option, exact_places)
         ]
     pruned = prune_candidates(
-        coverage_options, origin, destination, max_candidates, max_detour_km
+        coverage_options, origin, destination, max_candidates, max_detour_km,
+        geometry=geometry,
     )
     near_misses = list(
         generate_near_misses(repository, categories, origin, destination)
@@ -406,12 +407,40 @@ def straight_line_detour_km(
     return max(0.0, shortest - baseline)
 
 
+def transit_access_rank_km(
+    candidate: CandidateOption,
+    geometry: tuple[Coordinate, ...],
+) -> float:
+    """Approximate what a stop costs on the network, not on the chord.
+
+    `straight_line_detour_km` measures deviation from the great-circle line
+    between origin and destination. Nothing travels that line. On a rail-shaped
+    network a stop 3 km off the chord but on the line you are already riding is
+    cheaper than one 500 m off it that needs two transfers, so ranking by the
+    chord routes the wrong four candidates and the real winner is never priced.
+
+    This proxy instead charges each stop for leaving the baseline route, walked
+    in both directions, plus the walk between the stop and its nearest transit
+    node. Both terms are in kilometres, so they stay comparable, and both fall
+    to zero for a stop sitting on the route beside a station.
+    """
+    if not geometry:
+        return 0.0
+    total = 0.0
+    for stop in candidate.stops:
+        total += 2 * distance_to_geometry_km(stop.coordinate, geometry)
+        if stop.transport_node_distance_m is not None:
+            total += stop.transport_node_distance_m / 1000
+    return total
+
+
 def prune_candidates(
     candidates: list[CandidateOption],
     origin: Coordinate,
     destination: Coordinate,
     max_candidates: int,
     max_detour_km: float,
+    geometry: tuple[Coordinate, ...] = (),
 ) -> list[CandidateOption]:
     measured = [
         CandidateOption(
@@ -428,8 +457,12 @@ def prune_candidates(
         )
         for candidate in candidates
     ]
+    # The chord distance stays the hard reachability cap - it is the cheap,
+    # conservative bound. Ordering within that cap is by network cost, so the
+    # candidates that survive truncation are the ones worth a routing call.
     measured.sort(
         key=lambda candidate: (
+            round(transit_access_rank_km(candidate, geometry), 3),
             candidate.straight_line_detour_km,
             len(candidate.stops),
             tuple(stop.id for stop in candidate.stops),

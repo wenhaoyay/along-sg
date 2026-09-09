@@ -32,9 +32,16 @@ area["ISO3166-1"="SG"][admin_level=2]->.sg;
   nwr(area.sg)[parcel_pickup="yes"];
   nwr(area.sg)[public_transport="station"];
   nwr(area.sg)[railway="station"];
+  nwr(area.sg)[highway="bus_stop"];
+  nwr(area.sg)[amenity="bus_station"];
 );
 out center tags bb;
 """.strip()
+
+# Rail stations anchor the "station_area" hub type; bus stops only widen the
+# transit-access test. Singapore has ~130 rail stations against ~5,100 bus
+# stops, so treating the two alike would reclassify most of the catalog.
+RAIL_NODE_TYPES = frozenset({"station", "halt", "tram_stop", "stop"})
 
 
 @dataclass(frozen=True)
@@ -58,6 +65,16 @@ def _coordinate(element: dict[str, Any]) -> Coordinate | None:
     center = element.get("center")
     if isinstance(center, dict) and "lat" in center and "lon" in center:
         return Coordinate(float(center["lat"]), float(center["lon"]))
+    # Overpass honours only the last geometry modifier, so `out center tags bb`
+    # returns `bounds` and no `center`. Without this fallback every way and
+    # relation is silently discarded - which is almost every mall, because a
+    # mall is mapped as a building polygon rather than a point.
+    bounds = element.get("bounds")
+    if isinstance(bounds, dict) and {"minlat", "maxlat", "minlon", "maxlon"} <= bounds.keys():
+        return Coordinate(
+            (float(bounds["minlat"]) + float(bounds["maxlat"])) / 2,
+            (float(bounds["minlon"]) + float(bounds["maxlon"])) / 2,
+        )
     return None
 
 
@@ -94,6 +111,53 @@ def _inside_bounds(coordinate: Coordinate, element: dict[str, Any], margin: floa
     )
 
 
+def _is_station_area(rail_distance_m: float | None) -> bool:
+    """A hub is a station area only next to rail, never merely next to a bus stop."""
+    return rail_distance_m is not None and rail_distance_m <= 150
+
+
+class _SpatialIndex:
+    """Nearest-neighbour lookup over transit nodes, bucketed into ~1.1 km cells."""
+
+    CELL = 0.01
+
+    def __init__(self, entries: list[tuple[str, Coordinate]]) -> None:
+        self._cells: dict[tuple[int, int], list[tuple[str, Coordinate]]] = {}
+        for node_id, coordinate in entries:
+            self._cells.setdefault(self._cell(coordinate), []).append((node_id, coordinate))
+
+    def _cell(self, coordinate: Coordinate) -> tuple[int, int]:
+        return (int(coordinate.latitude / self.CELL), int(coordinate.longitude / self.CELL))
+
+    def nearest(self, coordinate: Coordinate) -> tuple[str | None, float | None]:
+        if not self._cells:
+            return None, None
+        origin_lat, origin_lon = self._cell(coordinate)
+        best: tuple[str, float] | None = None
+        # Grow the ring until a hit is closer than the nearest unexplored cell,
+        # so the answer matches an exhaustive scan rather than approximating it.
+        for ring in range(0, 64):
+            # Rings 0..ring-1 are done, so anything still unseen sits at least
+            # (ring - 1) cells away - the probe may stand at its own cell edge.
+            # Charging the barrier at `ring` instead would stop one ring early
+            # and quietly return a runner-up.
+            if best is not None and ring and best[1] <= (ring - 1) * self.CELL * 110_000:
+                break
+            candidates: list[tuple[str, Coordinate]] = []
+            for lat_step in range(-ring, ring + 1):
+                for lon_step in range(-ring, ring + 1):
+                    if ring and max(abs(lat_step), abs(lon_step)) != ring:
+                        continue
+                    candidates.extend(
+                        self._cells.get((origin_lat + lat_step, origin_lon + lon_step), ())
+                    )
+            for node_id, node_coordinate in candidates:
+                distance_m = haversine_km(coordinate, node_coordinate) * 1000
+                if best is None or distance_m < best[1]:
+                    best = (node_id, distance_m)
+        return (best[0], round(best[1], 1)) if best else (None, None)
+
+
 def _unique_name(name: str, source_id: str, used: set[str]) -> str:
     candidate = name.strip() or f"Unnamed place {source_id}"
     if candidate not in used:
@@ -124,7 +188,12 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
             continue
         if tags.get("shop") == "mall":
             malls.append((element, coordinate))
-        if tags.get("public_transport") == "station" or tags.get("railway") == "station":
+        if (
+            tags.get("public_transport") == "station"
+            or tags.get("railway") == "station"
+            or tags.get("highway") == "bus_stop"
+            or tags.get("amenity") == "bus_station"
+        ):
             stations.append((element, coordinate))
         categories = infer_categories(tags)
         if categories:
@@ -133,6 +202,7 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
 
     nodes: list[dict[str, Any]] = []
     station_lookup: list[tuple[str, Coordinate]] = []
+    rail_lookup: list[tuple[str, Coordinate]] = []
     seen_station_ids: set[str] = set()
     for element, coordinate in stations:
         source_id = _source_id(element)
@@ -141,29 +211,46 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
         seen_station_ids.add(source_id)
         node_id = f"osm:{source_id}"
         tags = element.get("tags") or {}
+        node_type = (
+            "bus_stop" if tags.get("highway") == "bus_stop"
+            else "bus_station" if tags.get("amenity") == "bus_station"
+            else tags.get("railway") or tags.get("public_transport") or "station"
+        )
         nodes.append({
             "id": node_id,
             "name": tags.get("name") or f"Transport node {source_id}",
             "latitude": coordinate.latitude,
             "longitude": coordinate.longitude,
-            "node_type": tags.get("railway") or tags.get("public_transport") or "station",
+            "node_type": node_type,
             "source": source,
             "source_id": source_id,
             "last_verified_at": captured_at,
         })
         station_lookup.append((node_id, coordinate))
+        if node_type in RAIL_NODE_TYPES:
+            rail_lookup.append((node_id, coordinate))
+
+    # Bus stops take the node count from ~130 to several thousand, so a linear
+    # scan per hub becomes tens of millions of haversine calls. Bucket by
+    # ~1.1 km cells and only search the rings that could still hold a winner.
+    all_index = _SpatialIndex(station_lookup)
+    rail_index = _SpatialIndex(rail_lookup)
 
     def nearest_station(coordinate: Coordinate) -> tuple[str | None, float | None]:
-        if not station_lookup:
+        node_id, distance_m = all_index.nearest(coordinate)
+        if node_id is None:
             return None, None
-        node_id, node_coordinate = min(
-            station_lookup,
-            key=lambda item: haversine_km(coordinate, item[1]),
-        )
-        distance_m = haversine_km(coordinate, node_coordinate) * 1000
-        return (node_id, round(distance_m, 1)) if distance_m <= 1200 else (None, round(distance_m, 1))
+        return (node_id, distance_m) if distance_m <= 1200 else (None, distance_m)
 
-    used_names = {row[1] for row in HUB_SEED}
+    def nearest_rail_distance_m(coordinate: Coordinate) -> float | None:
+        return rail_index.nearest(coordinate)[1]
+
+    # The curated seed bootstraps twelve major malls so the catalog is never
+    # empty. Once OSM supplies the mall polygons it supplies those twelve too,
+    # and `replace_source_data` retires the superseded curated hub - so their
+    # names must stay available here, or every one of them would be renamed
+    # "ION Orchard - mall:way/123" to dodge a collision that no longer exists.
+    used_names = {row[1] for row in HUB_SEED if row[4] != "mall"}
     hubs: list[dict[str, Any]] = []
     mall_lookup: list[tuple[str, dict[str, Any], Coordinate]] = []
     for element, coordinate in malls:
@@ -228,7 +315,7 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                     "name": _unique_name(display_name, source_id, used_names),
                     "latitude": coordinate.latitude,
                     "longitude": coordinate.longitude,
-                    "semantic_type": "station_area" if transport_distance is not None and transport_distance <= 150 else "standalone",
+                    "semantic_type": "station_area" if _is_station_area(nearest_rail_distance_m(coordinate)) else "standalone",
                     "transport_area_id": transport_id,
                     "consolidation_group_id": hub_source_id,
                     "source": source,
