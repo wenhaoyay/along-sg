@@ -1,0 +1,15 @@
+# Build output and dependencies
+.next/
+out/
+node_modules/
+test-results/
+playwright-report/
+tsconfig.tsbuildinfo
+
+# Generated: Next.js rewrites both of these, so formatting them only
+# produces a diff that comes back.
+next-env.d.ts
+AGENTS.md
+
+# Lockfile: npm owns the formatting.
+package-lock.json

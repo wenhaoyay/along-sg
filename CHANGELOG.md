@@ -2,6 +2,19 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.7.9 — Prettier and an enforced line length
+
+Adopted Prettier for the frontend at `printWidth: 100`, matching the backend's ruff
+`line-length`, so one number governs both halves of the repository. Every other option is
+left at its default because the codebase already wrote double quotes, semicolons and
+trailing commas, which keeps the reformat to line-wrapping rather than a rewrite. Wired
+`eslint-config-prettier` so ESLint stops competing over the same lines, and added
+`@stylistic/max-len` after it, because `printWidth` is a target rather than a ceiling:
+Prettier cannot break a comment, a URL or a long string, so those crossed 100 columns
+silently. `npm run format` and `npm run format:check` are the entry points. The reformat
+itself changes no behaviour - `globals.css` was verified identical once whitespace and
+leading zeros are normalised, and the suite passes unchanged.
+
 ## 0.7.8 — The timeline names the service you board
 
 Carried `routeShortName`, `routeLongName`, `agencyName` and the intermediate-stop count

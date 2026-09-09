@@ -21,8 +21,11 @@ export function ServiceWorker() {
           const urls = performance
             .getEntriesByType("resource")
             .map((entry) => entry.name)
-            .filter((name) => name.startsWith(location.origin)
-              && (name.includes("/_next/") || /\.(?:css|js|woff2?|png|svg)(?:\?|$)/.test(name)));
+            .filter(
+              (name) =>
+                name.startsWith(location.origin) &&
+                (name.includes("/_next/") || /\.(?:css|js|woff2?|png|svg)(?:\?|$)/.test(name)),
+            );
           registration.active?.postMessage({ type: "warm", urls });
         })
         .catch(() => {
