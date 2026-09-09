@@ -22,6 +22,8 @@ import {
   deduplicatedAlternatives,
   RecommendationPanel,
   type Recommendation,
+  rankRoutedOptions,
+  type RankKey,
   type Result,
 } from "./components/RecommendationPanel";
 import { SpatialMap } from "./components/SpatialMap";
@@ -97,6 +99,7 @@ export default function Home() {
   const [activeStop, setActiveStop] = useState<number | null>(null);
   // Which compared place the pointer is over, so its map marker can lift.
   const [activeConsidered, setActiveConsidered] = useState<string | null>(null);
+  const [rankBy, setRankBy] = useState<RankKey>("recommended");
   const searchRef = useRef<AbortController | null>(null);
   const [loadingSlow, setLoadingSlow] = useState(false);
   const [searchStage, setSearchStage] = useState<"discovery" | "routing">("discovery");
@@ -323,56 +326,55 @@ export default function Home() {
     setSelections([{ category: slug, item: null, mode: "any" }]);
   }
 
+  /* One dict of routed options, split by whether the app volunteered it.
+   *
+   * A compared candidate is a full recommendation now, so promoting one is
+   * `setSelectedKey` and nothing else - no second code path, and the marker key
+   * is just the recommendation key. */
+  const offeredRecommendations = useMemo(() => {
+    const entries = Object.entries(result?.recommendations ?? {}).filter(
+      ([, item]) => item.offered !== false,
+    );
+    return Object.fromEntries(entries);
+  }, [result]);
   const selected: Recommendation | undefined =
     result?.recommendations[selectedKey] ??
     result?.recommendations.best_overall ??
     Object.values(result?.recommendations ?? {})[0];
+  // The dedupe stays on the offered set only: #5 suppressed indistinguishable
+  // choices deliberately, and feeding the compared options through here would
+  // quietly undo it.
   const alternatives = useMemo(
-    () => deduplicatedAlternatives(result?.recommendations ?? {}),
-    [result],
+    () => deduplicatedAlternatives(offeredRecommendations),
+    [offeredRecommendations],
+  );
+  const compared = useMemo(
+    () =>
+      rankRoutedOptions(result?.recommendations ?? {}, rankBy).filter(
+        ([key, item]) => item.offered === false && key !== selectedKey,
+      ),
+    [result, rankBy, selectedKey],
   );
   /* Every routed place that is not the plan on screen, as one set.
    *
-   * The map's job here is to show the comparison that was made, and from the
-   * map's point of view an offered alternative and a rejected candidate are the
-   * same thing: somewhere that was routed and is not where you are being sent.
-   * Which of them you can still choose is a question the panel answers. Before
-   * this, the map drew the winner alone - a single line and two markers over
-   * most of a 1440px viewport - so the one thing this app does that a nearest-
-   * shop search cannot was the one thing it never showed. */
-  /* Ordered by the figure the row actually shows.
-   *
-   * The backend returns them in ranking order, which weights walking and
-   * transfers as well as time, so a list labelled only with added minutes read
-   * 7, 7, 6, 9, 11 - which looks like a bug rather than a ranking the reader
-   * cannot see. */
-  const consideredSorted = useMemo(
-    () =>
-      [...(result?.considered ?? [])].sort(
-        (first, second) => first.extra_transport_minutes - second.extra_transport_minutes,
-      ),
-    [result],
-  );
+   * From the map's point of view an offered alternative and a rejected
+   * candidate are the same thing: somewhere that was routed and is not where
+   * you are being sent. Which of them the app volunteered is a question the
+   * panel answers. Clicking any of them makes it the plan. */
   const comparedPoints = useMemo(
-    () => [
-      ...alternatives
-        .filter(([key]) => key !== selectedKey)
-        .flatMap(([key, item]) =>
-          item.stops.map((stop, index) => ({
-            key: `alt:${key}:${index}`,
-            display_name: stop.display_name,
-            coordinate: stop.coordinate,
-            extra_transport_minutes: item.detour_breakdown.extra_transport_minutes,
-          })),
-        ),
-      ...consideredSorted.map((option, index) => ({
-        key: `cmp:${index}`,
-        display_name: option.display_name,
-        coordinate: option.coordinate,
-        extra_transport_minutes: option.extra_transport_minutes,
-      })),
-    ],
-    [alternatives, selectedKey, consideredSorted],
+    () =>
+      [...alternatives.filter(([key]) => key !== selectedKey), ...compared].flatMap(([key, item]) =>
+        item.stops.map((stop, index) => ({
+          key,
+          display_name: stop.display_name,
+          extra_transport_minutes: item.detour_breakdown.extra_transport_minutes,
+          coordinate: stop.coordinate,
+          // A two-stop option puts two markers on the map for one decision,
+          // so only the first carries the name of the whole option.
+          secondary: index > 0,
+        })),
+      ),
+    [alternatives, compared, selectedKey],
   );
 
   return (
@@ -398,6 +400,7 @@ export default function Home() {
           destination={destination}
           stops={selected?.stops ?? []}
           considered={comparedPoints}
+          onConsideredSelect={setSelectedKey}
           baselineGeometry={result?.baseline.geometry ?? []}
           routeGeometry={selected?.route_geometry ?? []}
           activeStop={activeStop}
@@ -798,8 +801,17 @@ export default function Home() {
             recommendation={selected}
             result={result}
             alternatives={alternatives}
-            considered={consideredSorted}
-            onConsideredHover={setActiveConsidered}
+            compared={compared}
+            onComparedHover={setActiveConsidered}
+            rankBy={rankBy}
+            onRankChange={(rank) => {
+              setRankBy(rank);
+              // Changing what matters changes the answer, not just the order -
+              // otherwise the control would reshuffle a list while leaving the
+              // recommendation contradicting the top of it.
+              const ranked = rankRoutedOptions(result?.recommendations ?? {}, rank);
+              if (ranked.length) setSelectedKey(ranked[0][0]);
+            }}
             selectedKey={selectedKey}
             onSelect={(key) => {
               setSelectedKey(key);

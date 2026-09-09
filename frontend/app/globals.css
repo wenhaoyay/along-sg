@@ -1324,26 +1324,34 @@ summary:focus-visible {
   font-size: 11px;
   white-space: nowrap;
 }
-/* Deliberately quieter than .alternative-list, and rows rather than buttons:
- * these places were compared and rejected, so they must not look pressable. */
+/* Quieter than .alternative-list - these were routed and rejected rather than
+ * put forward - but pressable, because picking one is now the point. */
 .considered-list {
-  margin: 0;
-  padding: 0 0 5px;
+  padding-bottom: 5px;
   display: grid;
   gap: 3px;
-  list-style: none;
 }
-.considered-list li {
-  padding: 7px 10px;
+.considered-list button {
+  width: 100%;
+  min-height: 48px;
+  padding: 7px 9px 7px 10px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto 17px;
   align-items: center;
   gap: 7px;
+  background: transparent;
+  border: 1px dashed var(--line);
   border-radius: 9px;
-  transition: background 0.16s ease;
+  text-align: left;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease;
 }
-.considered-list li:hover {
+.considered-list button:hover,
+.considered-list button:focus-visible {
   background: var(--surface-soft);
+  border-style: solid;
+  border-color: var(--mint-strong);
 }
 .considered-list strong,
 .considered-list small {
@@ -1367,6 +1375,57 @@ summary:focus-visible {
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+}
+.considered-list svg {
+  color: var(--muted);
+}
+
+/* The weighting control. Segmented rather than a slider: the four options are
+ * exactly the figures the optimiser computes, and a continuous slider would
+ * imply a precision the model does not have - and imply it is re-searching
+ * when it is reordering what was already routed. */
+.rank-control {
+  margin: 4px 0 2px;
+  padding: 11px 0 13px;
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+}
+.rank-control > span {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+.rank-control > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.rank-control button {
+  min-height: 36px;
+  padding: 7px 11px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.rank-control button:hover {
+  border-color: var(--mint-strong);
+}
+.rank-control button[aria-pressed="true"] {
+  color: white;
+  background: var(--green);
+}
+.rank-control > small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
 }
 .empty-result > span {
   color: var(--green);

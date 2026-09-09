@@ -126,11 +126,14 @@ async def test_the_best_of_the_losers_is_reported_first(repository) -> None:
     assert scores == sorted(scores)
 
 
-def test_the_api_reports_extra_travel_not_total_added_time(tmp_path) -> None:
-    """The panel puts this figure beside the recommendation headline, which is
-    extra travel. Reporting total added time here would compare a number that
-    is mostly dwell against one that excludes it - the confusion V0.7.7
-    removed from the headline."""
+def test_the_api_returns_compared_options_as_selectable_recommendations(tmp_path) -> None:
+    """A compared option is a recommendation the app did not volunteer.
+
+    You can pick one off the map, and the moment you do it needs its own legs,
+    geometry and per-shop detail - so it is rendered as what it is, flagged
+    rather than reshaped. It also reports extra travel through the same
+    breakdown as the headline, which is the figure V0.7.7 moved to.
+    """
     settings = Settings(onemap_mock=True, database_path=tmp_path / "api.db")
     with TestClient(create_app(settings)) as client:
         response = client.post("/api/optimize", json={
@@ -144,12 +147,22 @@ def test_the_api_reports_extra_travel_not_total_added_time(tmp_path) -> None:
         })
         assert response.status_code == 200
         body = response.json()
-        assert body["considered"], "the seed catalogue routes more than it recommends"
-        for option in body["considered"]:
-            # Strictly less, not merely not-greater: groceries carry dwell, so
-            # equality here would mean the two fields had been wired to the same
-            # value and the comparison with the headline would be meaningless.
-            assert option["extra_transport_minutes"] < option["incremental_detour_minutes"]
-            assert option["stop_count"] >= 1
-            assert option["display_name"]
-            assert 1.1 <= option["coordinate"]["latitude"] <= 1.5
+        offered = {key: item for key, item in body["recommendations"].items() if item["offered"]}
+        compared = {
+            key: item for key, item in body["recommendations"].items() if not item["offered"]
+        }
+        assert offered, "nothing was recommended"
+        assert compared, "the seed catalogue routes more than it recommends"
+        for key, option in compared.items():
+            assert key.startswith("compared_")
+            # Selectable means complete: without these a click cannot draw a plan.
+            assert option["stops"], key
+            assert option["legs"], key
+            assert option["detour_breakdown"]["extra_transport_minutes"] >= 0
+            # Strictly less than total added time, not merely not-greater:
+            # groceries carry dwell, so equality would mean the two figures had
+            # been wired to the same value.
+            assert (
+                option["detour_breakdown"]["extra_transport_minutes"]
+                < option["incremental_detour_minutes"]
+            )

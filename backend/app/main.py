@@ -40,7 +40,6 @@ from app.providers.place_search import GeoapifyPlaceSearchProvider, TomTomPlaceS
 from app.providers.semantic_expansion import OpenAISemanticExpansionProvider
 from app.providers.web_search import TavilyWebDiscoveryProvider
 from app.schemas import (
-    ConsideredOptionResponse,
     CoordinateResponse,
     AnalyticsEventRequest,
     AnalyticsEventResponse,
@@ -334,10 +333,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             errands=list(categories),
             baseline=route_response(baseline),
             recommendations={
-                key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
-                for key, candidate in recommendations.items()
+                **{
+                    key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
+                    for key, candidate in recommendations.items()
+                },
+                # Routed, rejected, and selectable anyway. Keyed separately so
+                # the client can tell what was volunteered from what was merely
+                # compared without inspecting the flag on every entry.
+                **{
+                    f"compared_{index}": recommendation_response(
+                        "Also compared", candidate, categories, app_settings.dwell_times,
+                        offered=False,
+                    )
+                    for index, candidate in enumerate(considered)
+                },
             },
-            considered=[considered_response(candidate) for candidate in considered],
             diagnostics=diagnostics,
             outcome=str(diagnostics["outcome"]),
             message=(
@@ -556,10 +566,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             errands=list(categories),
             baseline=route_response(baseline),
             recommendations={
-                key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
-                for key, candidate in recommendations.items()
+                **{
+                    key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
+                    for key, candidate in recommendations.items()
+                },
+                # Routed, rejected, and selectable anyway. Keyed separately so
+                # the client can tell what was volunteered from what was merely
+                # compared without inspecting the flag on every entry.
+                **{
+                    f"compared_{index}": recommendation_response(
+                        "Also compared", candidate, categories, app_settings.dwell_times,
+                        offered=False,
+                    )
+                    for index, candidate in enumerate(considered)
+                },
             },
-            considered=[considered_response(candidate) for candidate in considered],
             diagnostics=diagnostics,
             outcome=str(diagnostics["outcome"]),
             message=(
@@ -793,37 +814,12 @@ def route_geometry_response(route: RouteResult) -> list[CoordinateResponse]:
     return [CoordinateResponse(latitude=point.latitude, longitude=point.longitude) for point in points]
 
 
-def considered_response(candidate: ScoredCandidate) -> ConsideredOptionResponse:
-    """A routed candidate that lost, reported at its primary stop.
-
-    One marker per option rather than one per stop: a two-stop option is a
-    single decision, and plotting both halves of a rejected pair would imply the
-    map is offering them separately. The stop count says what was involved.
-    """
-    stops = candidate.ordered_stops
-    primary = stops[0]
-    return ConsideredOptionResponse(
-        display_name=" + ".join(hub_display_name(hub) for hub in stops),
-        coordinate=CoordinateResponse(
-            latitude=primary.coordinate.latitude,
-            longitude=primary.coordinate.longitude,
-        ),
-        stop_count=len(stops),
-        extra_transport_minutes=max(
-            0.0, candidate.incremental_detour_minutes - candidate.total_route.dwell_minutes
-        ),
-        incremental_detour_minutes=candidate.incremental_detour_minutes,
-        incremental_walking_distance_m=candidate.incremental_walking_distance_m,
-        incremental_transfers=candidate.incremental_transfers,
-        consolidated=candidate.option.consolidated,
-    )
-
-
 def recommendation_response(
     label: str,
     candidate: ScoredCandidate,
     categories: tuple[str, ...],
     dwell_times,
+    offered: bool = True,
 ) -> RecommendationResponse:
     stops = []
     matched_categories = candidate.option.required_categories or categories
@@ -873,6 +869,7 @@ def recommendation_response(
     ]
     extra_transport = max(0.0, candidate.incremental_detour_minutes - route.dwell_minutes)
     return RecommendationResponse(
+        offered=offered,
         legs=[leg_response(leg) for leg in route.legs],
         time_dependent=route.time_dependent,
         departure_time=route.departure_time if route.time_dependent else None,

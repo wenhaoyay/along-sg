@@ -14,6 +14,9 @@ type Considered = {
   display_name: string;
   coordinate: Coordinate;
   extra_transport_minutes: number;
+  /** The second stop of a two-stop option: same decision, so it carries no
+   *  label of its own. */
+  secondary?: boolean;
 };
 
 export function SpatialMap({
@@ -26,6 +29,7 @@ export function SpatialMap({
   activeStop,
   activeConsidered,
   onStopSelect,
+  onConsideredSelect,
 }: {
   origin: ResolvedLocation | null;
   destination: ResolvedLocation | null;
@@ -36,6 +40,7 @@ export function SpatialMap({
   activeStop?: number | null;
   activeConsidered?: string | null;
   onStopSelect?: (index: number) => void;
+  onConsideredSelect?: (key: string) => void;
 }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
@@ -127,17 +132,20 @@ export function SpatialMap({
       // Drawn before the plan's own markers so a compared place can never
       // cover the stop that won.
       consideredRef.current = considered.map((option) => {
-        const item = marker(
-          option.coordinate,
-          "considered",
-          `${option.display_name} · +${Math.round(option.extra_transport_minutes)} min`,
-          "",
-        );
+        const label = option.secondary
+          ? option.display_name
+          : `${option.display_name} · +${Math.round(option.extra_transport_minutes)} min · tap to pick`;
+        const item = marker(option.coordinate, "considered", label, "");
         const element = item.getElement();
         if (element) {
           element.dataset.comparedKey = option.key;
           element.classList.toggle("highlighted", option.key === activeConsidered);
+          // Announced, but not focusable: the panel's compared list is the
+          // keyboard path to the same action, and a dozen tab stops scattered
+          // over a map is not one.
+          element.setAttribute("aria-label", `Pick ${option.display_name}`);
         }
+        item.on("click", () => onConsideredSelect?.(option.key));
         return item;
       });
       if (origin)
@@ -200,7 +208,16 @@ export function SpatialMap({
     // `activeConsidered` is deliberately absent: highlighting is handled by the
     // effect above, and rebuilding every layer on hover would refit the map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin, destination, stops, considered, baselineGeometry, routeGeometry, onStopSelect]);
+  }, [
+    origin,
+    destination,
+    stops,
+    considered,
+    baselineGeometry,
+    routeGeometry,
+    onStopSelect,
+    onConsideredSelect,
+  ]);
 
   useEffect(
     () => () => {

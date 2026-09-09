@@ -1021,31 +1021,65 @@ test("markers that would overlap are fanned apart", async ({ page }) => {
  * most of a 1440px viewport - while the optimiser had routed and rejected
  * several other places. A live Punggol->Orchard run generated 465 candidates,
  * routed 6 and showed 1. */
+/* Finding #9 and idea 2: the map drew the winner alone while the optimiser had
+ * routed and rejected several other places, and none of them could be picked.
+ * A compared option is a full recommendation flagged `offered: false`, so
+ * promoting one is a selection and nothing more. */
+function compared(name: string, lat: number, lon: number, overrides: Record<string, unknown>) {
+  return {
+    ...walkingAlternative,
+    offered: false,
+    quality_label: "Also compared",
+    match_classification: "best_match",
+    stops: [
+      {
+        ...recommendation.stops[0],
+        name,
+        display_name: name,
+        coordinate: { latitude: lat, longitude: lon },
+        location_context: name,
+      },
+    ],
+    route_geometry: [cck.coordinate, { latitude: lat, longitude: lon }, fajar.coordinate],
+    ...overrides,
+  };
+}
+
 const comparedResult = {
   ...result,
-  recommendations: { best_overall: recommendation, least_walking: walkingAlternative },
-  considered: [
-    {
-      display_name: "Yew Tee Point",
-      coordinate: { latitude: 1.3974, longitude: 103.747 },
-      stop_count: 1,
-      extra_transport_minutes: 14,
-      incremental_detour_minutes: 37,
-      incremental_walking_distance_m: 240,
-      incremental_transfers: 1,
-      consolidated: false,
+  recommendations: {
+    best_overall: {
+      ...recommendation,
+      incremental_detour_minutes: 31,
+      inconvenience_score: 14,
     },
-    {
-      display_name: "Bukit Panjang Plaza",
-      coordinate: { latitude: 1.3796, longitude: 103.7638 },
-      stop_count: 1,
-      extra_transport_minutes: 9,
-      incremental_detour_minutes: 32,
-      incremental_walking_distance_m: 200,
+    least_walking: { ...walkingAlternative, inconvenience_score: 19 },
+    // Cheapest on travel, dearest on walking - so "Least time" and "Least
+    // walking" cannot both point here, which is the only way to tell the
+    // control apart from a no-op.
+    compared_0: compared("Yew Tee Point", 1.3974, 103.747, {
+      detour_breakdown: { ...recommendation.detour_breakdown, extra_transport_minutes: 4 },
+      incremental_walking_distance_m: 900,
+      incremental_transfers: 2,
+      inconvenience_score: 22,
+    }),
+    compared_1: compared("Bukit Panjang Plaza", 1.3796, 103.7638, {
+      detour_breakdown: { ...recommendation.detour_breakdown, extra_transport_minutes: 20 },
+      // Below walkingAlternative's 60 m, so "Least walking" has one answer.
+      incremental_walking_distance_m: 30,
       incremental_transfers: 0,
-      consolidated: false,
-    },
-  ],
+      inconvenience_score: 25,
+    }),
+    // Covers one errand instead of two, and is cheapest on every metric because
+    // of it. Ranking must never promote this.
+    compared_2: compared("Half Errand Mall", 1.3745, 103.7502, {
+      match_classification: "partial_option",
+      detour_breakdown: { ...recommendation.detour_breakdown, extra_transport_minutes: 1 },
+      incremental_walking_distance_m: 10,
+      incremental_transfers: 0,
+      inconvenience_score: 2,
+    }),
+  },
 };
 
 async function comparedJourney(page: Page) {
@@ -1078,35 +1112,71 @@ async function comparedJourney(page: Page) {
   await page.waitForTimeout(1200);
 }
 
+const planName = (page: Page) => page.locator(".result-heading h1").first();
+
 test("the map shows every routed place that is not the plan", async ({ page }) => {
   await comparedJourney(page);
-  // One offered alternative plus two rejected candidates. Without this the map
+  // One offered alternative plus three compared candidates. Before this the map
   // carried the winning stop and nothing else.
-  await expect(page.locator(".along-marker.considered")).toHaveCount(3);
+  await expect(page.locator(".along-marker.considered")).toHaveCount(4);
   await expect(page.locator(".map-key")).toContainText("Compared");
 });
 
-test("the compared list states its cost and is ordered by it", async ({ page }) => {
+test("a compared place can be picked off the map", async ({ page }) => {
+  await comparedJourney(page);
+  await expect(planName(page)).toContainText("Lot One");
+  // Whichever dot this is, the plan must become the place it names.
+  const dot = page.locator(".along-marker.considered").first();
+  const label = (await dot.getAttribute("aria-label")) ?? "";
+  await dot.click({ force: true });
+  await expect(planName(page)).toContainText(label.replace(/^Pick /, ""));
+});
+
+test("a compared row promotes its option, and states what it costs", async ({ page }) => {
   await comparedJourney(page);
   await page.getByText(/^Also compared/).click();
-  const rows = page.locator(".considered-list li");
-  await expect(rows).toHaveCount(2);
-  // Sorted by the figure the row displays, not by the ranking score behind it.
-  await expect(rows.first()).toContainText("Bukit Panjang Plaza");
-  await expect(rows.first()).toContainText("+9 min");
-  await expect(rows.last()).toContainText("Yew Tee Point");
-  // Deltas against the plan on screen, in the figures the ranking used.
-  await expect(rows.last()).toContainText("1 more transfer");
-  await expect(rows.last()).toContainText("6 min more travel");
+  const rows = page.locator(".considered-list button");
+  await expect(rows).toHaveCount(3);
+  await expect(rows.filter({ hasText: "Bukit Panjang Plaza" })).toContainText("12 min more travel");
+  await rows.filter({ hasText: "Bukit Panjang Plaza" }).click();
+  await expect(planName(page)).toContainText("Bukit Panjang Plaza");
+});
+
+test("the weighting control changes the plan, not just the order", async ({ page }) => {
+  await comparedJourney(page);
+  await expect(planName(page)).toContainText("Lot One");
+  await page.getByRole("button", { name: "Least time", exact: true }).click();
+  await expect(planName(page)).toContainText("Yew Tee Point");
+  await page.getByRole("button", { name: "Least walking", exact: true }).click();
+  await expect(planName(page)).toContainText("Bukit Panjang Plaza");
+  await page.getByRole("button", { name: "Fewest transfers", exact: true }).click();
+  // Yew Tee is quickest but needs two transfers, so it must lose this one.
+  await expect(planName(page)).not.toContainText("Yew Tee Point");
+  await page.getByRole("button", { name: "Our pick", exact: true }).click();
+  await expect(planName(page)).toContainText("Lot One");
+});
+
+test("no weighting ever promotes an option that drops an errand", async ({ page }) => {
+  /* A partial option covers fewer errands, so it is cheaper on every metric by
+   * construction - 1 min of travel and 10 m of walking here. Letting a
+   * weighting pick it would answer a question the traveller did not ask. It
+   * stays selectable by hand. */
+  await comparedJourney(page);
+  for (const label of ["Our pick", "Least time", "Least walking", "Fewest transfers"]) {
+    await page.getByRole("button", { name: label, exact: true }).click();
+    await expect(planName(page)).not.toContainText("Half Errand Mall");
+  }
+  await page.getByText(/^Also compared/).click();
+  await page.locator(".considered-list button").filter({ hasText: "Half Errand Mall" }).click();
+  await expect(planName(page)).toContainText("Half Errand Mall");
 });
 
 test("pointing at a compared place lifts its own marker only", async ({ page }) => {
   await comparedJourney(page);
   await page.getByText(/^Also compared/).click();
   await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(0);
-  await page.locator(".considered-list li").first().hover();
+  await page.locator(".considered-list button").first().hover();
   await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(1);
-  // An offered alternative is on the map too, and its row highlights it.
   await page.getByText(/^Other options/).click();
   await page.locator(".alternative-list button").first().hover();
   await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(1);

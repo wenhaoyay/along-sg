@@ -63,6 +63,10 @@ export type Recommendation = {
   };
   route_geometry: Array<{ latitude: number; longitude: number }>;
   legs?: Leg[];
+  /** False for a routed candidate the app did not put forward. Selectable all
+   *  the same, which is why it is a flag and not a separate shape. */
+  offered?: boolean;
+  inconvenience_score: number;
 };
 
 export type Leg = {
@@ -78,17 +82,6 @@ export type Leg = {
   segment_index: number | null;
 };
 
-export type ConsideredOption = {
-  display_name: string;
-  coordinate: { latitude: number; longitude: number };
-  stop_count: number;
-  extra_transport_minutes: number;
-  incremental_detour_minutes: number;
-  incremental_walking_distance_m: number;
-  incremental_transfers: number;
-  consolidated: boolean;
-};
-
 export type Result = {
   origin: ResolvedLocation;
   destination: ResolvedLocation;
@@ -99,7 +92,6 @@ export type Result = {
     geometry: Array<{ latitude: number; longitude: number }>;
   };
   recommendations: Record<string, Recommendation>;
-  considered?: ConsideredOption[];
   outcome: string;
   message: string | null;
 };
@@ -118,16 +110,22 @@ type Props = {
    * The client already resolved a real name for each endpoint; prefer it. */
   originLabel?: string;
   destinationLabel?: string;
-  considered?: ConsideredOption[];
-  onConsideredHover?: (key: string | null) => void;
+  /** Routed, not volunteered, and selectable: [key, option] so a click can
+   *  promote one straight into the plan. */
+  compared?: Array<[string, Recommendation]>;
+  onComparedHover?: (key: string | null) => void;
+  rankBy: RankKey;
+  onRankChange: (rank: RankKey) => void;
 };
 
 export function RecommendationPanel({
   recommendation,
   result,
   alternatives,
-  considered = [],
-  onConsideredHover,
+  compared = [],
+  onComparedHover,
+  rankBy,
+  onRankChange,
   selectedKey,
   onSelect,
   onEdit,
@@ -138,6 +136,9 @@ export function RecommendationPanel({
 }: Props) {
   const primaryStop = recommendation.stops[0];
   const otherOptions = alternatives.filter(([key]) => key !== selectedKey);
+  // Everything routed, the plan on screen included - the number the ranking
+  // note quotes has to be the size of the set being reordered.
+  const routedCount = otherOptions.length + compared.length + 1;
 
   return (
     <section className="recommendation" aria-live="polite" data-testid="recommendation-sheet">
@@ -314,6 +315,25 @@ export function RecommendationPanel({
         </div>
       </details>
 
+      {routedCount > 1 && (
+        <div className="rank-control">
+          <span id="rank-label">What matters most</span>
+          <div role="group" aria-labelledby="rank-label">
+            {(Object.keys(RANK_LABELS) as RankKey[]).map((key) => (
+              <button
+                type="button"
+                key={key}
+                aria-pressed={rankBy === key}
+                onClick={() => onRankChange(key)}
+              >
+                {RANK_LABELS[key]}
+              </button>
+            ))}
+          </div>
+          <small>{rankNote(rankBy, routedCount)}</small>
+        </div>
+      )}
+
       {otherOptions.length > 0 && (
         <details className="result-disclosure alternatives-disclosure">
           <summary>
@@ -327,10 +347,10 @@ export function RecommendationPanel({
               <button
                 type="button"
                 onClick={() => onSelect(key)}
-                onMouseEnter={() => onConsideredHover?.(`alt:${key}:0`)}
-                onFocus={() => onConsideredHover?.(`alt:${key}:0`)}
-                onMouseLeave={() => onConsideredHover?.(null)}
-                onBlur={() => onConsideredHover?.(null)}
+                onMouseEnter={() => onComparedHover?.(key)}
+                onFocus={() => onComparedHover?.(key)}
+                onMouseLeave={() => onComparedHover?.(null)}
+                onBlur={() => onComparedHover?.(null)}
                 key={key}
               >
                 <span>
@@ -350,35 +370,40 @@ export function RecommendationPanel({
         </details>
       )}
 
-      {considered.length > 0 && (
+      {compared.length > 0 && (
         <details className="result-disclosure considered-disclosure">
           <summary>
             <span>
-              Also compared <small>{considered.length}</small>
+              Also compared <small>{compared.length}</small>
             </span>
             <ChevronDown size={18} aria-hidden="true" />
           </summary>
-          {/* Rows are plain text, not buttons: these are not offers, and
-              nothing here is selectable. The marker highlight is a pointer-only
-              enhancement, so it may carry no information the row does not
-              already state. */}
-          <ul className="considered-list" onMouseLeave={() => onConsideredHover?.(null)}>
-            {considered.map((option, index) => (
-              <li
-                key={`${option.display_name}-${index}`}
-                onMouseEnter={() => onConsideredHover?.(`cmp:${index}`)}
+          {/* Buttons, not text. Last round these were inert and the marker
+              highlight was a pointer-only garnish; now a row promotes a routed
+              candidate into the plan, so it has to be reachable by keyboard
+              too. */}
+          <div className="considered-list" onMouseLeave={() => onComparedHover?.(null)}>
+            {compared.map(([key, item]) => (
+              <button
+                type="button"
+                key={key}
+                onClick={() => onSelect(key)}
+                onMouseEnter={() => onComparedHover?.(key)}
+                onFocus={() => onComparedHover?.(key)}
+                onBlur={() => onComparedHover?.(null)}
               >
                 <span>
-                  <strong>{option.display_name}</strong>
-                  <small>{comparedDetail(option, recommendation)}</small>
+                  <strong>{item.stops.map((stop) => stop.display_name).join(" then ")}</strong>
+                  <small>{comparedDetail(item, recommendation)}</small>
                 </span>
-                <b>+{Math.round(option.extra_transport_minutes)} min</b>
-              </li>
+                <b>+{Math.round(item.detour_breakdown.extra_transport_minutes)} min</b>
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
             ))}
-          </ul>
+          </div>
           <p className="precision-note">
             <Clock3 size={13} aria-hidden="true" />
-            {comparedSummary(considered, recommendation, otherOptions)}
+            {comparedSummary(compared, recommendation, otherOptions)}
           </p>
         </details>
       )}
@@ -386,12 +411,90 @@ export function RecommendationPanel({
   );
 }
 
+/* What the traveller wants least of.
+ *
+ * Every one of these is a figure the optimiser already computed per candidate,
+ * so re-ranking is arithmetic over routed results rather than a new search -
+ * which is exactly why it can be instant, and exactly why it must not be
+ * dressed up as re-optimising. The candidate set was chosen under the default
+ * weights; this reorders that set, and `rankNote` says so. */
+export type RankKey = "recommended" | "time" | "walking" | "transfers";
+
+export const RANK_LABELS: Record<RankKey, string> = {
+  recommended: "Our pick",
+  time: "Least time",
+  walking: "Least walking",
+  transfers: "Fewest transfers",
+};
+
+/* An option that drops an errand always sorts last, whatever the weighting.
+ *
+ * Otherwise re-ranking silently answers a different question: a partial option
+ * covers fewer errands, so it is cheaper on every metric by construction, and
+ * `inconvenience_score` additionally carries a preference adjustment that makes
+ * it incomparable with a full match. A live Woodlands-HarbourFront run had a
+ * one-errand option scoring better than every complete one. It stays pickable -
+ * it is on the map and in the list - but you have to choose it. */
+const COVERAGE_PENALTY = 1_000_000;
+
+function coverageRank(item: Recommendation): number {
+  return item.match_classification === "partial_option" ? COVERAGE_PENALTY : 0;
+}
+
+/** Lower is better for all four, so one comparator serves the whole set. */
+export function rankValue(item: Recommendation, rank: RankKey): number {
+  return coverageRank(item) + rankMetric(item, rank);
+}
+
+function rankMetric(item: Recommendation, rank: RankKey): number {
+  switch (rank) {
+    case "time":
+      return item.detour_breakdown.extra_transport_minutes;
+    case "walking":
+      return item.incremental_walking_distance_m;
+    case "transfers":
+      // Transfers are coarse and tie constantly, so time breaks the tie rather
+      // than leaving the order to whatever the object happened to be built in.
+      return item.incremental_transfers * 1000 + item.detour_breakdown.extra_transport_minutes;
+    case "recommended":
+    default:
+      /* The optimiser's own score, so the default is the app's actual verdict
+       * rather than a fourth opinion invented in the client.
+       *
+       * It is deliberately NOT called "balanced": the score is the journey cost
+       * minus a credit for how confidently the place is known (location
+       * certainty plus published hours, weighted 2.5). On a live
+       * Woodlands-HarbourFront run that credit picked a named shop at +11 min
+       * over a mall at +5, which is defensible as a recommendation and
+       * indefensible as "balanced" - the label would have been claiming the
+       * three journey metrics and quietly using a fourth term. */
+      return item.inconvenience_score;
+  }
+}
+
+export function rankRoutedOptions(
+  recommendations: Record<string, Recommendation>,
+  rank: RankKey,
+): Array<[string, Recommendation]> {
+  return Object.entries(recommendations).sort(
+    ([, first], [, second]) => rankValue(first, rank) - rankValue(second, rank),
+  );
+}
+
+function rankNote(rank: RankKey, count: number) {
+  if (rank === "recommended")
+    return `Our ranking across ${count} routed options: added time, walking and transfers, and how confidently we know each place.`;
+  return `Reordering the same ${count} routed options by one measure. The search itself used our own ranking.`;
+}
+
 /** Why a compared place is not the plan, in the figures the ranking used.
  *
  * Below a minute there is no honest difference to report, and inventing one
  * ("slightly slower") would misrepresent a tie as a decision. */
-function comparedDetail(option: ConsideredOption, chosen: Recommendation) {
-  const slower = option.extra_transport_minutes - chosen.detour_breakdown.extra_transport_minutes;
+function comparedDetail(option: Recommendation, chosen: Recommendation) {
+  const slower =
+    option.detour_breakdown.extra_transport_minutes -
+    chosen.detour_breakdown.extra_transport_minutes;
   const further = option.incremental_walking_distance_m - chosen.incremental_walking_distance_m;
   const transfers = option.incremental_transfers - chosen.incremental_transfers;
   const parts: string[] = [];
@@ -399,7 +502,7 @@ function comparedDetail(option: ConsideredOption, chosen: Recommendation) {
   if (slower >= 1) parts.push(`${Math.round(slower)} min more travel`);
   if (further >= 100) parts.push(`${Math.round(further)} m more walking`);
   if (parts.length) return parts.join(", ");
-  if (option.stop_count > chosen.stops.length) return "Needs an extra stop";
+  if (option.stops.length > chosen.stops.length) return "Needs an extra stop";
   return "Within a minute of the plan above";
 }
 
@@ -407,17 +510,19 @@ function comparedDetail(option: ConsideredOption, chosen: Recommendation) {
  *  half a minute of each other is a different fact from one clear winner, and
  *  the reader cannot tell which from a list of rounded numbers. */
 function comparedSummary(
-  considered: ConsideredOption[],
+  compared: Array<[string, Recommendation]>,
   chosen: Recommendation,
   otherOptions: Array<[string, Recommendation]>,
 ) {
   // Everything routed, not just the rejected half: the offered alternatives
   // were compared too, and counting only what is in this list would understate
   // the work by exactly the number of options the panel is already showing.
-  const total = considered.length + otherOptions.length + 1;
+  const total = compared.length + otherOptions.length + 1;
   const spread = Math.max(
-    ...considered.map(
-      (option) => option.extra_transport_minutes - chosen.detour_breakdown.extra_transport_minutes,
+    ...compared.map(
+      ([, option]) =>
+        option.detour_breakdown.extra_transport_minutes -
+        chosen.detour_breakdown.extra_transport_minutes,
     ),
     ...otherOptions.map(
       ([, item]) =>

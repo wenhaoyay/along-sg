@@ -2,6 +2,30 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.7.11 — Pick your own stop, and say what matters
+
+A compared option is now a recommendation the app did not volunteer, rather than a
+second shape: it carries its own stops, legs and geometry, is flagged `offered: false`,
+and clicking its map marker or its row in the panel promotes it into the plan. That
+replaces the parallel `considered` payload added in 0.7.10 - the moment a compared
+option is selectable it needs everything a recommendation needs, at which point the only
+difference between the two is whether the app put it forward.
+
+Added a weighting control - our pick, least time, least walking, fewest transfers - which
+reorders every routed option and moves the plan to the new leader, because a control that
+reshuffled a list while leaving the recommendation contradicting the top of it would be
+worse than none. Re-ranking is arithmetic over results that were already routed, so it is
+instant and the note under the control says exactly that rather than implying a new
+search. No weighting promotes an option that drops an errand: a partial option is cheaper
+on every metric by construction, and a live Woodlands-HarbourFront run had a one-errand
+option scoring better than every complete one. It stays selectable by hand.
+
+The default is called "our pick" rather than "balanced" because `inconvenience_score` is
+the journey cost minus a credit for how confidently the place is known - location
+certainty plus published hours, weighted 2.5. On that same run the credit chose a named
+shop at +11 min over a mall at +5, which is defensible as a recommendation and
+indefensible as a claim about time, walking and transfers.
+
 ## 0.7.10 — The map shows the comparison it made
 
 `optimize` routed several candidates and returned only the winners, so a live

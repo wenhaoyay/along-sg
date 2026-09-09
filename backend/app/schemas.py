@@ -216,6 +216,12 @@ class RecommendationResponse(BaseModel):
     detour_breakdown: DetourBreakdownResponse
     route_geometry: list[CoordinateResponse] = Field(default_factory=list)
     legs: list[RouteLegResponse] = Field(default_factory=list)
+    # Whether the app puts this forward as a choice, as opposed to reporting it
+    # as something it routed and rejected. Both are full recommendations,
+    # because you can select either - a compared option needs its own legs and
+    # geometry the moment you pick it, and at that point the only difference
+    # between the two is whether the app volunteered it.
+    offered: bool = True
 
 
 class CatalogCategoryResponse(BaseModel):
@@ -241,26 +247,6 @@ class NearMissResponse(BaseModel):
     approximate_straight_line_detour_km: float
     match_classification: str = "easier_alternative"
     explanation: str
-
-
-class ConsideredOptionResponse(BaseModel):
-    """A candidate that was genuinely routed and lost.
-
-    Every figure here is the one the ranking used, so the map and the panel can
-    state what an option would have cost without recomputing anything.
-    """
-
-    display_name: str
-    coordinate: CoordinateResponse
-    stop_count: int
-    # The same figure the recommendation headline leads with, so the two are
-    # actually comparable. Total added time is dominated by dwell, which is near
-    # constant across options - see 0.7.7.
-    extra_transport_minutes: float
-    incremental_detour_minutes: float
-    incremental_walking_distance_m: float
-    incremental_transfers: int
-    consolidated: bool = False
 
 
 class DiagnosticsResponse(BaseModel):
@@ -305,7 +291,7 @@ class OptimizeResponse(BaseModel):
     data_attribution: str = "POI data © OpenStreetMap contributors, ODbL 1.0"
     intent: IntentV1 | None = None
     near_misses: list[NearMissResponse] = Field(default_factory=list)
-    considered: list[ConsideredOptionResponse] = Field(default_factory=list)
+
 
 
 class AnalyticsEventType(StrEnum):
