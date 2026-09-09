@@ -75,19 +75,19 @@ class Settings:
     database_path: Path = Path(__file__).resolve().parents[1] / "data" / "errands.db"
     scoring: ScoringWeights = ScoringWeights()
     dwell_times: DwellTimes = DwellTimes()
-    max_candidates: int = 4
+    max_candidates: int = 6
     max_straight_line_detour_km: float = 12.0
     max_reasonable_detour_minutes: float = 45.0
     candidate_corridor_km: float = 2.5
     candidate_endpoint_radius_km: float = 2.0
     candidate_max_transit_node_distance_m: float = 1200.0
     candidate_max_hubs_per_category: int = 8
-    routing_soft_budget: int = 10
-    routing_hard_budget: int = 12
+    routing_soft_budget: int = 16
+    routing_hard_budget: int = 20
     route_cache_max_entries: int = 512
     route_cache_ttl_seconds: float = 300.0
     route_cache_departure_bucket_minutes: int = 1
-    routing_concurrency: int = 1
+    routing_concurrency: int = 4
     llm_intent_enabled: bool = False
     openai_api_key: str | None = None
     openai_intent_model: str = "gpt-4.1-mini"
@@ -167,7 +167,7 @@ class Settings:
                 coffee=float(os.getenv("DWELL_COFFEE_MINUTES", "12")),
                 convenience=float(os.getenv("DWELL_CONVENIENCE_MINUTES", "5")),
             ),
-            max_candidates=int(os.getenv("OPTIMIZER_MAX_CANDIDATES", "4")),
+            max_candidates=int(os.getenv("OPTIMIZER_MAX_CANDIDATES", "6")),
             max_straight_line_detour_km=float(
                 os.getenv("OPTIMIZER_MAX_STRAIGHT_LINE_DETOUR_KM", "12")
             ),
@@ -184,14 +184,14 @@ class Settings:
             candidate_max_hubs_per_category=int(
                 os.getenv("OPTIMIZER_MAX_HUBS_PER_CATEGORY", "8")
             ),
-            routing_soft_budget=int(os.getenv("OPTIMIZER_ROUTING_SOFT_BUDGET", "10")),
-            routing_hard_budget=int(os.getenv("OPTIMIZER_ROUTING_HARD_BUDGET", "12")),
+            routing_soft_budget=int(os.getenv("OPTIMIZER_ROUTING_SOFT_BUDGET", "16")),
+            routing_hard_budget=int(os.getenv("OPTIMIZER_ROUTING_HARD_BUDGET", "20")),
             route_cache_max_entries=int(os.getenv("ROUTE_CACHE_MAX_ENTRIES", "512")),
             route_cache_ttl_seconds=float(os.getenv("ROUTE_CACHE_TTL_SECONDS", "300")),
             route_cache_departure_bucket_minutes=int(
                 os.getenv("ROUTE_CACHE_DEPARTURE_BUCKET_MINUTES", "1")
             ),
-            routing_concurrency=int(os.getenv("OPTIMIZER_ROUTING_CONCURRENCY", "1")),
+            routing_concurrency=int(os.getenv("OPTIMIZER_ROUTING_CONCURRENCY", "4")),
             llm_intent_enabled=_bool_env("LLM_INTENT_ENABLED", False),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             openai_intent_model=os.getenv("OPENAI_INTENT_MODEL", "gpt-4.1-mini"),

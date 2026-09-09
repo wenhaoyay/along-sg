@@ -10,6 +10,22 @@ from app.domain import Coordinate, Hub, Store
 from app.poi_taxonomy import BRAND_ALIASES, CATEGORIES, canonical_brand, normalize_text
 
 
+def _seed_distance_km(
+    latitude: float, longitude: float, other: tuple[float, float]
+) -> float:
+    """Great-circle kilometres, used only to decide whether two hub rows are the
+    same building. Kept local so ingestion does not import a provider."""
+    from math import asin, sin
+
+    lat1, lon1 = radians(latitude), radians(longitude)
+    lat2, lon2 = radians(other[0]), radians(other[1])
+    inner = (
+        sin((lat2 - lat1) / 2) ** 2
+        + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
+    )
+    return 2 * 6371.0088 * asin(sqrt(inner))
+
+
 HUB_SEED = (
     (1, "Waterway Point", 1.4067, 103.9023, "mall", "punggol-station", "waterway-point"),
     (2, "NEX Serangoon", 1.3509, 103.8488, "mall", "serangoon-station", "nex"),
@@ -198,6 +214,16 @@ class HubRepository:
 
     @staticmethod
     def _seed_curated_data(connection: sqlite3.Connection) -> None:
+        # The seed bootstraps an empty catalog and runs again on every startup.
+        # Once ingestion has superseded a seed hub with the real thing, that
+        # name belongs to the ingested row, so re-seeding it would collide with
+        # UNIQUE(hubs.name) and take the whole server down at startup.
+        superseded = {
+            row[0] for row in connection.execute(
+                "SELECT name FROM hubs WHERE source<>'curated'"
+            )
+        }
+        seed_hubs = [row for row in HUB_SEED if row[1] not in superseded]
         connection.executemany(
             """
             INSERT INTO hubs(id, name, latitude, longitude, semantic_type,
@@ -209,17 +235,21 @@ class HubRepository:
                 transport_area_id=excluded.transport_area_id,
                 consolidation_group_id=excluded.consolidation_group_id
             """,
-            HUB_SEED,
+            seed_hubs,
         )
+        seeded_hub_ids = {row[0] for row in seed_hubs}
+        seed_outlets = [row for row in OUTLET_SEED if row[1] in seeded_hub_ids]
         connection.executemany(
             """
             INSERT OR IGNORE INTO outlets(id, hub_id, name, category, source, closure_status)
             VALUES (?, ?, ?, ?, 'curated', 'open')
             """,
-            OUTLET_SEED,
+            seed_outlets,
         )
         brand_ids = dict(connection.execute("SELECT slug, id FROM brands"))
-        for outlet_id, _hub_id, name, category in OUTLET_SEED:
+        # Only the outlets that were actually seeded - outlet_categories has a
+        # foreign key onto outlets(id), so the skipped ones would fail here.
+        for outlet_id, _hub_id, name, category in seed_outlets:
             slug, _ = canonical_brand(name)
             if slug:
                 connection.execute("UPDATE outlets SET brand_id=? WHERE id=?", (brand_ids[slug], outlet_id))
@@ -590,6 +620,20 @@ class HubRepository:
         node_records, hub_records, outlet_records = list(transport_nodes), list(hubs), list(outlets)
         with self._connect() as connection:
             old_hub_ids = [row[0] for row in connection.execute("SELECT id FROM hubs WHERE source=?", (source,))]
+            # A curated seed hub is a bootstrap, not a fact. Where an incoming
+            # hub describes the same building - same normalized name, within
+            # 400 m - retire the seed copy, or the two reach the user as
+            # competing recommendations for one mall.
+            incoming = {
+                normalize_text(hub["name"]): (hub["latitude"], hub["longitude"])
+                for hub in hub_records
+            }
+            for row in connection.execute(
+                "SELECT id, name, latitude, longitude FROM hubs WHERE source<>?", (source,)
+            ):
+                match = incoming.get(normalize_text(row[1]))
+                if match is not None and _seed_distance_km(row[2], row[3], match) <= 0.4:
+                    old_hub_ids.append(row[0])
             if old_hub_ids:
                 placeholders = ",".join("?" for _ in old_hub_ids)
                 connection.execute(f"DELETE FROM outlets WHERE hub_id IN ({placeholders})", old_hub_ids)

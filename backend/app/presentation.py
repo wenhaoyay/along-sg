@@ -9,7 +9,10 @@ from app.poi_taxonomy import CATEGORIES
 
 
 logger = logging.getLogger("presentation")
-_RAW_ID = re.compile(r"(?:\s*[·-]\s*)?(?:node|way|relation)/\d+", re.IGNORECASE)
+# A disambiguated name carries a source id that may be prefixed by its hub
+# kind, as in "ION Orchard · mall:way/123". Matching only the bare "way/123"
+# tail left "ION Orchard · mall:" on screen.
+_RAW_ID = re.compile(r"(?:\s*[·-]\s*)?\w*:?(?:node|way|relation)/\d+", re.IGNORECASE)
 _CATEGORY_LABELS = {item.slug: item.name for item in CATEGORIES}
 
 
