@@ -2,6 +2,20 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.7.8 — The timeline names the service you board
+
+Carried `routeShortName`, `routeLongName`, `agencyName` and the intermediate-stop count
+through from OneMap, all four of which the leg parser had been discarding, so the timeline
+says how to travel between stops instead of only when to be there. Legs now carry a
+`segment_index`, because `combine_routes` flattens the routed segments into one list with
+no boundary and the client could otherwise only guess which service belongs to which stop;
+the mock provider names plausible lines so the timeline is developable offline. Fanned
+overlapping map markers around their centre, which the mall recovery made more pressing
+rather than less - a Singapore mall is often built on the station, and at Choa Chu Kang the
+origin marker was entirely hidden. Raised timeline endpoint contrast, preferred the
+client's resolved place names over coordinate-derived labels, and stopped a hub heading
+repeating a shop line identical to it.
+
 ## 0.7.7 — Honest headline numbers, dark mode and offline shell
 
 Suppressed alternatives whose journey is indistinguishable from the

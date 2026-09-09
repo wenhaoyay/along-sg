@@ -12,7 +12,9 @@ from fastapi.staticfiles import StaticFiles
 from app.config import Settings
 from app.analytics import AnalyticsRepository
 from app.db import HubRepository
-from app.domain import Coordinate, GeocodeMatch, Hub, RouteResult, ScoredCandidate, Store
+from app.domain import (
+    Coordinate, GeocodeMatch, Hub, RouteLeg, RouteResult, ScoredCandidate, Store,
+)
 from app.discovery_models import (
     DiscoveryConfidence, DiscoverySearchContext, DiscoverySource, EvidenceTier,
     ResolvedLocation, ResolvedPlace,
@@ -744,6 +746,24 @@ def geocode_response(match: GeocodeMatch) -> GeocodeResultResponse:
     )
 
 
+def leg_response(leg: RouteLeg) -> RouteLegResponse:
+    return RouteLegResponse(
+        mode=leg.mode,
+        duration_minutes=leg.duration_minutes,
+        distance_m=leg.distance_m,
+        from_name=leg.from_name,
+        to_name=leg.to_name,
+        departure_time=leg.departure_time,
+        arrival_time=leg.arrival_time,
+        geometry_format=leg.geometry_format,
+        route_short_name=leg.route_short_name,
+        route_long_name=leg.route_long_name,
+        agency=leg.agency,
+        stop_count=leg.stop_count,
+        segment_index=leg.segment_index,
+    )
+
+
 def route_response(route: RouteResult) -> RouteResponse:
     return RouteResponse(
         duration_minutes=route.duration_minutes,
@@ -752,17 +772,7 @@ def route_response(route: RouteResult) -> RouteResponse:
         transfers=route.transfers,
         provider=route.provider,
         legs=[
-            RouteLegResponse(
-                mode=leg.mode,
-                duration_minutes=leg.duration_minutes,
-                distance_m=leg.distance_m,
-                from_name=leg.from_name,
-                to_name=leg.to_name,
-                departure_time=leg.departure_time,
-                arrival_time=leg.arrival_time,
-                geometry_format=leg.geometry_format,
-            )
-            for leg in route.legs
+            leg_response(leg) for leg in route.legs
         ],
         departure_time=route.departure_time,
         arrival_time=route.arrival_time,
@@ -834,6 +844,7 @@ def recommendation_response(
     ]
     extra_transport = max(0.0, candidate.incremental_detour_minutes - route.dwell_minutes)
     return RecommendationResponse(
+        legs=[leg_response(leg) for leg in route.legs],
         time_dependent=route.time_dependent,
         departure_time=route.departure_time if route.time_dependent else None,
         arrival_time=route.arrival_time if route.time_dependent else None,

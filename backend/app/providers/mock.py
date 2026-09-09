@@ -26,6 +26,17 @@ MOCK_PLACES = (
 )
 
 
+# (short name, long name, is_rail, agency)
+_MOCK_LINES = (
+    ("NE", "NORTH EAST LINE", True, "SBS Transit"),
+    ("NS", "NORTH SOUTH LINE", True, "SMRT Corporation"),
+    ("CC", "CIRCLE LINE", True, "SMRT Corporation"),
+    ("DT", "DOWNTOWN LINE", True, "SBS Transit"),
+    ("95", "SBST BUS 95", False, "SBS Transit"),
+    ("196", "SBST BUS 196", False, "SBS Transit"),
+)
+
+
 def haversine_km(first: Coordinate, second: Coordinate) -> float:
     radius_km = 6371.0
     lat1, lat2 = math.radians(first.latitude), math.radians(second.latitude)
@@ -69,9 +80,18 @@ class MockOneMapProvider(MapProvider):
         transfers = 0 if distance_km < 7.0 else (1 if distance_km < 18.0 else 2)
         transit_minutes = distance_km / 26.0 * 60.0 + 3.0 + transfers * 2.5
         duration = walking_minutes + transit_minutes
+        # Deterministic but plausible service identity, so the journey timeline
+        # can be developed and tested without live OneMap credentials. Derived
+        # from the distance so a given journey always names the same service.
+        line = _MOCK_LINES[int(distance_km * 10) % len(_MOCK_LINES)]
         legs = (
             RouteLeg("WALK", walking_minutes / 2, walking_distance_m / 2, "Origin", "Stop"),
-            RouteLeg("TRANSIT", transit_minutes, distance_km * 1000, "Stop", "Stop"),
+            RouteLeg(
+                "SUBWAY" if line[2] else "BUS",
+                transit_minutes, distance_km * 1000, "Stop", "Stop",
+                route_short_name=line[0], route_long_name=line[1], agency=line[3],
+                stop_count=max(1, round(distance_km / 1.4)),
+            ),
             RouteLeg("WALK", walking_minutes / 2, walking_distance_m / 2, "Stop", "Destination"),
         )
         return RouteResult(

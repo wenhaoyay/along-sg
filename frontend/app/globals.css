@@ -309,8 +309,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .map-key i { width: 22px; border-top: 3px solid var(--green); }
 .map-key i.baseline { border-top-color: var(--map-baseline); border-top-style: dashed; opacity: .68; }
 .along-marker { background: transparent; border: 0; }
-.along-marker span { width: 30px; height: 30px; display: grid; place-items: center; color: var(--marker-fg); background: var(--marker-bg); border: 3px solid var(--marker-ring); border-radius: 50%; box-shadow: 0 5px 16px rgba(21,44,36,.3); font-size: 10px; font-weight: 850; }
-.along-marker.stop span { background: var(--green); box-shadow: 0 0 0 5px rgba(8,122,95,.14), 0 6px 17px rgba(21,44,36,.3); transform: scale(1.13); }
+.along-marker span { transition: transform .18s ease; transform: translate(var(--fan-x, 0px), var(--fan-y, 0px)); width: 30px; height: 30px; display: grid; place-items: center; color: var(--marker-fg); background: var(--marker-bg); border: 3px solid var(--marker-ring); border-radius: 50%; box-shadow: 0 5px 16px rgba(21,44,36,.3); font-size: 10px; font-weight: 850; }
+.along-marker.stop span { background: var(--green); box-shadow: 0 0 0 5px rgba(8,122,95,.14), 0 6px 17px rgba(21,44,36,.3); transform: translate(var(--fan-x, 0px), var(--fan-y, 0px)) scale(1.13); }
 .along-marker.destination span { background: var(--marker-dest); border-radius: 8px; }
 .leaflet-control-zoom { margin-right: 18px !important; margin-bottom: 18px !important; overflow: hidden; border: 0 !important; border-radius: 10px !important; box-shadow: var(--control-shadow) !important; }
 .leaflet-control-zoom a { width: 36px !important; height: 36px !important; color: var(--ink-soft) !important; background: var(--glass) !important; border-color: var(--line) !important; line-height: 35px !important; }
@@ -321,11 +321,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .departure-controls label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; min-width: 0; flex: 1; }
 .departure-controls select, .departure-controls input { width: 100%; min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--elevated); color: var(--ink-soft); font: inherit; }
 .cancel-search { width: 100%; min-height: 44px; border: 0; background: transparent; color: var(--green); font: inherit; }
-.timeline-endpoint { font-size: 11px; color: var(--muted); margin: 10px 0; padding-left: 8px; border-left: 2px solid var(--line); }
+.timeline-endpoint { font-size: 12px; font-weight: 600; color: var(--ink-soft); margin: 9px 0; padding-left: 10px; border-left: 2px solid var(--mint-strong); }
+.ride-leg { display: flex; align-items: center; gap: 7px; margin: 0 0 0 10px; padding: 5px 0; border-left: 2px solid var(--mint-strong); padding-left: 10px; margin-left: -2px; color: var(--ink-soft); font-size: 11px; }
+.ride-leg svg { flex: 0 0 auto; color: var(--green); }
+.ride-leg .service { padding: 2px 7px; color: var(--green); background: var(--mint); border-radius: 999px; font-weight: 750; letter-spacing: .01em; }
+.ride-leg .ride-detail { color: var(--muted); }
 .journey-timeline .stop-summary-row { grid-template-columns: 44px minmax(0,1fr); border: 1px solid transparent; border-radius: 12px; padding: 8px; transition: background .18s; }
 .journey-timeline .selected-stop-card { border-color: var(--green); background: var(--wash-strong); }
 button.stop-number { border: 0; min-width: 44px; min-height: 44px; cursor: pointer; }
-.along-marker.selected-stop { outline: 4px solid var(--selected-outline); outline-offset: 3px; border-radius: 50%; }
+.along-marker.selected-stop > span { outline: 4px solid var(--selected-outline); outline-offset: 3px; }
 .discovery-recovery { color: var(--muted); font-size: 12px; }
 .discovery-recovery button { min-height: 44px; margin: 4px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); color: var(--green); background: var(--wash); }
 .impact-caption, .hours-status { color: var(--muted); font-size: 11px; }

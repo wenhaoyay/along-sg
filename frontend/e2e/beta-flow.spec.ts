@@ -4,7 +4,7 @@ const cck = { label: "Choa Chu Kang MRT Station", address: "10 Choa Chu Kang Ave
 const fajar = { label: "Fajar LRT Station", address: "Fajar Road", postal_code: "677728", entity_type: "station", confirmed: true, coordinate: { latitude: 1.3845, longitude: 103.7708 } };
 const orchard = { label: "Orchard MRT", address: "Orchard Road", entity_type: "station", confirmed: true, coordinate: { latitude: 1.3043, longitude: 103.8322 } };
 const intent = { schema_version: "1.0", original_text: "KFC and bubble tea", required_errands: [{ category: "fried_chicken", required: true, exact_brand: "KFC", substitutes_allowed: false }, { category: "bubble_tea", required: true, substitutes_allowed: true }], optional_errands: [], preferences: { walking_tolerance: "low", transfer_tolerance: "standard", prefer_consolidated_stops: true, urgency: "normal" }, parse_method: "deterministic", confidence: .98 };
-const recommendation = { label: "Best Overall", quality_label: "Best option", match_classification: "best_match", hard_constraints_satisfied: true, stops: [{ name: "Lot One", display_name: "Lot One", coordinate: { latitude: 1.3851, longitude: 103.7449 }, matching_outlets: ["KFC · fried_chicken", "KOI Thé · bubble_tea"], businesses: [{ display_name: "KFC", canonical_brand: "KFC", category_labels: ["Fried chicken"], location_context: "Lot One" }, { display_name: "KOI Thé", canonical_brand: "KOI Thé", category_labels: ["Bubble tea"], location_context: "Lot One" }], semantic_type: "mall", location_context: "Lot One", context_kind: "mall", location_quality: .95, navigation_ready: true }], consolidated: true, total_duration_minutes: 37, total_walking_distance_m: 510, total_transfers: 0, incremental_detour_minutes: 8, incremental_walking_distance_m: 180, incremental_transfers: 0, stop_relationship: "same_mall", why_this_wins: "Both errands are in one mall near the route.", detour_breakdown: { extra_transport_minutes: 8, dwell_minutes: 23, dwell_allowances: [{ label: "Estimated fried chicken stop", minutes: 15 }, { label: "Estimated bubble tea stop", minutes: 8 }], total_incremental_minutes: 31, precision_note: "Travel comes from the route check. Stop times are practical estimates." }, route_geometry: [cck.coordinate, { latitude: 1.3851, longitude: 103.7449 }, fajar.coordinate] };
+const recommendation = { label: "Best Overall", quality_label: "Best option", match_classification: "best_match", hard_constraints_satisfied: true, stops: [{ name: "Lot One", display_name: "Lot One", coordinate: { latitude: 1.3851, longitude: 103.7449 }, matching_outlets: ["KFC · fried_chicken", "KOI Thé · bubble_tea"], businesses: [{ display_name: "KFC", canonical_brand: "KFC", category_labels: ["Fried chicken"], location_context: "Lot One" }, { display_name: "KOI Thé", canonical_brand: "KOI Thé", category_labels: ["Bubble tea"], location_context: "Lot One" }], semantic_type: "mall", location_context: "Lot One", context_kind: "mall", location_quality: .95, navigation_ready: true }], consolidated: true, total_duration_minutes: 37, total_walking_distance_m: 510, total_transfers: 0, incremental_detour_minutes: 8, incremental_walking_distance_m: 180, incremental_transfers: 0, stop_relationship: "same_mall", why_this_wins: "Both errands are in one mall near the route.", detour_breakdown: { extra_transport_minutes: 8, dwell_minutes: 23, dwell_allowances: [{ label: "Estimated fried chicken stop", minutes: 15 }, { label: "Estimated bubble tea stop", minutes: 8 }], total_incremental_minutes: 31, precision_note: "Travel comes from the route check. Stop times are practical estimates." }, route_geometry: [cck.coordinate, { latitude: 1.3851, longitude: 103.7449 }, fajar.coordinate], legs: [{ mode: "WALK", duration_minutes: 4, distance_m: 300, from_name: "Origin", to_name: "CHOA CHU KANG MRT", route_short_name: null, route_long_name: null, agency: null, stop_count: null, segment_index: 0 }, { mode: "SUBWAY", duration_minutes: 11, distance_m: 5200, from_name: "CHOA CHU KANG MRT", to_name: "BUKIT PANJANG", route_short_name: "DT", route_long_name: "DOWNTOWN LINE", agency: "SBS Transit", stop_count: 4, segment_index: 0 }, { mode: "BUS", duration_minutes: 8, distance_m: 2600, from_name: "LOT ONE", to_name: "FAJAR LRT", route_short_name: "190", route_long_name: "SBST BUS 190", agency: "SBS Transit", stop_count: 3, segment_index: 1 }, { mode: "WALK", duration_minutes: 3, distance_m: 210, from_name: "FAJAR LRT", to_name: "Destination", route_short_name: null, route_long_name: null, agency: null, stop_count: null, segment_index: 1 }] };
 const walkingAlternative = { ...recommendation, quality_label: "Less walking", match_classification: "best_match", stops: [{ ...recommendation.stops[0], name: "Hillion Mall", display_name: "Hillion Mall", coordinate: { latitude: 1.3783, longitude: 103.7634 }, location_context: "Hillion Mall" }], incremental_detour_minutes: 12, incremental_walking_distance_m: 60, route_geometry: [cck.coordinate, { latitude: 1.3783, longitude: 103.7634 }, fajar.coordinate] };
 const result = { origin: cck, destination: fajar, baseline: { duration_minutes: 29, walking_distance_m: 330, transfers: 0, geometry: [cck.coordinate, fajar.coordinate] }, recommendations: { best_overall: recommendation, fastest: recommendation, least_walking: recommendation }, outcome: "ok", message: null };
 
@@ -361,4 +361,64 @@ test("a dark device with no stored choice renders dark before paint", async ({ p
   // otherwise the page paints light and flips.
   expect(await page.evaluate(() => document.documentElement.getAttribute("data-theme"))).toBe("dark");
   await expect(page.locator(".theme-toggle")).toHaveAttribute("data-theme-preference", "system");
+});
+
+test("the timeline names the service you board, per segment", async ({ page }) => {
+  await commonRoutes(page);
+  await page.route("**/api/intent/parse", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: "resolved", intent, diagnostics: {}, journey_mentions: [], journey_conflicts: [] }) }));
+  await page.route("**/api/optimize-intent", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(result) }));
+  await page.goto("/"); await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+
+  const rides = page.locator(".ride-leg");
+  await expect(rides).toHaveCount(2);
+  // Rail reads as a line, bus as a numbered service, each with stops ridden.
+  await expect(rides.nth(0)).toContainText("DT line");
+  await expect(rides.nth(0)).toContainText("4 stops");
+  await expect(rides.nth(1)).toContainText("Bus 190");
+  await expect(rides.nth(1)).toContainText("3 stops");
+  // Walking legs are not services and must not appear.
+  expect((await rides.allTextContents()).join(" ")).not.toMatch(/walk/i);
+  // Segment 0's service sits above the stop, segment 1's below it.
+  const rideOne = await rides.nth(0).boundingBox();
+  const stopRow = await page.locator(".stop-summary-row").first().boundingBox();
+  const rideTwo = await rides.nth(1).boundingBox();
+  expect(rideOne!.y).toBeLessThan(stopRow!.y);
+  expect(rideTwo!.y).toBeGreaterThan(stopRow!.y);
+
+  // The endpoints name the places the user chose, not the coordinates sent.
+  await expect(page.locator(".timeline-endpoint").first()).toContainText("Choa Chu Kang");
+  await expect(page.locator(".timeline-endpoint").first()).not.toContainText(/\d+\.\d{4},/);
+});
+
+test("markers that would overlap are fanned apart", async ({ page }) => {
+  await commonRoutes(page);
+  // The stop sits ~30 m from the origin - a mall built on top of the station.
+  const onStation = { ...result, recommendations: { best_overall: { ...recommendation, stops: [{ ...recommendation.stops[0], coordinate: { latitude: cck.coordinate.latitude + 0.0002, longitude: cck.coordinate.longitude } }] } } };
+  await page.route("**/api/intent/parse", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: "resolved", intent, diagnostics: {}, journey_mentions: [], journey_conflicts: [] }) }));
+  await page.route("**/api/optimize-intent", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(onStation) }));
+  await page.goto("/"); await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+  await page.waitForTimeout(1800);
+
+  // Both the origin and the stop must carry an offset, or one hides the other.
+  const fanned = await page.locator(".along-marker > span").evaluateAll((els) => els.filter(
+    (el) => (getComputedStyle(el).getPropertyValue("--fan-y").trim()
+      || getComputedStyle(el).getPropertyValue("--fan-x").trim())).length);
+  expect(fanned).toBeGreaterThanOrEqual(2);
+
+  // And they must end up visually separated on screen. Measured on the inner
+  // span: Leaflet owns the outer element's position, and the fan offset is
+  // applied to the glyph inside it.
+  const boxes = await page.locator(".along-marker > span").evaluateAll(
+    (els) => els.map((el) => el.getBoundingClientRect()).map((r) => ({ x: r.x, y: r.y })));
+  const gaps = [];
+  for (let i = 0; i < boxes.length; i += 1) for (let j = i + 1; j < boxes.length; j += 1) {
+    gaps.push(Math.hypot(boxes[i].x - boxes[j].x, boxes[i].y - boxes[j].y));
+  }
+  expect(Math.min(...gaps)).toBeGreaterThan(20);
 });

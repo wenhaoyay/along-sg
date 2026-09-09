@@ -82,7 +82,11 @@ def combine_routes(
             sum(route.walking_distance_m for route in routes), 1
         ),
         transfers=sum(route.transfers for route in routes),
-        legs=tuple(leg for route in routes for leg in route.legs),
+        legs=tuple(
+            replace(leg, segment_index=index)
+            for index, route in enumerate(routes)
+            for leg in route.legs
+        ),
         provider=routes[0].provider if routes else "unknown",
         raw_metadata={
             "segments": len(routes),

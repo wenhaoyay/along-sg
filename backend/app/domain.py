@@ -31,6 +31,18 @@ class RouteLeg:
     arrival_time: datetime | None = None
     geometry: str | None = None
     geometry_format: str | None = None
+    # OneMap returns the service identity on every transit leg and it was
+    # being discarded, so a plan could say "37 minutes" without ever saying
+    # which train or bus to board - the one thing a traveller has to act on.
+    route_short_name: str | None = None
+    route_long_name: str | None = None
+    agency: str | None = None
+    stop_count: int | None = None
+    # Which routed segment this leg belongs to: 0 is origin -> first stop, 1 is
+    # first stop -> next, and so on. `combine_routes` flattens the segments
+    # into one leg list, and without this the client cannot tell where one
+    # ends, so it could not place a service against the right stop.
+    segment_index: int | None = None
 
 
 @dataclass(frozen=True)

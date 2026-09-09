@@ -2,6 +2,7 @@
 
 import {
   ArrowRight,
+  Bus,
   Check,
   ChevronDown,
   Clock3,
@@ -61,6 +62,20 @@ export type Recommendation = {
     precision_note: string;
   };
   route_geometry: Array<{ latitude: number; longitude: number }>;
+  legs?: Leg[];
+};
+
+export type Leg = {
+  mode: string;
+  duration_minutes: number;
+  distance_m: number;
+  from_name: string | null;
+  to_name: string | null;
+  route_short_name: string | null;
+  route_long_name: string | null;
+  agency: string | null;
+  stop_count: number | null;
+  segment_index: number | null;
 };
 
 export type Result = {
@@ -86,9 +101,14 @@ type Props = {
   onEdit: () => void;
   activeStop?: number | null;
   onStopSelect?: (index: number) => void;
+  /* The request is sent as coordinates, so the API echoes back a
+   * coordinate-derived label - the timeline read "A · 1.40578, 103.90290".
+   * The client already resolved a real name for each endpoint; prefer it. */
+  originLabel?: string;
+  destinationLabel?: string;
 };
 
-export function RecommendationPanel({ recommendation, result, alternatives, selectedKey, onSelect, onEdit, activeStop, onStopSelect }: Props) {
+export function RecommendationPanel({ recommendation, result, alternatives, selectedKey, onSelect, onEdit, activeStop, onStopSelect, originLabel, destinationLabel }: Props) {
   const primaryStop = recommendation.stops[0];
   const otherOptions = alternatives.filter(([key]) => key !== selectedKey);
 
@@ -124,17 +144,24 @@ export function RecommendationPanel({ recommendation, result, alternatives, sele
       : `+${Math.round(recommendation.incremental_detour_minutes)} min added in total.`}</p>
 
     <div className="stop-summary journey-timeline" aria-label="Errand stops">
-      <p className="timeline-endpoint">A · {result.origin.label}{recommendation.departure_time ? ` · ${sgTime(recommendation.departure_time)}` : ""}</p>
-      {recommendation.stops.map((stop, stopIndex) => <div className={`stop-summary-row ${activeStop === stopIndex ? "selected-stop-card" : ""}`} key={`${stop.display_name}-${stopIndex}`}>
+      <p className="timeline-endpoint">A · {originLabel ?? result.origin.label}{recommendation.departure_time ? ` · ${sgTime(recommendation.departure_time)}` : ""}</p>
+      {recommendation.stops.map((stop, stopIndex) => <div key={`segment-${stopIndex}`}>
+        <RideLegs legs={recommendation.legs} segment={stopIndex} />
+        <div className={`stop-summary-row ${activeStop === stopIndex ? "selected-stop-card" : ""}`}>
         <button type="button" className="stop-number" aria-label={`Highlight stop ${stopIndex + 1}: ${stop.display_name}`} aria-pressed={activeStop === stopIndex} onClick={() => onStopSelect?.(stopIndex)}>{recommendation.stops.length > 1 ? stopIndex + 1 : <Route size={15} aria-hidden="true" />}</button>
         <div>
-          {recommendation.stops.length > 1 && <strong>{stop.display_name}</strong>}
-          <p>{stop.businesses.map((business) => business.display_name).join(" · ") || stop.display_name}</p>
+          {/* A single-shop stop is often named after the shop, so printing
+              both gave "7-Eleven / 7-Eleven". Show the hub name only when it
+              adds something. */}
+          {recommendation.stops.length > 1 && stop.display_name !== businessLine(stop) && <strong>{stop.display_name}</strong>}
+          <p>{businessLine(stop)}</p>
           {stop.arrival_time && <small>Estimated arrival {new Intl.DateTimeFormat("en-SG", { timeZone: "Asia/Singapore", hour: "numeric", minute: "2-digit" }).format(new Date(stop.arrival_time))}</small>}
           {hoursNotes(stop.businesses).map((note) => <small className={`hours-status hours-${note.status}`} key={note.key}>{note.text}</small>)}
         </div>
+        </div>
       </div>)}
-      <p className="timeline-endpoint">B · {result.destination.label}{recommendation.arrival_time ? ` · Est. ${sgTime(recommendation.arrival_time)}` : ""}</p>
+      <RideLegs legs={recommendation.legs} segment={recommendation.stops.length} />
+      <p className="timeline-endpoint">B · {destinationLabel ?? result.destination.label}{recommendation.arrival_time ? ` · Est. ${sgTime(recommendation.arrival_time)}` : ""}</p>
     </div>
     {recommendation.time_dependent === false && <p className="precision-note">Departure-time routing is not verified for this provider. Stop arrival times are unavailable; this comparison is not a timetable promise.</p>}
 
@@ -216,6 +243,9 @@ function indistinguishable(a: Recommendation, b: Recommendation) {
  * ranking is broken. It is not - the extra time bought less walking or one
  * fewer change. Name that trade, from the same numbers the ranking used. */
 export function tradeoffCopy(item: Recommendation, selected: Recommendation): string | null {
+  // A partial option covers fewer errands, so "20 min less travel" would read
+  // as strictly better when it is simply doing less. Its label says so instead.
+  if (item.match_classification === "partial_option") return null;
   const minutes = item.incremental_detour_minutes - selected.incremental_detour_minutes;
   const metres = item.incremental_walking_distance_m - selected.incremental_walking_distance_m;
   const transfers = item.incremental_transfers - selected.incremental_transfers;
@@ -239,6 +269,54 @@ export function tradeoffCopy(item: Recommendation, selected: Recommendation): st
 }
 
 function capitalise(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); }
+
+function businessLine(stop: Stop) {
+  return stop.businesses.map((business) => business.display_name).join(" · ") || stop.display_name;
+}
+
+const WALKING_MODES = new Set(["WALK", "BICYCLE", "SCOOTER"]);
+
+/** The services you actually board on one leg of the journey.
+ *
+ * OneMap returns `routeShortName`, `routeLongName`, `agencyName` and
+ * `intermediateStops` on every transit leg, and all of it was being discarded
+ * - so a plan could say "37 minutes" without ever saying which train or bus to
+ * get on, which is the one thing the traveller has to act on. */
+function RideLegs({ legs, segment }: { legs?: Leg[]; segment: number }) {
+  const rides = (legs ?? []).filter(
+    (leg) => leg.segment_index === segment && !WALKING_MODES.has(leg.mode.toUpperCase()),
+  );
+  if (!rides.length) return null;
+  return <>{rides.map((leg, index) => <p className="ride-leg" key={`${segment}-${index}`}>
+    {isRail(leg) ? <TrainFront size={13} aria-hidden="true" /> : <Bus size={13} aria-hidden="true" />}
+    <span className="service">{serviceName(leg)}</span>
+    <span className="ride-detail">{rideDetail(leg)}</span>
+  </p>)}</>;
+}
+
+const RAIL_MODES = new Set(["SUBWAY", "RAIL", "TRAM", "METRO", "TRAIN", "LIGHT_RAIL", "FUNICULAR"]);
+
+function isRail(leg: Leg) { return RAIL_MODES.has(leg.mode.toUpperCase()); }
+
+function serviceName(leg: Leg) {
+  const short = leg.route_short_name?.trim();
+  if (isRail(leg)) return short ? `${short} line` : "Train";
+  if (short) return `Bus ${short}`;
+  return leg.route_long_name?.trim() || titleCase(leg.mode);
+}
+
+function rideDetail(leg: Leg) {
+  const parts: string[] = [];
+  if (leg.stop_count && leg.stop_count > 0) {
+    parts.push(`${leg.stop_count} stop${leg.stop_count === 1 ? "" : "s"}`);
+  }
+  if (leg.duration_minutes >= 1) parts.push(`${Math.round(leg.duration_minutes)} min`);
+  return parts.join(" · ");
+}
+
+function titleCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase().replace(/_/g, " ");
+}
 
 const HOURS_COPY: Record<string, string> = {
   open: "Listed open at arrival · hours may change",

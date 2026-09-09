@@ -86,6 +86,11 @@ class RouteLegResponse(BaseModel):
     departure_time: datetime | None = None
     arrival_time: datetime | None = None
     geometry_format: str | None = None
+    route_short_name: str | None = None
+    route_long_name: str | None = None
+    agency: str | None = None
+    stop_count: int | None = None
+    segment_index: int | None = None
 
 
 class RouteResponse(BaseModel):
@@ -210,6 +215,7 @@ class RecommendationResponse(BaseModel):
     hard_constraints_satisfied: bool = True
     detour_breakdown: DetourBreakdownResponse
     route_geometry: list[CoordinateResponse] = Field(default_factory=list)
+    legs: list[RouteLegResponse] = Field(default_factory=list)
 
 
 class CatalogCategoryResponse(BaseModel):

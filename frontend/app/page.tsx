@@ -194,7 +194,7 @@ export default function Home() {
         {!discoveryOpen && <button className="catalog-toggle" type="button" aria-expanded="false" onClick={() => setDiscoveryOpen(true)}><span>Browse categories</span><ChevronRight size={17} aria-hidden="true" /></button>}
       </form>}
 
-      {result && selected && <RecommendationPanel recommendation={selected} result={result} alternatives={alternatives} selectedKey={selectedKey} onSelect={(key) => { setSelectedKey(key); setActiveStop(null); }} activeStop={activeStop} onStopSelect={setActiveStop} onEdit={() => { setResult(null); setActiveStop(null); setSelectedKey("best_overall"); }} />}
+      {result && selected && <RecommendationPanel recommendation={selected} result={result} alternatives={alternatives} selectedKey={selectedKey} onSelect={(key) => { setSelectedKey(key); setActiveStop(null); }} activeStop={activeStop} onStopSelect={setActiveStop} onEdit={() => { setResult(null); setActiveStop(null); setSelectedKey("best_overall"); }} originLabel={origin?.label} destinationLabel={destination?.label} />}
       {result && !selected && <section className="recommendation empty-result" aria-live="polite"><button className="edit-journey" type="button" onClick={() => setResult(null)}><ArrowRight size={15} aria-hidden="true" />Edit journey</button><span>Try another way</span><h1>No easy match</h1><p>{result.message ?? "Try a broader category or loosen a brand or time preference."}</p><button className="find-button" type="button" onClick={() => { setDiscoveryOpen(true); setResult(null); }}>Browse options<ArrowRight size={18} aria-hidden="true" /></button></section>}
     </aside>
   </main>;
