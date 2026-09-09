@@ -70,6 +70,7 @@ NIGHT_ROUTE = {
 }
 
 WEDNESDAY_2300 = datetime(2026, 9, 9, 23, 0, tzinfo=SINGAPORE_TZ)
+SUNDAY_0010 = datetime(2026, 9, 13, 0, 10, tzinfo=SINGAPORE_TZ)
 SUNDAY_1000 = datetime(2026, 9, 13, 10, 0, tzinfo=SINGAPORE_TZ)
 
 
@@ -128,6 +129,17 @@ def test_a_window_that_crosses_midnight_still_contains_the_night() -> None:
     assert is_in_operation(route, datetime(2026, 9, 9, 0, 10, tzinfo=SINGAPORE_TZ)) is True
     assert is_in_operation(route, datetime(2026, 9, 9, 3, 0, tzinfo=SINGAPORE_TZ)) is False
     assert is_in_operation(route, datetime(2026, 9, 9, 6, 0, tzinfo=SINGAPORE_TZ)) is True
+
+
+def test_after_midnight_uses_the_previous_service_days_window() -> None:
+    """00:10 on Sunday is still inside Saturday's 05:30-00:15 service.
+
+    Using Sunday's row here is wrong even when Sunday has a published schedule,
+    and it is especially visible for this fixture because Sunday is absent.
+    """
+    route = transform_bus_routes([NIGHT_ROUTE])[0]
+    assert is_in_operation(route, SUNDAY_0010) is True
+    assert operating_hours_text(route, SUNDAY_0010) == "First bus 05:30, last bus 00:15"
 
 
 def test_an_unpublished_window_is_unknown_rather_than_closed() -> None:

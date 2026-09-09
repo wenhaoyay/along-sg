@@ -804,6 +804,7 @@ export default function Home() {
             compared={compared}
             onComparedHover={setActiveConsidered}
             rankBy={rankBy}
+            apiBase={API_BASE}
             onRankChange={(rank) => {
               setRankBy(rank);
               // Changing what matters changes the answer, not just the order -

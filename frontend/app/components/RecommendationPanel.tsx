@@ -131,7 +131,9 @@ type Props = {
   onComparedHover?: (key: string | null) => void;
   rankBy: RankKey;
   onRankChange: (rank: RankKey) => void;
-  apiBase?: string;
+  // Required rather than defaulting to the frontend origin: deployments may
+  // serve Next.js and FastAPI from different hosts.
+  apiBase: string;
 };
 
 export function RecommendationPanel({
@@ -142,7 +144,7 @@ export function RecommendationPanel({
   onComparedHover,
   rankBy,
   onRankChange,
-  apiBase = "",
+  apiBase,
   selectedKey,
   onSelect,
   onEdit,

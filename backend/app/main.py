@@ -228,6 +228,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app_settings.routing_concurrency,
         )
         yield
+        await app.state.bus_arrival_provider.close()
         close = getattr(provider, "close", None)
         if close is not None:
             await close()

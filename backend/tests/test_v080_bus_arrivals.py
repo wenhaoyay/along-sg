@@ -184,6 +184,22 @@ def test_live_mode_is_an_explicit_opt_in_not_a_side_effect_of_a_key() -> None:
     assert isinstance(provider, LtaDataMallProvider)
 
 
+def test_bus_arrival_provider_is_closed_on_app_shutdown(tmp_path, monkeypatch) -> None:
+    class ClosingMockProvider(MockBusArrivalProvider):
+        def __init__(self) -> None:
+            super().__init__()
+            self.closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    provider = ClosingMockProvider()
+    monkeypatch.setattr("app.main.build_bus_arrival_provider", lambda _settings: provider)
+    with TestClient(create_app(Settings(onemap_mock=True, database_path=tmp_path / "close.db"))):
+        pass
+    assert provider.closed is True
+
+
 async def test_the_mock_offers_every_state_the_interface_has_to_render() -> None:
     provider = MockBusArrivalProvider()
     arrivals = await provider.arrivals("16179")

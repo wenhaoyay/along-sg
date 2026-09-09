@@ -116,15 +116,9 @@ def transform_bus_routes(elements: list[dict[str, Any]]) -> list[dict[str, Any]]
     return list(rows.values())
 
 
-def window_for(row: dict[str, Any], moment: datetime) -> tuple[str | None, str | None]:
-    """The first and last bus applying on the day of `moment`.
-
-    Saturday and Sunday are published separately, and public holidays follow the
-    Sunday timetable in practice - which this does not attempt to know, because
-    guessing a holiday calendar would be a worse error than using the weekday
-    one.
-    """
-    weekday = moment.weekday()
+def _window_for_weekday(
+    row: dict[str, Any], weekday: int
+) -> tuple[str | None, str | None]:
     if weekday == 5:
         return row.get("saturday_first"), row.get("saturday_last")
     if weekday == 6:
@@ -132,8 +126,37 @@ def window_for(row: dict[str, Any], moment: datetime) -> tuple[str | None, str |
     return row.get("weekday_first"), row.get("weekday_last")
 
 
+def window_for(row: dict[str, Any], moment: datetime) -> tuple[str | None, str | None]:
+    """The first and last bus published for the calendar day of `moment`.
+
+    This intentionally returns the day's published row, not necessarily the
+    service window currently in effect. A bus after midnight can still belong
+    to the previous service day; `is_in_operation` handles that boundary.
+    """
+    return _window_for_weekday(row, moment.weekday())
+
+
 def _minutes(clock: str) -> int:
     return int(clock[:2]) * 60 + int(clock[2:])
+
+
+def _previous_day_tail(
+    row: dict[str, Any], moment: datetime
+) -> tuple[bool | None, tuple[str, str] | None]:
+    """Whether `moment` is inside the previous service day's after-midnight tail.
+
+    A Saturday service published as 05:30-00:15 is still Saturday's service at
+    Sunday 00:10. Looking only at Sunday's row would either miss that bus or use
+    Sunday's first/last times for the wrong service day.
+    """
+    first, last = _window_for_weekday(row, (moment.weekday() - 1) % 7)
+    if not first or not last:
+        return None, None
+    start, end = _minutes(first), _minutes(last)
+    if start <= end:
+        return False, None
+    active = moment.hour * 60 + moment.minute <= end
+    return active, (first, last) if active else None
 
 
 def is_in_operation(row: dict[str, Any], moment: datetime) -> bool | None:
@@ -143,9 +166,14 @@ def is_in_operation(row: dict[str, Any], moment: datetime) -> bool | None:
     collapse into False. Claiming a service has stopped running when the data
     is simply absent is the mistake this whole distinction exists to avoid.
 
-    A last bus after midnight is published as a smaller number than the first
-    ("0015" against "0530"), so the window wraps and the comparison has to.
+    After midnight, a wrapped service window belongs to the previous service
+    day. That matters at Saturday/Sunday and Sunday/Monday boundaries, where
+    the published schedules can differ.
     """
+    previous_tail, _ = _previous_day_tail(row, moment)
+    if previous_tail is True:
+        return True
+
     first, last = window_for(row, moment)
     if not first or not last:
         return None
@@ -154,10 +182,21 @@ def is_in_operation(row: dict[str, Any], moment: datetime) -> bool | None:
     if start == end:
         return None
     if start < end:
-        return start <= now <= end
-    # Wraps past midnight: in service from the first bus to the end of the day,
-    # and again from the start of the day to the last bus.
-    return now >= start or now <= end
+        if start <= now <= end:
+            return True
+        # Before today's first bus, an unpublished previous-day window means we
+        # cannot safely claim the service is stopped.
+        if now < start and previous_tail is None:
+            return None
+        return False
+
+    # For a wrapped window, only the evening portion belongs to today's service
+    # day. The after-midnight portion was checked against yesterday above.
+    if now >= start:
+        return True
+    if previous_tail is None:
+        return None
+    return False
 
 
 def stop_display_name(row: dict[str, Any]) -> str:
@@ -175,7 +214,11 @@ def stop_display_name(row: dict[str, Any]) -> str:
 
 def operating_hours_text(row: dict[str, Any], moment: datetime) -> str | None:
     """"First bus 05:30, last bus 23:52", or nothing if unpublished."""
-    first, last = window_for(row, moment)
+    _, previous_window = _previous_day_tail(row, moment)
+    if previous_window is not None:
+        first, last = previous_window
+    else:
+        first, last = window_for(row, moment)
     if not first or not last:
         return None
     return f"First bus {_pretty(first)}, last bus {_pretty(last)}"
