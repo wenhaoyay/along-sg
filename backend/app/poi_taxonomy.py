@@ -93,6 +93,58 @@ CATEGORY_ALIASES = {
     "convenience store": "convenience",
 }
 
+
+# The noun for ONE unnamed place of each kind. `CategoryDefinition.name` is a
+# heading for a group ("Bakeries", "ATM and banking") and reads as a mistake
+# when it stands in for a single shop, so the two are kept apart rather than
+# one being derived from the other.
+UNNAMED_LABELS = {
+    "food_drink": "Food and drink place",
+    "fast_food": "Fast food place",
+    "fried_chicken": "Fried chicken shop",
+    "bubble_tea": "Bubble tea shop",
+    "coffee": "Coffee shop",
+    "restaurants": "Restaurant",
+    "burgers": "Burger place",
+    "japanese_food": "Japanese restaurant",
+    "korean_food": "Korean restaurant",
+    "chinese_food": "Chinese restaurant",
+    "bakeries": "Bakery",
+    "dessert": "Dessert shop",
+    "retail": "Shop",
+    "groceries": "Supermarket",
+    "pharmacy": "Pharmacy",
+    "convenience": "Convenience store",
+    "electronics": "Electronics shop",
+    "stationery": "Stationery shop",
+    "hardware": "Hardware shop",
+    "florists": "Florist",
+    "pet_supplies": "Pet shop",
+    "clothing": "Clothes shop",
+    "household": "Household goods shop",
+    "services": "Service point",
+    "banking": "ATM or bank",
+    "parcel": "Parcel point",
+    "printing": "Print shop",
+    "haircuts": "Barber or salon",
+    "optical": "Optical shop",
+    "repairs": "Repair shop",
+}
+
+
+def unnamed_label(slug: str) -> str:
+    """What to call a place of this kind that OSM gives no name for.
+
+    Falls back to the group heading rather than to the raw slug: a new category
+    added without a noun here reads awkwardly, which is a far smaller failure
+    than printing "pet_supplies" at somebody.
+    """
+    if slug in UNNAMED_LABELS:
+        return UNNAMED_LABELS[slug]
+    definition = next((item for item in CATEGORIES if item.slug == slug), None)
+    return definition.name if definition else slug.replace("_", " ").capitalize()
+
+
 BRAND_ALIASES = {
     "7 eleven": ("7-eleven", "7-Eleven"),
     "7eleven": ("7-eleven", "7-Eleven"),

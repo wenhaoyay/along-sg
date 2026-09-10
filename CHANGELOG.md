@@ -2,6 +2,52 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.8.2 - Names a person can read
+
+Idea 3 asked for pictures of the stalls instead of bare names. Measuring the dataset first
+found something worse than bare: 3,140 of 9,641 hubs - 32.6% - were displaying a raw
+OpenStreetMap element id.
+
+    7-Eleven - node/10030129567
+    Bakeries node/10201802661
+
+Two separate defects. `_unique_name` settled a collision by appending the element id, and a
+place OSM never named was labelled with its category slug plus the same id. Singapore has
+three hundred 7-Elevens and 665 of these places have no name at all, so both branches were
+the common path rather than the exceptional one - a third of the catalog introduced itself
+to the traveller with a database row number.
+
+Collisions are now settled the way a person settles them: by somewhere you can picture.
+The street comes first because it is what somebody standing outside would say, then the
+station, then the bus stop reduced to its landmark - "Opposite Haw Par Villa Station"
+carries its information in the landmark and its length in the preposition. Only when every
+qualifier is taken does it number them, and the element id survives as a last resort that
+is now unreachable in practice: 3,140 polluted names became 0, across both hubs and
+outlets, with hub, outlet and dedupe counts unchanged.
+
+Places OSM never named get a noun rather than a heading. `CategoryDefinition.name` labels a
+group - "Bakeries", "ATM and banking" - and reads as a mistake standing in for one shop, so
+`UNNAMED_LABELS` holds the singular separately instead of deriving one from the other.
+
+Three things cost thought. Display and identity had to split: the dedupe key stays keyed on
+the element id for an unnamed place, because collapsing it to "Bakery" would merge two
+different unnamed bakeries twenty metres apart into one. Qualifiers arrive dirty from both
+sources - `addr:street` carries unit numbers punctuated on ("Irving Place, #08-06;The
+Commerze@Irving") and stop names carry their own brackets ("T4 Shuttle (Arrival)") which
+would nest inside the ones being added - and the brackets have to come off before the comma
+split, or "(EW23, CR17)" strands its opening bracket. And the schema's UNIQUE constraint on
+(hub_id, name, category) caught what the transform did not: that constraint used to hold by
+accident, because an unnamed outlet carried its element id and so could never match another,
+and the rebuild failed on it the moment two outlets in one mall were both "Bakery".
+
+What idea 3 actually asked for is not in this data. 20 of 21,280 elements carry an `image`
+tag - 0.1% - so photographs are not available from OpenStreetMap at any coverage worth
+rendering, and the providers that do have them are paid, uncacheable, or both. Brand logos
+are: 601 distinct `brand:wikidata` ids cover 4,077 outlets (19.2%), reachable free and
+keyless through Wikidata's EntityData route and Wikimedia Commons. That is the next commit,
+and this one had to come first - a logo beside "Bakeries node/10201802661" would have
+dressed up the wrong problem.
+
 ## 0.8.1 - The static bus network, so an empty answer can explain itself
 
 Added `bus_stops` and `bus_routes` tables, a transform for LTA's BusStops and BusRoutes
