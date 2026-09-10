@@ -170,6 +170,15 @@ class _SpatialIndex:
 _STOP_PREFIX = re.compile(r"^(?:before|after|opposite|opp|bef|aft)\.?\s+", re.IGNORECASE)
 
 
+def _wikidata_id(tags: dict[str, str]) -> str | None:
+    for key in ("brand:wikidata", "operator:wikidata", "wikidata"):
+        value = (tags.get(key) or "").strip()
+        # Q followed by digits. The tag is free text and does carry rubbish.
+        if re.fullmatch(r"Q[1-9]\d*", value):
+            return value
+    return None
+
+
 def _landmark(name: str) -> str:
     return _STOP_PREFIX.sub("", name).strip() or name
 
@@ -467,6 +476,10 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                 tags.get("addr:street"), tags.get("addr:place"), tags.get("addr:postcode"),
             ))) or None,
             "brand_slug": brand_slug,
+            # OSM's own link to Wikidata, which is what a logo is joined on.
+            # `brand:wikidata` is the brand; a bare `wikidata` on a chain outlet
+            # is usually that one branch, so it is only trusted as a fallback.
+            "brand_wikidata": _wikidata_id(tags),
             "categories": categories,
             "source": source,
             "source_id": source_id,

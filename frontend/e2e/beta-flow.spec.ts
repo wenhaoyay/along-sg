@@ -1494,3 +1494,135 @@ test("the service being ridden is what gets asked about", async ({ page }) => {
   await page.waitForTimeout(1200);
   expect(new Set(seen)).toEqual(new Set(["44009|190"]));
 });
+
+test("a place shows its brand mark, and a glyph where there is no logo", async ({ page }) => {
+  // Idea 3 asked for pictures. 16.4% of outlets carry a brand logo and the rest
+  // never will, so the glyph is the design rather than a failure state - and
+  // both have to occupy the same box or a list of places jitters as it loads.
+  const withLogo = {
+    ...result,
+    recommendations: {
+      ...result.recommendations,
+      best_overall: {
+        ...result.recommendations.best_overall,
+        stops: [
+          {
+            ...result.recommendations.best_overall.stops[0],
+            businesses: [
+              {
+                ...result.recommendations.best_overall.stops[0].businesses[0],
+                logo_url: "https://upload.wikimedia.org/wikipedia/commons/e/e0/kfc.svg",
+              },
+              // No logo_url at all: the ordinary case for a hawker stall.
+              result.recommendations.best_overall.stops[0].businesses[1],
+            ],
+          },
+        ],
+      },
+    },
+  };
+  await commonRoutes(page);
+  await page.route("**/api/intent/parse", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "resolved",
+        intent,
+        diagnostics: {},
+        journey_mentions: [],
+        journey_conflicts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/optimize-intent", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(withLogo),
+    }),
+  );
+  // Never reach Wikimedia from a test.
+  await page.route("**upload.wikimedia.org**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"></svg>',
+    }),
+  );
+  await page.goto("/");
+  await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByText("KFC · KOI Thé")).toBeVisible();
+
+  const marks = page.getByTestId("place-mark");
+  await expect(marks).toHaveCount(2);
+  await expect(marks.nth(0)).toHaveAttribute("data-kind", "logo");
+  await expect(marks.nth(1)).toHaveAttribute("data-kind", "glyph");
+
+  // Same box either way, so the row does not reflow when a logo arrives.
+  const logoBox = await marks.nth(0).boundingBox();
+  const glyphBox = await marks.nth(1).boundingBox();
+  expect(logoBox?.width).toBe(glyphBox?.width);
+  expect(logoBox?.height).toBe(glyphBox?.height);
+
+  // Decoration: the name is already in the text, so a screen reader must not
+  // hear it twice.
+  await expect(marks.nth(0)).toHaveAttribute("aria-hidden", "true");
+});
+
+test("a logo that fails to load falls back to the glyph rather than a broken image", async ({
+  page,
+}) => {
+  // The Commons URL is derived from the file name, not looked up, so a renamed
+  // or deleted file 404s and the page must absorb it.
+  const withLogo = {
+    ...result,
+    recommendations: {
+      ...result.recommendations,
+      best_overall: {
+        ...result.recommendations.best_overall,
+        stops: [
+          {
+            ...result.recommendations.best_overall.stops[0],
+            businesses: [
+              {
+                ...result.recommendations.best_overall.stops[0].businesses[0],
+                logo_url: "https://upload.wikimedia.org/wikipedia/commons/0/00/gone.svg",
+              },
+            ],
+          },
+        ],
+      },
+    },
+  };
+  await commonRoutes(page);
+  await page.route("**/api/intent/parse", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "resolved",
+        intent,
+        diagnostics: {},
+        journey_mentions: [],
+        journey_conflicts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/optimize-intent", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(withLogo),
+    }),
+  );
+  await page.route("**upload.wikimedia.org**", (route) => route.fulfill({ status: 404 }));
+  await page.goto("/");
+  await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("place-mark").first()).toHaveAttribute("data-kind", "glyph");
+  await expect(page.locator(".place-mark img")).toHaveCount(0);
+});

@@ -118,6 +118,9 @@ class Store:
     closure_status: str = "unknown"
     source: str = "curated"
     source_id: str | None = None
+    # A brand mark where the chain has one. Absent for most places and that is
+    # the ordinary case, not a gap: a hawker stall has no logo and never will.
+    logo_url: str | None = None
 
     @property
     def all_categories(self) -> frozenset[str]:

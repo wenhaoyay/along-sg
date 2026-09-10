@@ -958,6 +958,7 @@ def recommendation_response(
                     category_labels=[category_label(item) for item in store.all_categories if item in matched_categories],
                     location_context=location.context,
                     opening_status=check_hours(store.opening_hours, arrival, dwell),
+                    logo_url=store.logo_url,
                 ) for store in matching_stores],
                 semantic_type=hub.semantic_type,
                 location_context=location.context,

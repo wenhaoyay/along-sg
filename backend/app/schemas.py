@@ -179,6 +179,9 @@ class DisplayBusinessResponse(BaseModel):
     category_labels: list[str]
     location_context: str | None = None
     opening_status: str = "unknown"
+    # Null for most places. The client draws a category glyph instead rather
+    # than a gap, so a logo is a bonus and never a requirement.
+    logo_url: str | None = None
 
 
 class DwellAllowanceResponse(BaseModel):
