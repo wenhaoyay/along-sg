@@ -2,6 +2,46 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.8.3 - A brand mark where there is one, a glyph where there is not
+
+The second half of idea 3, and not what idea 3 asked for. Photographs of Singapore
+shopfronts are not obtainable on this project's terms: OpenStreetMap carries an `image` tag
+on 20 of 21,280 elements, Google's place photos may not be stored or cached, Foursquare
+charges, and its open dataset has no photographs in it. Measured before building rather than
+discovered after.
+
+Logos are obtainable, free and keyless. 601 distinct `brand:wikidata` ids cover 4,077 POIs,
+and after deduplication 169 brands carry a usable logo across 2,417 outlets - 16.4%. The
+route matters: Wikimedia's `api.php` refuses this client outright, so entities come from
+`Special:EntityData/<QID>.json`, and a Commons file URL is *derived* from the MD5 of its
+name rather than looked up, so the whole catalogue costs 303 requests instead of 606. The
+User-Agent is load-bearing - Wikimedia answers 403 to a terse one and 200 to the same
+request carrying a contact URL, measured both ways. Browsers send their own, so this governs
+ingestion and not the page.
+
+16.4% means the glyph is the design and the logo is the bonus. A hawker stall has no logo
+and never will, so `PlaceMark` draws a symbol for what the place sells, in the same box at
+the same size, with no border or label that would read as something failing to load. A logo
+that 404s - the URL is derived, so a renamed Commons file will - falls back to the same
+glyph rather than a broken image, and that fallback is keyed on the URL that failed rather
+than reset in an effect, which would cascade a render for every logo on screen.
+
+Wikidata is messier than its schema suggests, and four cases are pinned: a deprecated claim
+is a retired logo and must not win; a "novalue" snak carries no datavalue and reading one
+raises; TIFF, XCF and PDF are all on Commons and none of them renders in an `<img>`; and a
+merged item answers under a different id, which is a redirect to follow rather than a miss -
+though two entities and no match is ambiguity, and guessing would put the wrong mark on a
+real shop.
+
+Logos merge rather than replace, which is the opposite of the bus network and deliberately
+so. LTA publishes its network as one snapshot where a retired stop has to disappear; logos
+are fetched one brand at a time over hundreds of requests, and a run that dies at brand four
+hundred should leave the first three hundred and ninety-nine in place.
+
+Attribution for OpenStreetMap, OneMap, LTA and Wikimedia now has a home on the privacy page,
+which also states plainly that a missing logo is the usual case rather than a failure. The
+bus attribution string had been typed and never rendered since 0.8.0; this closes that too.
+
 ## 0.8.2 - Names a person can read
 
 Idea 3 asked for pictures of the stalls instead of bare names. Measuring the dataset first

@@ -33,6 +33,36 @@ export default function PrivacyPage() {
           analytics-store initialization. Access to aggregate reporting requires a server-side admin
           token. Backups, if enabled by the beta operator, follow the same retention window.
         </p>
+        <h2>Where the data comes from</h2>
+        <p>
+          Places, opening hours and shop categories come from{" "}
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            OpenStreetMap
+          </a>{" "}
+          contributors, under the Open Database Licence. Routing and the base map come from{" "}
+          <a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">
+            OneMap
+          </a>{" "}
+          and the Singapore Land Authority. Bus arrival times, stops and timetables come from{" "}
+          <a href="https://datamall.lta.gov.sg/" target="_blank" rel="noopener noreferrer">
+            LTA DataMall
+          </a>{" "}
+          under the Singapore Open Data Licence. Brand logos come from{" "}
+          <a href="https://www.wikidata.org/" target="_blank" rel="noopener noreferrer">
+            Wikidata
+          </a>{" "}
+          and{" "}
+          <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">
+            Wikimedia Commons
+          </a>
+          , each file under its own terms; a brand mark is shown to identify that brand at its own
+          shop. Where no logo is held the app draws a symbol for what the place sells, which is the
+          usual case rather than a failure to load.
+        </p>
         <h2>External navigation</h2>
         <p>
           Navigation opens only after you choose it. The selected stop coordinates are then sent to

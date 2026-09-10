@@ -13,6 +13,7 @@ import {
   TrainFront,
 } from "lucide-react";
 
+import PlaceMark from "./PlaceMark";
 import type { ResolvedLocation } from "./LocationField";
 import {
   boardingIsImminent,
@@ -30,6 +31,8 @@ export type Business = {
   category_labels: string[];
   location_context: string | null;
   opening_status?: string;
+  // Null for most places; PlaceMark draws a category glyph instead.
+  logo_url?: string | null;
 };
 
 export type Stop = {
@@ -267,7 +270,22 @@ export function RecommendationPanel({
                 {recommendation.stops.length > 1 && stop.display_name !== businessLine(stop) && (
                   <strong>{stop.display_name}</strong>
                 )}
-                <p>{businessLine(stop)}</p>
+                <p className="business-line">
+                  {stop.businesses.length > 0 && (
+                    <span className="place-marks">
+                      {stop.businesses.slice(0, 3).map((business, index) => (
+                        <PlaceMark
+                          key={`${business.display_name}-${index}`}
+                          logoUrl={business.logo_url}
+                          categoryLabels={business.category_labels}
+                          name={business.display_name}
+                          size={18}
+                        />
+                      ))}
+                    </span>
+                  )}
+                  {businessLine(stop)}
+                </p>
                 {stop.arrival_time && (
                   <small>
                     Estimated arrival{" "}

@@ -2047,3 +2047,42 @@ button.stop-number {
     color: var(--muted);
   }
 }
+
+/* The brand mark, or a glyph for what the place sells.
+   Both branches occupy the same box so a list does not jitter between the
+   16% of outlets that carry a logo and the rest that never will. The glyph
+   is muted rather than bordered: it is the ordinary case, not a placeholder
+   standing in for something that failed to load. */
+.place-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 7px;
+  vertical-align: -4px;
+}
+
+.place-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.place-mark img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  /* Many Commons logos are dark artwork on transparency, which disappears
+     against the dark palette. A light plate keeps them legible in both. */
+  background: #fff;
+  border-radius: 3px;
+  padding: 1px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.business-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
