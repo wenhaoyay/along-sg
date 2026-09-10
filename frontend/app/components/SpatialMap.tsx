@@ -5,6 +5,22 @@ import type { Coordinate, ResolvedLocation } from "./LocationField";
 
 type Stop = { display_name: string; coordinate: Coordinate };
 
+/* OneMap publishes five basemaps and this used GreyLite, the emptiest of them:
+ * at Orchard it draws faint grey outlines, one label, and no station at all.
+ * Default draws yellow arterials, named streets and the MRT stations with
+ * their codes - which for a journey app is information, not decoration.
+ *
+ * Night is a real dark basemap. It replaces a CSS invert(1) hue-rotate(180deg)
+ * filter over GreyLite, which produced muddy inverted grey and turned every
+ * label into a negative of itself. */
+const BASEMAP = {
+  light: "https://www.onemap.gov.sg/maps/tiles/Default/{z}/{x}/{y}.png",
+  dark: "https://www.onemap.gov.sg/maps/tiles/Night/{z}/{x}/{y}.png",
+} as const;
+
+const currentScheme = (): "light" | "dark" =>
+  document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+
 /** A candidate that was routed and lost. Drawn so the map can show the
  *  comparison it made rather than a single line to be taken on trust. */
 type Considered = {
@@ -49,6 +65,7 @@ export function SpatialMap({
   const allMarkersRef = useRef<import("leaflet").Marker[]>([]);
   const consideredRef = useRef<import("leaflet").Marker[]>([]);
   const selectionRef = useRef(activeStop);
+  const tileRef = useRef<import("leaflet").TileLayer | null>(null);
 
   useEffect(() => {
     selectionRef.current = activeStop;
@@ -67,6 +84,20 @@ export function SpatialMap({
     });
   }, [activeConsidered]);
 
+  /* The basemap follows the theme, and the theme can change after the map is
+   * built. Watching the data-theme attribute rather than subscribing to the
+   * theme store keeps the map from importing it - the attribute is already the
+   * contract, since the blocking script in the document head stamps it before
+   * first paint. */
+  useEffect(() => {
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => {
+      tileRef.current?.setUrl(BASEMAP[currentScheme()]);
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void import("leaflet").then((L) => {
@@ -80,7 +111,7 @@ export function SpatialMap({
           [1.144, 103.535],
           [1.494, 104.502],
         ]);
-        L.tileLayer("https://www.onemap.gov.sg/maps/tiles/GreyLite/{z}/{x}/{y}.png", {
+        tileRef.current = L.tileLayer(BASEMAP[currentScheme()], {
           detectRetina: true,
           minZoom: 11,
           maxZoom: 19,
@@ -117,11 +148,17 @@ export function SpatialMap({
           recommendedPoints.map((point) => [point.latitude, point.longitude]),
           { color: "#0d6b57", weight: 5, opacity: 0.9 },
         ).addTo(layer);
+      /* Markers used to be already in place the instant a result arrived,
+       * which is a good part of what "lifeless" was describing. They settle in
+       * now, staggered in creation order so a plan lands as a sequence rather
+       * than a flash. Capped, because a dozen compared places should not take
+       * a second and a half to finish arriving. */
+      let landOrder = 0;
       const marker = (coordinate: Coordinate, kind: string, label: string, glyph: string) =>
         L.marker([coordinate.latitude, coordinate.longitude], {
           icon: L.divIcon({
             className: `along-marker ${kind}`,
-            html: `<span>${glyph}</span>`,
+            html: `<span style="--land-delay:${Math.min(landOrder++ * 32, 360)}ms">${glyph}</span>`,
             iconSize: [30, 30],
             iconAnchor: [15, 15],
           }),

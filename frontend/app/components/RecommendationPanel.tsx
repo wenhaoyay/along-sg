@@ -13,6 +13,7 @@ import {
   TrainFront,
 } from "lucide-react";
 
+import { lineColor } from "../lineColors";
 import PlaceMark from "./PlaceMark";
 import type { ResolvedLocation } from "./LocationField";
 import {
@@ -712,7 +713,20 @@ function RideLegs({
   return (
     <>
       {rides.map((leg, index) => (
-        <p className="ride-leg" key={`${segment}-${index}`}>
+        <p
+          className="ride-leg"
+          key={`${segment}-${index}`}
+          /* The official line colour, which the router was already returning
+             and nobody was reading. Null for a bus, and for any line this
+             table has not heard of - the accent then applies, because a wrong
+             line colour is a confident claim about which train you are on. */
+          style={
+            {
+              "--service-color":
+                lineColor(leg.route_short_name, leg.route_long_name) ?? "var(--green)",
+            } as React.CSSProperties
+          }
+        >
           {isRail(leg) ? (
             <TrainFront size={13} aria-hidden="true" />
           ) : (

@@ -18,8 +18,32 @@
   --danger-bg: #fff0ee;
   --panel-shadow: 0 24px 70px rgba(23, 48, 39, 0.18), 0 2px 10px rgba(23, 48, 39, 0.08);
   --control-shadow: 0 8px 24px rgba(23, 48, 39, 0.14);
-  --radius-panel: 18px;
-  --radius-control: 11px;
+  /* Geometry ladder. Twelve ad-hoc corner radii and five ad-hoc elevation
+     shadows, collapsed to two short scales. Nobody consciously sees a 9px
+     corner beside a 10px one - but the absence of a system is exactly what
+     reads as assembled rather than designed. */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+  --radius-panel: var(--r-lg);
+  --radius-control: var(--r-md);
+
+  /* Type scale. The floor was 8px, and there was nothing at all between 15px
+     and 25px - so a secondary figure and a legal footnote were set at the same
+     size. These are the only sizes below body copy that should be used. */
+  --t-micro: 11px;
+  --t-meta: 11.5px;
+  --t-small: 13px;
+  --t-body: 15px;
+  --t-figure-sm: 15px;
+
+  /* Elevation, three steps. Rings and the brand glows are semantic and stay
+     as they are; only genuine depth is unified here. */
+  --e-1: 0 1px 2px rgba(23, 48, 39, 0.05), 0 2px 8px rgba(23, 48, 39, 0.07);
+  --e-2: 0 2px 5px rgba(23, 48, 39, 0.06), 0 6px 18px rgba(23, 48, 39, 0.09);
+  --e-marker: 0 2px 4px rgba(21, 44, 36, 0.26), 0 8px 18px rgba(21, 44, 36, 0.28);
 
   /* Surfaces and grounds. Every value the dark palette needs to swap lives
      here; nothing below this block hardcodes a background again. */
@@ -51,6 +75,10 @@
   --marker-considered-ring: #f3f7f5;
   --selected-outline: #ffdc83;
   --tile-filter: none;
+  /* Line colours are chosen for signage, not for text on a pale panel, so the
+     readable variant is mixed toward the ground rather than hand-picked per
+     line - six hardcoded text colours would drift the moment a line is added. */
+  --service-mix: #06120e;
 }
 
 /* Dark mode. `data-theme` is stamped on <html> before first paint by the
@@ -82,6 +110,9 @@
   --danger-bg: #37201d;
   --panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.4);
   --control-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --e-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.32);
+  --e-2: 0 2px 5px rgba(0, 0, 0, 0.45), 0 6px 18px rgba(0, 0, 0, 0.4);
+  --e-marker: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 18px rgba(0, 0, 0, 0.45);
 
   --page-bg: #0c1211;
   --map-bg: #101615;
@@ -110,7 +141,10 @@
   --marker-considered: #5d6f68;
   --marker-considered-ring: #1b2422;
   --selected-outline: #ffcf5c;
-  --tile-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
+  /* Was invert(1) hue-rotate(180deg) over GreyLite. The Night basemap is drawn
+     dark by OneMap, so inverting it now would undo the thing that fixed it. */
+  --tile-filter: none;
+  --service-mix: #eaf3ef;
 }
 
 .leaflet-tile-pane {
@@ -137,7 +171,7 @@ body {
   color: var(--ink);
   background: var(--page-bg);
   font:
-    15px/1.45 Inter,
+    var(--t-body)/1.45 var(--font-sans, Inter),
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
@@ -231,7 +265,7 @@ summary:focus-visible {
   place-items: center;
   color: white;
   background: var(--green);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   box-shadow: 0 7px 18px rgba(8, 122, 95, 0.24);
   font-weight: 800;
 }
@@ -240,9 +274,9 @@ summary:focus-visible {
   color: var(--green);
   background: var(--glass);
   border: 1px solid rgba(8, 122, 95, 0.1);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   backdrop-filter: blur(10px);
-  font-size: 10px;
+  font-size: var(--t-meta);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -259,8 +293,8 @@ summary:focus-visible {
   padding: 0 10px;
   background: var(--glass);
   border: 1px solid var(--glass-line);
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(23, 48, 39, 0.07);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-2);
   backdrop-filter: blur(12px);
   font-size: 12px;
   font-weight: 650;
@@ -360,7 +394,7 @@ summary:focus-visible {
   color: var(--green);
   border: 1px solid var(--line);
   border-radius: 50%;
-  box-shadow: 0 3px 12px rgba(23, 48, 39, 0.08);
+  box-shadow: var(--e-1);
   transition: transform 0.2s ease;
 }
 .swap-journey:hover:not(:disabled) {
@@ -374,7 +408,7 @@ summary:focus-visible {
   padding: 4px;
   background: var(--track);
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: var(--r-md);
 }
 .trip-style button {
   display: flex;
@@ -384,7 +418,7 @@ summary:focus-visible {
   min-height: 40px;
   padding: 5px 3px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--muted);
   font-size: 11px;
@@ -396,7 +430,7 @@ summary:focus-visible {
 .trip-style button[aria-pressed="true"] {
   color: var(--green);
   background: var(--elevated);
-  box-shadow: 0 2px 8px rgba(23, 48, 39, 0.08);
+  box-shadow: var(--e-1);
 }
 .preference-hint {
   margin: 7px 2px 0;
@@ -492,7 +526,7 @@ summary:focus-visible {
   place-items: center;
   color: var(--green);
   background: var(--glyph-bg);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
 }
 .location-glyph.destination {
   color: var(--ink-soft);
@@ -574,7 +608,7 @@ summary:focus-visible {
   list-style: none;
   background: var(--elevated);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--r-md);
   box-shadow: var(--panel-shadow);
 }
 .location-results button {
@@ -587,7 +621,7 @@ summary:focus-visible {
   gap: 8px;
   background: transparent;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   text-align: left;
 }
 .location-results button:hover,
@@ -601,7 +635,7 @@ summary:focus-visible {
   place-items: center;
   color: var(--green);
   background: var(--mint);
-  border-radius: 9px;
+  border-radius: var(--r-sm);
 }
 .location-results strong,
 .location-results small {
@@ -636,8 +670,8 @@ summary:focus-visible {
   color: var(--green);
   background: var(--elevated);
   border: 1px solid var(--glass-line);
-  border-radius: 13px;
-  box-shadow: 0 3px 12px rgba(23, 48, 39, 0.05);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-1);
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease;
@@ -670,7 +704,7 @@ summary:focus-visible {
   color: var(--ink-soft);
   background: var(--chip-bg);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 11px;
   transition:
     background 0.16s ease,
@@ -687,12 +721,12 @@ summary:focus-visible {
   margin-top: 11px;
   padding: 10px 42px 10px 11px;
   background: var(--wash);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 .intent-preview > span {
   display: block;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
 }
 .intent-preview > div {
   margin-top: 5px;
@@ -704,8 +738,8 @@ summary:focus-visible {
   padding: 4px 7px;
   color: var(--green);
   background: var(--elevated);
-  border-radius: 999px;
-  font-size: 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-meta);
   font-weight: 700;
 }
 .intent-preview > button {
@@ -725,7 +759,7 @@ summary:focus-visible {
   padding: 12px 13px;
   color: var(--warning);
   background: var(--warning-bg);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 .notice.error,
 .notice.conflict {
@@ -749,7 +783,7 @@ summary:focus-visible {
   padding: 8px 10px;
   background: var(--glass);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   text-align: left;
   font-size: 11px;
   font-weight: 650;
@@ -767,7 +801,7 @@ summary:focus-visible {
   color: white;
   background: var(--green);
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   box-shadow: 0 10px 24px rgba(8, 122, 95, 0.2);
   font-weight: 750;
   transition:
@@ -827,7 +861,7 @@ summary:focus-visible {
 .discovery-title p {
   margin: 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
 }
 .discovery-back {
   width: 34px;
@@ -837,14 +871,14 @@ summary:focus-visible {
   color: var(--ink-soft);
   background: var(--surface-soft);
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
 }
 .selection-count {
   padding: 4px 8px;
   color: var(--green);
   background: var(--mint);
-  border-radius: 999px;
-  font-size: 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-meta);
   font-weight: 750;
 }
 .discovery-search {
@@ -858,7 +892,7 @@ summary:focus-visible {
   color: var(--green);
   background: var(--surface-soft);
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 .discovery-search:focus-within {
   background: var(--elevated);
@@ -879,7 +913,7 @@ summary:focus-visible {
 }
 .popular > span {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
   font-weight: 750;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -908,7 +942,7 @@ summary:focus-visible {
   display: block;
   background: transparent;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   text-align: left;
 }
 .discovery-results > button:hover,
@@ -929,7 +963,7 @@ summary:focus-visible {
   margin-top: 2px;
   overflow: hidden;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -943,7 +977,7 @@ summary:focus-visible {
   place-items: center;
   color: var(--green);
   background: var(--mint);
-  border-radius: 9px;
+  border-radius: var(--r-sm);
 }
 .result-icon.place {
   color: var(--warning);
@@ -955,7 +989,7 @@ summary:focus-visible {
   right: 7px;
   margin: 0 !important;
   color: var(--faint) !important;
-  font-size: 8px !important;
+  font-size: var(--t-micro) !important;
   font-weight: 750;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -974,7 +1008,7 @@ summary:focus-visible {
   position: relative;
   padding: 10px 38px 10px 11px;
   background: var(--surface-soft);
-  border-radius: 11px;
+  border-radius: var(--r-md);
 }
 .selected-needs article > div:first-child span,
 .selected-needs article > div:first-child strong {
@@ -982,7 +1016,7 @@ summary:focus-visible {
 }
 .selected-needs article > div:first-child span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--t-micro);
   text-transform: uppercase;
 }
 .selected-needs article > div:first-child strong {
@@ -1015,8 +1049,8 @@ summary:focus-visible {
   color: var(--muted);
   background: var(--elevated);
   border: 0;
-  border-radius: 7px;
-  font-size: 9px;
+  border-radius: var(--r-sm);
+  font-size: var(--t-micro);
 }
 .mode-picker button.active {
   color: white;
@@ -1055,7 +1089,7 @@ summary:focus-visible {
   padding: 10px 11px;
   color: var(--warning);
   background: var(--warning-bg);
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   font-size: 11px;
 }
 .quality-label {
@@ -1141,7 +1175,7 @@ summary:focus-visible {
   place-items: center;
   color: white;
   background: var(--green);
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   font-size: 11px;
   font-weight: 800;
 }
@@ -1170,7 +1204,7 @@ summary:focus-visible {
   color: white;
   background: var(--green);
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   box-shadow: 0 10px 24px rgba(8, 122, 95, 0.21);
   font-weight: 750;
   transition:
@@ -1219,8 +1253,8 @@ summary:focus-visible {
   padding: 2px 6px;
   color: var(--green);
   background: var(--mint);
-  border-radius: 999px;
-  font-size: 9px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-micro);
 }
 .disclosure-body {
   padding: 0 1px 13px;
@@ -1230,7 +1264,7 @@ summary:focus-visible {
   margin: 0;
   padding: 11px 12px;
   background: var(--surface-soft);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 .breakdown-list > div {
   padding: 4px 0;
@@ -1263,7 +1297,7 @@ summary:focus-visible {
 }
 .journey-comparison div > span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--t-micro);
   text-transform: uppercase;
 }
 .journey-comparison strong {
@@ -1272,7 +1306,7 @@ summary:focus-visible {
 }
 .journey-comparison small {
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--t-micro);
 }
 .precision-note {
   margin: 11px 0 0;
@@ -1280,7 +1314,7 @@ summary:focus-visible {
   align-items: flex-start;
   gap: 6px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--t-micro);
 }
 .precision-note svg {
   flex: 0 0 auto;
@@ -1301,7 +1335,7 @@ summary:focus-visible {
   gap: 7px;
   background: var(--surface-soft);
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   text-align: left;
   transition: background 0.16s ease;
 }
@@ -1319,7 +1353,7 @@ summary:focus-visible {
   margin-top: 2px;
   overflow: hidden;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1345,7 +1379,7 @@ summary:focus-visible {
   gap: 7px;
   background: transparent;
   border: 1px dashed var(--line);
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   text-align: left;
   transition:
     background 0.16s ease,
@@ -1372,7 +1406,7 @@ summary:focus-visible {
 .considered-list small {
   margin-top: 1px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
 }
 .considered-list b {
   color: var(--muted);
@@ -1411,7 +1445,7 @@ summary:focus-visible {
   color: var(--ink-soft);
   background: var(--surface-soft);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font: inherit;
   font-size: 11px;
   font-weight: 650;
@@ -1428,12 +1462,12 @@ summary:focus-visible {
 }
 .rank-control > small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
   line-height: 1.5;
 }
 .empty-result > span {
   color: var(--green);
-  font-size: 10px;
+  font-size: var(--t-meta);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1458,10 +1492,10 @@ summary:focus-visible {
   color: var(--ink-soft);
   background: var(--glass);
   border: 1px solid var(--glass-line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   box-shadow: var(--control-shadow);
   backdrop-filter: blur(12px);
-  font-size: 10px;
+  font-size: var(--t-meta);
 }
 .map-key span {
   display: flex;
@@ -1501,9 +1535,30 @@ summary:focus-visible {
   background: var(--marker-bg);
   border: 3px solid var(--marker-ring);
   border-radius: 50%;
-  box-shadow: 0 5px 16px rgba(21, 44, 36, 0.3);
-  font-size: 10px;
-  font-weight: 850;
+  box-shadow: var(--e-marker);
+  font-size: var(--t-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+/* Markers used to appear already in place, which is most of what "lifeless"
+   was describing. They settle in instead - staggered by their own index, so a
+   three-stop plan reads left to right as it lands. Transform is shared with
+   the collision fan, so the entrance animates scale only. */
+@media (prefers-reduced-motion: no-preference) {
+  .along-marker span {
+    animation: marker-land 0.34s cubic-bezier(0.2, 0.9, 0.25, 1.06) backwards;
+    animation-delay: var(--land-delay, 0ms);
+  }
+}
+@keyframes marker-land {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
 }
 .along-marker.stop span {
   background: var(--green);
@@ -1514,7 +1569,7 @@ summary:focus-visible {
 }
 .along-marker.destination span {
   background: var(--marker-dest);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
 }
 /* A compared place is evidence, not an offer: small, muted and unlabelled, so
  * it reads as "we looked here too" without competing with the numbered plan.
@@ -1526,7 +1581,7 @@ summary:focus-visible {
   border-width: 2px;
   background: var(--marker-considered);
   border-color: var(--marker-considered-ring);
-  box-shadow: 0 2px 7px rgba(21, 44, 36, 0.22);
+  box-shadow: var(--e-1);
 }
 /* Ringed rather than filled: a solid green disc reads as another numbered stop,
  * and a compared place is precisely not one. */
@@ -1547,7 +1602,7 @@ summary:focus-visible {
   margin-bottom: 18px !important;
   overflow: hidden;
   border: 0 !important;
-  border-radius: 10px !important;
+  border-radius: var(--r-md) !important;
   box-shadow: var(--control-shadow) !important;
 }
 .leaflet-control-zoom a {
@@ -1561,7 +1616,7 @@ summary:focus-visible {
 .leaflet-control-attribution {
   color: var(--muted) !important;
   background: var(--glass) !important;
-  font-size: 8px !important;
+  font-size: var(--t-micro) !important;
 }
 
 .trip-comparison {
@@ -1592,7 +1647,7 @@ summary:focus-visible {
   min-height: 44px;
   padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--elevated);
   color: var(--ink-soft);
   font: inherit;
@@ -1613,28 +1668,32 @@ summary:focus-visible {
   padding-left: 10px;
   border-left: 2px solid var(--mint-strong);
 }
+/* The rail down the left is the line you are on, in the line's own colour.
+ * --service-color is set per leg from route_short_name; it falls back to the
+ * app accent for buses and for any line the table does not know. */
 .ride-leg {
+  --service-ink: color-mix(in oklab, var(--service-color, var(--green)) 72%, var(--service-mix));
   display: flex;
   align-items: center;
   gap: 7px;
   margin: 0 0 0 10px;
   padding: 5px 0;
-  border-left: 2px solid var(--mint-strong);
+  border-left: 3px solid var(--service-color, var(--green));
   padding-left: 10px;
-  margin-left: -2px;
+  margin-left: -3px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: var(--t-small);
 }
 .ride-leg svg {
   flex: 0 0 auto;
-  color: var(--green);
+  color: var(--service-ink);
 }
 .ride-leg .service {
-  padding: 2px 7px;
-  color: var(--green);
-  background: var(--mint);
-  border-radius: 999px;
-  font-weight: 750;
+  padding: 2px 8px;
+  color: var(--service-ink);
+  background: color-mix(in srgb, var(--service-color, var(--green)) 15%, transparent);
+  border-radius: var(--r-pill);
+  font-weight: 700;
   letter-spacing: 0.01em;
 }
 .ride-leg .ride-detail {
@@ -1652,12 +1711,23 @@ summary:focus-visible {
   white-space: nowrap;
 }
 .next-buses b {
-  padding: 2px 6px;
-  border-radius: 6px;
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
   background: var(--surface-soft);
   color: var(--ink-soft);
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--t-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* The soonest bus is the answer; the ones after it are context. Giving the
+   first one figure size is the only way the row reads at a glance, and it
+   costs nothing because the others recede on their own. */
+.next-buses b:first-of-type {
+  font-size: var(--t-figure-sm);
+  color: var(--ink);
+}
+.next-buses.scheduled b:first-of-type {
+  color: var(--muted);
 }
 /* Crowding, as a dot beside the first time rather than a tint on it. */
 .next-buses b > i {
@@ -1685,7 +1755,7 @@ summary:focus-visible {
 }
 .next-buses em {
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--t-micro);
   font-style: normal;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -1695,7 +1765,7 @@ summary:focus-visible {
 }
 .next-buses.none {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-meta);
 }
 
 /* Text for a screen reader only. The crowding dot is decoration, so the level
@@ -1714,7 +1784,7 @@ summary:focus-visible {
 .journey-timeline .stop-summary-row {
   grid-template-columns: 44px minmax(0, 1fr);
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 8px;
   transition: background 0.18s;
 }
@@ -1740,7 +1810,7 @@ button.stop-number {
   min-height: 44px;
   margin: 4px;
   padding: 8px 12px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   color: var(--green);
   background: var(--wash);
@@ -1790,7 +1860,7 @@ button.stop-number {
 .privacy-page section {
   padding: 28px;
   background: var(--elevated);
-  border-radius: 18px;
+  border-radius: var(--r-lg);
   box-shadow: var(--panel-shadow);
 }
 .privacy-page h2 {
@@ -1853,7 +1923,7 @@ button.stop-number {
     overflow-x: hidden;
     overflow-y: auto;
     border-width: 1px 0 0;
-    border-radius: 20px 20px 0 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
     box-shadow: 0 -14px 45px rgba(23, 48, 39, 0.18);
     transition: max-height 0.24s ease;
   }
@@ -1873,7 +1943,7 @@ button.stop-number {
     margin: 8px auto 1px;
     display: block;
     background: var(--handle);
-    border-radius: 999px;
+    border-radius: var(--r-pill);
   }
   .planner-intro {
     margin-bottom: 16px;
@@ -1977,7 +2047,7 @@ button.stop-number {
     align-items: center;
   }
   .result-impact > div {
-    font-size: 10px;
+    font-size: var(--t-meta);
   }
   .leaflet-control-zoom {
     margin-bottom: calc(60dvh + 10px) !important;
@@ -2012,7 +2082,7 @@ button.stop-number {
     flex: 1;
     min-height: 44px;
     border: 0;
-    border-radius: 12px;
+    border-radius: var(--r-md);
     background: var(--track);
     color: var(--ink-soft);
     font: inherit;
@@ -2076,7 +2146,7 @@ button.stop-number {
   /* Many Commons logos are dark artwork on transparency, which disappears
      against the dark palette. A light plate keeps them legible in both. */
   background: #fff;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   padding: 1px;
   box-shadow: 0 0 0 1px var(--line);
 }
