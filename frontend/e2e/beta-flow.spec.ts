@@ -1626,3 +1626,77 @@ test("a logo that fails to load falls back to the glyph rather than a broken ima
   await expect(page.getByTestId("place-mark").first()).toHaveAttribute("data-kind", "glyph");
   await expect(page.locator(".place-mark img")).toHaveCount(0);
 });
+
+test("the basemap follows the theme rather than being filtered into one", async ({ page }) => {
+  // Was GreyLite for both, with the dark theme applying invert(1)
+  // hue-rotate(180deg) over it. OneMap publishes a real dark basemap, and a
+  // filtered grey one is not the same thing.
+  const tiles: string[] = [];
+  // commonRoutes stubs tiles too, and Playwright matches the most recently
+  // registered handler first - so this has to be added after it, not before.
+  await commonRoutes(page);
+  await page.route("https://www.onemap.gov.sg/maps/tiles/**", (route) => {
+    tiles.push(route.request().url());
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto("/");
+  await expect.poll(() => tiles.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+  const theme = await page.evaluate(() => document.documentElement.dataset.theme);
+  const expected = theme === "dark" ? "/Night/" : "/Default/";
+  expect(tiles.every((url) => url.includes(expected))).toBe(true);
+  expect(tiles.some((url) => url.includes("/GreyLite/"))).toBe(false);
+
+  // And the invert hack is gone rather than merely overridden.
+  const filter = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue("--tile-filter").trim(),
+  );
+  expect(filter).toBe("none");
+});
+
+test("a rail leg is drawn in its own line colour", async ({ page }) => {
+  // route_short_name was already coming back as "DT" on every rail leg and
+  // nothing read it, so every leg was drawn in the same grey-green. A
+  // Singaporean identifies a line by its colour before reading a word.
+  await commonRoutes(page);
+  await page.route("**/api/intent/parse", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "resolved",
+        intent,
+        diagnostics: {},
+        journey_mentions: [],
+        journey_conflicts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/optimize-intent", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(result) }),
+  );
+  await page.goto("/");
+  await resolveJourney(page);
+  await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await page.getByRole("button", { name: /Find best stop/ }).click();
+  await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
+
+  const rides = page.locator(".ride-leg");
+  await expect(rides).toHaveCount(2);
+
+  // Downtown Line blue, LTA's own identity colour.
+  await expect(rides.nth(0)).toHaveCSS("border-left-color", "rgb(0, 94, 196)");
+
+  // A bus has no line colour system to borrow, so it keeps the app accent
+  // rather than being assigned an invented hue.
+  const busEdge = await rides.nth(1).evaluate((el) => getComputedStyle(el).borderLeftColor);
+  expect(busEdge).not.toBe("rgb(0, 94, 196)");
+
+  // The badge must stay legible: its text is a darkened mix, never the raw
+  // signage colour, which fails contrast on a pale panel.
+  const badge = await rides
+    .nth(0)
+    .locator(".service")
+    .evaluate((el) => getComputedStyle(el).color);
+  expect(badge).not.toBe("rgb(0, 94, 196)");
+});

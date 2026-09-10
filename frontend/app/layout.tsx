@@ -1,9 +1,22 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
 import { ServiceWorker } from "./ServiceWorker";
 import { THEME_BOOTSTRAP } from "./theme";
+
+/* The stylesheet was written for Inter and Inter was never loaded - no
+   next/font import, no @font-face, no link tag - so Windows rendered Segoe UI
+   and Android Roboto. Worse, the CSS asks for weights 450, 650, 750 and 850,
+   which only exist on a variable font; on a static family all four snap to the
+   nearest real weight and the hierarchy collapses to bold-or-not. Loading the
+   variable face is what makes the type scale below it real. */
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Along the Way — Singapore errand optimiser",
@@ -33,7 +46,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-SG" suppressHydrationWarning>
+    <html lang="en-SG" className={inter.variable} suppressHydrationWarning>
       <head>
         {/* Stamps data-theme before the first paint. Without a blocking script
             here the page renders light and then flips, which is worse at night

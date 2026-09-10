@@ -2,6 +2,59 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.8.4 - Giving the app a face
+
+A re-skin, prompted by the app reading as lifeless and machine-made. No component moved, no
+copy changed, no behaviour changed; the 322 backend tests are untouched and the browser suite
+went from 152 to 160 only because two new guards were added.
+
+The perception had specific, measurable causes rather than being a matter of taste.
+
+**The typeface the whole design assumed was never downloaded.** `globals.css` set
+`15px/1.45 Inter, ...` with no `next/font` import, no `@font-face` and no link tag anywhere,
+so Windows rendered Segoe UI and Android Roboto. Worse, the CSS asked for weights 450, 650,
+750 and 850 - values that only exist on a variable font - and on a static family all four
+snapped to the nearest real weight, collapsing the hierarchy to bold-or-not. Loading Inter
+properly now emits eight `@font-face` rules and self-hosted woff2 files, which makes the
+existing type system real for the first time rather than replacing it.
+
+**Twenty-six of thirty colours were the same hue.** The palette spanned 22 degrees at 24%
+mean saturation, and amber and red appeared only inside warning and error states - so a
+session where nothing went wrong was literally monochrome. The fix borrows Singapore's own
+colour system instead of inventing one: every rail leg already carried `route_short_name`
+as "DT" or "NS" and nothing read it, so `lineColors.ts` maps the seventeen line codes to
+LTA's identity colours and the leg is drawn in the line's own colour. That is comprehension
+before decoration - a local reader identifies a purple leg as North East before reading a
+word. Buses are deliberately excluded: operators do not colour-code services, so a hue per
+service number would look like a system while meaning nothing.
+
+Signage colours are not text colours, so the readable variant is mixed toward the ground
+with `color-mix` rather than hand-picked per line - white on Circle Line amber is about
+2.2:1, and six hardcoded text colours would drift the moment a line is added.
+
+**The map was the emptiest basemap OneMap publishes.** GreyLite draws faint grey outlines at
+Orchard, one label and no station at all; Default draws yellow arterials, named streets and
+the MRT stations with their codes. Dark mode now uses the real Night basemap in place of an
+`invert(1) hue-rotate(180deg)` filter over GreyLite, which had been turning every label into
+a negative of itself. The layer follows the theme through a MutationObserver on
+`data-theme`, so the map never imports the theme store.
+
+**Geometry had no system.** Twelve corner radii (3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 18, 20px)
+and six ad-hoc elevation shadows became a five-step radius ladder and three elevation tokens.
+Rings and the brand glows were left alone, being semantic rather than depth.
+
+**The type floor was 8px.** Seventeen distinct sizes with 73 of 87 declarations at 13px or
+smaller. 8px and 9px are retired, 10px raised, and the soonest bus - the figure a person
+actually came for - is given figure size with tabular numerals while the ones after it recede.
+
+**Nothing moved.** Three keyframes in 2,088 lines, and markers that were simply already in
+place when a result arrived. They settle in now, staggered in creation order and capped at
+360ms so a dozen compared places do not take a second and a half to finish arriving.
+
+One idea from the exploration was dropped on inspection: a warm accent for "live now" would
+have collided with `--warning`, which already owns amber. Diversity comes from the line
+colours instead, and liveness is signalled by motion, so no hue changes meaning.
+
 ## 0.8.3 - A brand mark where there is one, a glyph where there is not
 
 The second half of idea 3, and not what idea 3 asked for. Photographs of Singapore
