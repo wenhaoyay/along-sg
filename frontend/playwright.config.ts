@@ -11,10 +11,33 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "mobile-chromium", use: { browserName: "chromium", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
-    { name: "desktop-chromium", use: { browserName: "chromium", viewport: { width: 1440, height: 900 } } },
-    { name: "desktop-dark", use: { browserName: "chromium", viewport: { width: 1440, height: 900 }, colorScheme: "dark" } },
-    { name: "mobile-dark", use: { browserName: "chromium", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, colorScheme: "dark" } },
+    {
+      name: "mobile-chromium",
+      use: {
+        browserName: "chromium",
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
+      name: "desktop-chromium",
+      use: { browserName: "chromium", viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "desktop-dark",
+      use: { browserName: "chromium", viewport: { width: 1440, height: 900 }, colorScheme: "dark" },
+    },
+    {
+      name: "mobile-dark",
+      use: {
+        browserName: "chromium",
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        colorScheme: "dark",
+      },
+    },
   ],
   webServer: {
     command: "npm run dev -- --hostname 127.0.0.1 --port 3000",

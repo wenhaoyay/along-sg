@@ -2,6 +2,272 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.8.4 - Giving the app a face
+
+A re-skin, prompted by the app reading as lifeless and machine-made. No component moved, no
+copy changed, no behaviour changed; the 322 backend tests are untouched and the browser suite
+went from 152 to 160 only because two new guards were added.
+
+The perception had specific, measurable causes rather than being a matter of taste.
+
+**The typeface the whole design assumed was never downloaded.** `globals.css` set
+`15px/1.45 Inter, ...` with no `next/font` import, no `@font-face` and no link tag anywhere,
+so Windows rendered Segoe UI and Android Roboto. Worse, the CSS asked for weights 450, 650,
+750 and 850 - values that only exist on a variable font - and on a static family all four
+snapped to the nearest real weight, collapsing the hierarchy to bold-or-not. Loading Inter
+properly now emits eight `@font-face` rules and self-hosted woff2 files, which makes the
+existing type system real for the first time rather than replacing it.
+
+**Twenty-six of thirty colours were the same hue.** The palette spanned 22 degrees at 24%
+mean saturation, and amber and red appeared only inside warning and error states - so a
+session where nothing went wrong was literally monochrome. The fix borrows Singapore's own
+colour system instead of inventing one: every rail leg already carried `route_short_name`
+as "DT" or "NS" and nothing read it, so `lineColors.ts` maps the seventeen line codes to
+LTA's identity colours and the leg is drawn in the line's own colour. That is comprehension
+before decoration - a local reader identifies a purple leg as North East before reading a
+word. Buses are deliberately excluded: operators do not colour-code services, so a hue per
+service number would look like a system while meaning nothing.
+
+Signage colours are not text colours, so the readable variant is mixed toward the ground
+with `color-mix` rather than hand-picked per line - white on Circle Line amber is about
+2.2:1, and six hardcoded text colours would drift the moment a line is added.
+
+**The map was the emptiest basemap OneMap publishes.** GreyLite draws faint grey outlines at
+Orchard, one label and no station at all; Default draws yellow arterials, named streets and
+the MRT stations with their codes. Dark mode now uses the real Night basemap in place of an
+`invert(1) hue-rotate(180deg)` filter over GreyLite, which had been turning every label into
+a negative of itself. The layer follows the theme through a MutationObserver on
+`data-theme`, so the map never imports the theme store.
+
+**Geometry had no system.** Twelve corner radii (3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 18, 20px)
+and six ad-hoc elevation shadows became a five-step radius ladder and three elevation tokens.
+Rings and the brand glows were left alone, being semantic rather than depth.
+
+**The type floor was 8px.** Seventeen distinct sizes with 73 of 87 declarations at 13px or
+smaller. 8px and 9px are retired, 10px raised, and the soonest bus - the figure a person
+actually came for - is given figure size with tabular numerals while the ones after it recede.
+
+**Nothing moved.** Three keyframes in 2,088 lines, and markers that were simply already in
+place when a result arrived. They settle in now, staggered in creation order and capped at
+360ms so a dozen compared places do not take a second and a half to finish arriving.
+
+One idea from the exploration was dropped on inspection: a warm accent for "live now" would
+have collided with `--warning`, which already owns amber. Diversity comes from the line
+colours instead, and liveness is signalled by motion, so no hue changes meaning.
+
+## 0.8.3 - A brand mark where there is one, a glyph where there is not
+
+The second half of idea 3, and not what idea 3 asked for. Photographs of Singapore
+shopfronts are not obtainable on this project's terms: OpenStreetMap carries an `image` tag
+on 20 of 21,280 elements, Google's place photos may not be stored or cached, Foursquare
+charges, and its open dataset has no photographs in it. Measured before building rather than
+discovered after.
+
+Logos are obtainable, free and keyless. 601 distinct `brand:wikidata` ids cover 4,077 POIs,
+and after deduplication 169 brands carry a usable logo across 2,417 outlets - 16.4%. The
+route matters: Wikimedia's `api.php` refuses this client outright, so entities come from
+`Special:EntityData/<QID>.json`, and a Commons file URL is *derived* from the MD5 of its
+name rather than looked up, so the whole catalogue costs 303 requests instead of 606. The
+User-Agent is load-bearing - Wikimedia answers 403 to a terse one and 200 to the same
+request carrying a contact URL, measured both ways. Browsers send their own, so this governs
+ingestion and not the page.
+
+16.4% means the glyph is the design and the logo is the bonus. A hawker stall has no logo
+and never will, so `PlaceMark` draws a symbol for what the place sells, in the same box at
+the same size, with no border or label that would read as something failing to load. A logo
+that 404s - the URL is derived, so a renamed Commons file will - falls back to the same
+glyph rather than a broken image, and that fallback is keyed on the URL that failed rather
+than reset in an effect, which would cascade a render for every logo on screen.
+
+Wikidata is messier than its schema suggests, and four cases are pinned: a deprecated claim
+is a retired logo and must not win; a "novalue" snak carries no datavalue and reading one
+raises; TIFF, XCF and PDF are all on Commons and none of them renders in an `<img>`; and a
+merged item answers under a different id, which is a redirect to follow rather than a miss -
+though two entities and no match is ambiguity, and guessing would put the wrong mark on a
+real shop.
+
+Logos merge rather than replace, which is the opposite of the bus network and deliberately
+so. LTA publishes its network as one snapshot where a retired stop has to disappear; logos
+are fetched one brand at a time over hundreds of requests, and a run that dies at brand four
+hundred should leave the first three hundred and ninety-nine in place.
+
+Attribution for OpenStreetMap, OneMap, LTA and Wikimedia now has a home on the privacy page,
+which also states plainly that a missing logo is the usual case rather than a failure. The
+bus attribution string had been typed and never rendered since 0.8.0; this closes that too.
+
+## 0.8.2 - Names a person can read
+
+Idea 3 asked for pictures of the stalls instead of bare names. Measuring the dataset first
+found something worse than bare: 3,140 of 9,641 hubs - 32.6% - were displaying a raw
+OpenStreetMap element id.
+
+    7-Eleven - node/10030129567
+    Bakeries node/10201802661
+
+Two separate defects. `_unique_name` settled a collision by appending the element id, and a
+place OSM never named was labelled with its category slug plus the same id. Singapore has
+three hundred 7-Elevens and 665 of these places have no name at all, so both branches were
+the common path rather than the exceptional one - a third of the catalog introduced itself
+to the traveller with a database row number.
+
+Collisions are now settled the way a person settles them: by somewhere you can picture.
+The street comes first because it is what somebody standing outside would say, then the
+station, then the bus stop reduced to its landmark - "Opposite Haw Par Villa Station"
+carries its information in the landmark and its length in the preposition. Only when every
+qualifier is taken does it number them, and the element id survives as a last resort that
+is now unreachable in practice: 3,140 polluted names became 0, across both hubs and
+outlets, with hub, outlet and dedupe counts unchanged.
+
+Places OSM never named get a noun rather than a heading. `CategoryDefinition.name` labels a
+group - "Bakeries", "ATM and banking" - and reads as a mistake standing in for one shop, so
+`UNNAMED_LABELS` holds the singular separately instead of deriving one from the other.
+
+Three things cost thought. Display and identity had to split: the dedupe key stays keyed on
+the element id for an unnamed place, because collapsing it to "Bakery" would merge two
+different unnamed bakeries twenty metres apart into one. Qualifiers arrive dirty from both
+sources - `addr:street` carries unit numbers punctuated on ("Irving Place, #08-06;The
+Commerze@Irving") and stop names carry their own brackets ("T4 Shuttle (Arrival)") which
+would nest inside the ones being added - and the brackets have to come off before the comma
+split, or "(EW23, CR17)" strands its opening bracket. And the schema's UNIQUE constraint on
+(hub_id, name, category) caught what the transform did not: that constraint used to hold by
+accident, because an unnamed outlet carried its element id and so could never match another,
+and the rebuild failed on it the moment two outlets in one mall were both "Bakery".
+
+What idea 3 actually asked for is not in this data. 20 of 21,280 elements carry an `image`
+tag - 0.1% - so photographs are not available from OpenStreetMap at any coverage worth
+rendering, and the providers that do have them are paid, uncacheable, or both. Brand logos
+are: 601 distinct `brand:wikidata` ids cover 4,077 outlets (19.2%), reachable free and
+keyless through Wikidata's EntityData route and Wikimedia Commons. That is the next commit,
+and this one had to come first - a logo beside "Bakeries node/10201802661" would have
+dressed up the wrong problem.
+
+## 0.8.1 - The static bus network, so an empty answer can explain itself
+
+Added `bus_stops` and `bus_routes` tables, a transform for LTA's BusStops and BusRoutes
+datasets, and `scripts/ingest_bus_network.py` to fetch and store them. The arrivals
+endpoint now reports the stop's LTA name and, for the service being ridden, whether it is
+scheduled to be calling there at all.
+
+That is the difference between "nothing due" and "stopped for the night", which LTA's
+front-end advisement names as separate states and which the arrivals feed alone cannot
+distinguish - it returns no body for either. Where the timetable is not held the answer
+stays `null` rather than `false`, because reporting a service as not running on the
+strength of a missing row would invent the very fact this dataset was added to establish.
+
+Three details cost thought. A last bus after midnight is published as a smaller number
+than the first ("0015" against "0530"), so the window wraps and a naive comparison marks
+the service closed for twenty-three hours a day. `$skip` paging is not documented in
+v6.9, so the fetcher stops when a page repeats rather than trusting a page size - a server
+ignoring the parameter would otherwise return page one until the cap. And an empty capture
+is refused outright: half a bus network is worse than none, because every missing row
+reads as a cancelled service.
+
+The client now sends the service it is riding, which both narrows LTA's answer and is what
+makes the operating-hours lookup possible at all.
+
+Field names are LTA's own, read from the guide rather than from third-party bindings,
+which use different ones. None of this is verified against the live API yet: fetching
+requires an AccountKey, so the tests pin the transform and the storage against the
+documented shapes.
+
+## 0.8.0 - When the bus is coming, and whether that is a guess
+
+The leg parser was discarding the operator's stop code the same way it had been
+discarding service names before 0.7.8. OneMap returns `stopCode` on every transit leg,
+and for a bus leg that is the five-digit LTA BusStopCode - so live arrivals join by code
+rather than by name or coordinate, and no matching heuristic is involved.
+
+Added an LTA DataMall provider and a `/api/bus-arrivals` endpoint, so the timeline shows
+when the next buses on that service are due at the stop you board from. Free: DataMall
+allows 10 million calls a day under the Singapore Open Data Licence, which unlike the
+place providers weighed up for opening hours permits storing and serving the data on.
+Without a key the app serves deterministic sample times, labelled as samples, so the
+whole path is developable and testable offline.
+
+Three honesty rules govern it. `Monitored` distinguishes a time derived from the bus's
+position from one read off the operator's timetable, and the second is dimmed and
+labelled rather than shown in the same voice. Arrivals are requested only for a leg
+boarding within the next half hour, because a live time about a bus you will catch in two
+hours is a true number about the wrong bus. And durations round down with anything under
+a minute shown as arriving, per LTA's own front-end advisement.
+
+Crowding is a coloured dot beside the first time rather than a tint on the times
+themselves: LTA permits colouring the timings, but three differently coloured numbers in a
+row with no legend reads as urgency, and amber for 8 min beside red for 16 min looks like
+a claim about lateness. The level is also given in words for a reader who cannot see the
+colour. A stop that answers with nothing says "no live times" without guessing whether
+the service has stopped running - telling those apart needs per-stop operating hours from
+the Bus Routes dataset, which this app does not hold yet.
+
+## 0.7.11 — Pick your own stop, and say what matters
+
+A compared option is now a recommendation the app did not volunteer, rather than a
+second shape: it carries its own stops, legs and geometry, is flagged `offered: false`,
+and clicking its map marker or its row in the panel promotes it into the plan. That
+replaces the parallel `considered` payload added in 0.7.10 - the moment a compared
+option is selectable it needs everything a recommendation needs, at which point the only
+difference between the two is whether the app put it forward.
+
+Added a weighting control - our pick, least time, least walking, fewest transfers - which
+reorders every routed option and moves the plan to the new leader, because a control that
+reshuffled a list while leaving the recommendation contradicting the top of it would be
+worse than none. Re-ranking is arithmetic over results that were already routed, so it is
+instant and the note under the control says exactly that rather than implying a new
+search. No weighting promotes an option that drops an errand: a partial option is cheaper
+on every metric by construction, and a live Woodlands-HarbourFront run had a one-errand
+option scoring better than every complete one. It stays selectable by hand.
+
+The default is called "our pick" rather than "balanced" because `inconvenience_score` is
+the journey cost minus a credit for how confidently the place is known - location
+certainty plus published hours, weighted 2.5. On that same run the credit chose a named
+shop at +11 min over a mall at +5, which is defensible as a recommendation and
+indefensible as a claim about time, walking and transfers.
+
+## 0.7.10 — The map shows the comparison it made
+
+`optimize` routed several candidates and returned only the winners, so a live
+Punggol-Orchard run generated 465 candidates, routed 6 and drew 1 marker across most
+of a 1440px viewport. The routed-but-rejected candidates are now returned alongside the
+recommendations, deduplicated by stop set because a two-stop option is evaluated once per
+permutation, and capped at six. The map draws every routed place that is not the plan on
+screen - offered alternatives included, since from the map's point of view an alternative
+and a rejected candidate are the same thing - and a panel section states what each would
+have cost, ordered by the figure it displays and summarised so that six options within a
+minute of each other reads as the near-tie it is. Pointing at a row lifts its marker.
+
+Compared options report extra travel rather than total added time, so the number sits
+beside the recommendation headline and means the same thing. Fixing that exposed the same
+confusion in the alternatives trade-off copy, which compared total added time while
+labelling it travel: a live run offered ION Orchard as "15 min less travel" when its
+travel differed by 0.15 min and the whole fifteen minutes was one fewer shop to stand in.
+
+## 0.7.9 — Prettier and an enforced line length
+
+Adopted Prettier for the frontend at `printWidth: 100`, matching the backend's ruff
+`line-length`, so one number governs both halves of the repository. Every other option is
+left at its default because the codebase already wrote double quotes, semicolons and
+trailing commas, which keeps the reformat to line-wrapping rather than a rewrite. Wired
+`eslint-config-prettier` so ESLint stops competing over the same lines, and added
+`@stylistic/max-len` after it, because `printWidth` is a target rather than a ceiling:
+Prettier cannot break a comment, a URL or a long string, so those crossed 100 columns
+silently. `npm run format` and `npm run format:check` are the entry points. The reformat
+itself changes no behaviour - `globals.css` was verified identical once whitespace and
+leading zeros are normalised, and the suite passes unchanged.
+
+## 0.7.8 — The timeline names the service you board
+
+Carried `routeShortName`, `routeLongName`, `agencyName` and the intermediate-stop count
+through from OneMap, all four of which the leg parser had been discarding, so the timeline
+says how to travel between stops instead of only when to be there. Legs now carry a
+`segment_index`, because `combine_routes` flattens the routed segments into one list with
+no boundary and the client could otherwise only guess which service belongs to which stop;
+the mock provider names plausible lines so the timeline is developable offline. Fanned
+overlapping map markers around their centre, which the mall recovery made more pressing
+rather than less - a Singapore mall is often built on the station, and at Choa Chu Kang the
+origin marker was entirely hidden. Raised timeline endpoint contrast, preferred the
+client's resolved place names over coordinate-derived labels, and stopped a hub heading
+repeating a shop line identical to it.
+
 ## 0.7.7 — Honest headline numbers, dark mode and offline shell
 
 Suppressed alternatives whose journey is indistinguishable from the

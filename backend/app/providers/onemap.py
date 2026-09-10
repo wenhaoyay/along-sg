@@ -110,6 +110,14 @@ def _number(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _text(value: object) -> str | None:
+    """Empty strings are how OneMap says "not applicable" on a walking leg."""
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
 def _timestamp(value: Any) -> datetime | None:
     if value is None:
         return None
@@ -210,6 +218,19 @@ class OneMapNormalizer:
                     arrival_time=arrival_time,
                     geometry=geometry,
                     geometry_format=geometry_format,
+                    route_short_name=_text(raw_leg.get("routeShortName"))
+                    or _text(raw_leg.get("route")),
+                    route_long_name=_text(raw_leg.get("routeLongName")),
+                    agency=_text(raw_leg.get("agencyName")),
+                    # intermediateStops excludes the boarding stop, so the
+                    # number of stops ridden is one more than its length.
+                    stop_count=(
+                        len(raw_leg["intermediateStops"]) + 1
+                        if isinstance(raw_leg.get("intermediateStops"), list)
+                        else None
+                    ),
+                    from_stop_code=_text(from_place.get("stopCode")),
+                    to_stop_code=_text(to_place.get("stopCode")),
                 )
             )
 

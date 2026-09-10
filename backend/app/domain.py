@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import Any
 
+
+# Every time this app reports is local: the journey, the shop hours, the bus.
+SINGAPORE_TZ = ZoneInfo("Asia/Singapore")
 
 @dataclass(frozen=True)
 class Coordinate:
@@ -21,6 +25,42 @@ class GeocodeMatch:
 
 
 @dataclass(frozen=True)
+class ArrivalEstimate:
+    """One oncoming bus at one stop.
+
+    `live` is LTA's `Monitored` flag: True when the time was derived from where
+    the bus actually is, False when it came from the operator's timetable. The
+    app keeps them apart because they are different claims, and a timetable
+    figure presented as a live one is the kind of confident wrongness this
+    project treats as worse than saying nothing.
+    """
+
+    arrival_time: datetime
+    live: bool = False
+    # SEA seats available, SDA standing available, LSD limited standing.
+    load: str | None = None
+    wheelchair_accessible: bool = False
+    # SD single deck, DD double deck, BD bendy.
+    vehicle_type: str | None = None
+
+    def minutes_away(self, now: datetime) -> int:
+        """Whole minutes, rounded down, never negative.
+
+        LTA's front-end advisement is explicit that durations round down and
+        that anything under a minute is "arriving" rather than "0 min", so 3:49
+        is three minutes and 0:59 is zero.
+        """
+        return max(0, int((self.arrival_time - now).total_seconds() // 60))
+
+
+@dataclass(frozen=True)
+class BusArrival:
+    service_no: str
+    operator: str | None = None
+    estimates: tuple[ArrivalEstimate, ...] = ()
+
+
+@dataclass(frozen=True)
 class RouteLeg:
     mode: str
     duration_minutes: float
@@ -31,6 +71,25 @@ class RouteLeg:
     arrival_time: datetime | None = None
     geometry: str | None = None
     geometry_format: str | None = None
+    # OneMap returns the service identity on every transit leg and it was
+    # being discarded, so a plan could say "37 minutes" without ever saying
+    # which train or bus to board - the one thing a traveller has to act on.
+    route_short_name: str | None = None
+    route_long_name: str | None = None
+    agency: str | None = None
+    stop_count: int | None = None
+    # OneMap hands back the operator's own stop code on every transit leg, and
+    # for a bus leg that is the LTA five-digit BusStopCode - so live arrivals
+    # can be joined by code rather than guessed from a name or a coordinate.
+    # Rail legs carry a station code instead (NE17), which is why this is a
+    # string and why `is_bus_stop_code` exists rather than an int cast.
+    from_stop_code: str | None = None
+    to_stop_code: str | None = None
+    # Which routed segment this leg belongs to: 0 is origin -> first stop, 1 is
+    # first stop -> next, and so on. `combine_routes` flattens the segments
+    # into one leg list, and without this the client cannot tell where one
+    # ends, so it could not place a service against the right stop.
+    segment_index: int | None = None
 
 
 @dataclass(frozen=True)
@@ -59,6 +118,9 @@ class Store:
     closure_status: str = "unknown"
     source: str = "curated"
     source_id: str | None = None
+    # A brand mark where the chain has one. Absent for most places and that is
+    # the ordinary case, not a gap: a hawker stall has no logo and never will.
+    logo_url: str | None = None
 
     @property
     def all_categories(self) -> frozenset[str]:

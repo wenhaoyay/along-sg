@@ -1,0 +1,95 @@
+name: PR verification
+
+on:
+  push:
+    branches:
+      - journey-comparison-and-bus-arrivals
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - name: Install backend dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run backend test suite
+        working-directory: backend
+        env:
+          ONEMAP_MOCK: "true"
+          DATAMALL_MOCK: "true"
+        run: python -m pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: TypeScript check
+        working-directory: frontend
+        run: npx tsc --noEmit
+      - name: ESLint
+        working-directory: frontend
+        run: npm run lint
+      - name: Prettier check
+        working-directory: frontend
+        run: npm run format:check
+      - name: Production build
+        working-directory: frontend
+        run: npm run build
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Playwright suite
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            frontend/test-results
+            frontend/playwright-report
+          if-no-files-found: ignore
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build -t along-sg-pr .
+      - name: Start production image
+        run: docker run -d --name along-sg-pr -p 8000:8000 -e ONEMAP_MOCK=true -e DATAMALL_MOCK=true along-sg-pr
+      - name: Verify health endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/health >/dev/null; then
+              exit 0
+            fi
+            if ! docker inspect -f '{{.State.Running}}' along-sg-pr | grep -q true; then
+              docker logs along-sg-pr
+              exit 1
+            fi
+            sleep 2
+          done
+          docker logs along-sg-pr
+          exit 1

@@ -75,7 +75,7 @@ async def run(live: bool, output: Path) -> dict:
     results = []
     try:
         for name, origin, destination, errands in CASES:
-            baseline, recommendations, diagnostics = await optimizer.optimize(
+            baseline, recommendations, diagnostics, _ = await optimizer.optimize(
                 origin, destination, errands, departure
             )
             winner = recommendations.get("best_overall")

@@ -86,6 +86,16 @@ class RouteLegResponse(BaseModel):
     departure_time: datetime | None = None
     arrival_time: datetime | None = None
     geometry_format: str | None = None
+    route_short_name: str | None = None
+    route_long_name: str | None = None
+    agency: str | None = None
+    stop_count: int | None = None
+    # For a bus leg these are LTA five-digit BusStopCodes, which is what makes
+    # live arrivals an exact lookup rather than a name match. A rail leg carries
+    # a station code (NE17) instead, so the client checks the shape.
+    from_stop_code: str | None = None
+    to_stop_code: str | None = None
+    segment_index: int | None = None
 
 
 class RouteResponse(BaseModel):
@@ -169,6 +179,9 @@ class DisplayBusinessResponse(BaseModel):
     category_labels: list[str]
     location_context: str | None = None
     opening_status: str = "unknown"
+    # Null for most places. The client draws a category glyph instead rather
+    # than a gap, so a logo is a bonus and never a requirement.
+    logo_url: str | None = None
 
 
 class DwellAllowanceResponse(BaseModel):
@@ -210,6 +223,13 @@ class RecommendationResponse(BaseModel):
     hard_constraints_satisfied: bool = True
     detour_breakdown: DetourBreakdownResponse
     route_geometry: list[CoordinateResponse] = Field(default_factory=list)
+    legs: list[RouteLegResponse] = Field(default_factory=list)
+    # Whether the app puts this forward as a choice, as opposed to reporting it
+    # as something it routed and rejected. Both are full recommendations,
+    # because you can select either - a compared option needs its own legs and
+    # geometry the moment you pick it, and at that point the only difference
+    # between the two is whether the app volunteered it.
+    offered: bool = True
 
 
 class CatalogCategoryResponse(BaseModel):
@@ -279,6 +299,45 @@ class OptimizeResponse(BaseModel):
     data_attribution: str = "POI data © OpenStreetMap contributors, ODbL 1.0"
     intent: IntentV1 | None = None
     near_misses: list[NearMissResponse] = Field(default_factory=list)
+
+
+
+class ArrivalEstimateResponse(BaseModel):
+    # Whole minutes rounded down, per LTA's front-end advisement: 3:49 is "3",
+    # and anything under a minute is 0, which the client renders as arriving.
+    minutes: int
+    arrival_time: datetime
+    # LTA's Monitored flag. True means the time came from where the bus is;
+    # False means it came from the timetable. Different claims, said apart.
+    live: bool
+    load: Literal["SEA", "SDA", "LSD"] | None = None
+    wheelchair_accessible: bool = False
+    vehicle_type: Literal["SD", "DD", "BD"] | None = None
+
+
+class BusArrivalResponse(BaseModel):
+    service_no: str
+    operator: str | None = None
+    estimates: list[ArrivalEstimateResponse]
+
+
+class BusArrivalsResponse(BaseModel):
+    stop_code: str
+    checked_at: datetime
+    services: list[BusArrivalResponse]
+    # LTA's name for the stop, from the ingested network. Absent until the bus
+    # network has been ingested, which needs an AccountKey.
+    stop_name: str | None = None
+    # Whether the requested service is scheduled to be calling here right now.
+    # None means the timetable is not held, which the client must not render as
+    # "not running" - LTA's advisement separates "No Est. Available" from "Not
+    # In Operation" and that distinction is the whole reason this field exists.
+    in_operation: bool | None = None
+    operating_hours: str | None = None
+    # "lta_datamall" or "mock". The client says which out loud, because sample
+    # bus times shown as real ones would be the worst kind of wrong here.
+    source: str
+    attribution: str | None = None
 
 
 class AnalyticsEventType(StrEnum):

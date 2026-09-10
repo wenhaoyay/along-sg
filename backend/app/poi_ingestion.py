@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,7 +11,12 @@ import httpx
 
 from app.db import HUB_SEED, HubRepository
 from app.domain import Coordinate
-from app.poi_taxonomy import canonical_brand, infer_categories, normalize_text
+from app.poi_taxonomy import (
+    canonical_brand,
+    infer_categories,
+    normalize_text,
+    unnamed_label,
+)
 from app.providers.mock import haversine_km
 
 
@@ -158,12 +164,104 @@ class _SpatialIndex:
         return (best[0], round(best[1], 1)) if best else (None, None)
 
 
-def _unique_name(name: str, source_id: str, used: set[str]) -> str:
-    candidate = name.strip() or f"Unnamed place {source_id}"
-    if candidate not in used:
-        used.add(candidate)
-        return candidate
-    candidate = f"{candidate} · {source_id}"
+# Bus stop names are descriptions relative to a landmark - "Opposite Haw Par
+# Villa Station", "Before Tai Hoe Hotel". Used to tell two shops apart, the
+# landmark is the whole of the information and the preposition is length.
+_STOP_PREFIX = re.compile(r"^(?:before|after|opposite|opp|bef|aft)\.?\s+", re.IGNORECASE)
+
+
+def _wikidata_id(tags: dict[str, str]) -> str | None:
+    """Return only the high-confidence consumer-brand Wikidata association.
+
+    ``operator:wikidata`` can identify a franchise/operator that is not the
+    shop's displayed brand, while bare ``wikidata`` usually identifies the POI
+    or building itself. Until those weaker associations are validated against
+    the known consumer brand, showing no logo is safer than showing a wrong one.
+    """
+    value = (tags.get("brand:wikidata") or "").strip()
+    # Q followed by digits. The tag is free text and does carry rubbish.
+    if re.fullmatch(r"Q[1-9]\d*", value):
+        return value
+    return None
+
+
+def _landmark(name: str) -> str:
+    return _STOP_PREFIX.sub("", name).strip() or name
+
+
+def _clean_qualifier(value: str) -> str | None:
+    """A qualifier fit to sit in brackets after a name, or nothing.
+
+    Both sources arrive dirty. `addr:street` carries unit numbers and building
+    names bolted on with punctuation ("Irving Place, #08-06;The Commerze"), and
+    stop names carry their own brackets ("T4 Shuttle (Arrival)"), which would
+    nest inside the ones this is about to be wrapped in.
+    """
+    text = re.sub(r"\s*\([^)]*\)", "", value)
+    text = re.split(r"[,;]", text, maxsplit=1)[0]
+    text = re.sub(r"\s+", " ", text).strip(" -/")
+    # Too short to identify anything; too long to read at a glance.
+    return text if 2 <= len(text) <= 40 else None
+
+
+def _qualifiers(
+    tags: dict[str, str],
+    transport_id: str | None,
+    node_index: dict[str, tuple[str, str]],
+) -> tuple[str, ...]:
+    """Ways to tell this place from another of the same name, best first.
+
+    Somebody distinguishing two 7-Elevens says the street or the station. The
+    OSM element id does that job for a database and for nobody else.
+    """
+    raw: list[str] = []
+    street = (tags.get("addr:street") or tags.get("addr:place") or "").strip()
+    if street:
+        raw.append(street)
+    node_name, node_type = node_index.get(transport_id or "", ("", ""))
+    # A node we had to invent a name for identifies nothing to a reader.
+    if node_name and not node_name.startswith("Transport node "):
+        raw.append(node_name if node_type in RAIL_NODE_TYPES else _landmark(node_name))
+    ordered = [cleaned for cleaned in (_clean_qualifier(item) for item in raw) if cleaned]
+    seen: set[str] = set()
+    # A stop is often named after the street it stands on, so the two collapse.
+    return tuple(
+        item for item in ordered
+        if item and not (item.casefold() in seen or seen.add(item.casefold()))
+    )
+
+
+def _unique_name(
+    name: str,
+    source_id: str,
+    used: set[str],
+    qualifiers: tuple[str, ...] = (),
+) -> str:
+    """A display name no other hub has taken.
+
+    Collisions here are mundane rather than exceptional - Singapore has three
+    hundred 7-Elevens - so this ran on the fallback branch for a third of the
+    catalog and printed "7-Eleven · node/10030129567" at people. The element id
+    is now the last resort instead of the first, and reaching it means every
+    human qualifier was taken too.
+    """
+    base = name.strip() or f"Unnamed place {source_id}"
+    if base not in used:
+        used.add(base)
+        return base
+    for qualifier in qualifiers:
+        candidate = f"{base} ({qualifier})"
+        if candidate not in used:
+            used.add(candidate)
+            return candidate
+    # Two of the same chain on one street: number them, the way a person would.
+    stem = f"{base} ({qualifiers[0]})" if qualifiers else base
+    for index in range(2, 100):
+        candidate = f"{stem} {index}"
+        if candidate not in used:
+            used.add(candidate)
+            return candidate
+    candidate = f"{base} · {source_id}"
     used.add(candidate)
     return candidate
 
@@ -235,6 +333,9 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
     # ~1.1 km cells and only search the rings that could still hold a winner.
     all_index = _SpatialIndex(station_lookup)
     rail_index = _SpatialIndex(rail_lookup)
+    # Name and kind per node id, so a hub can be described by what it is
+    # next to rather than by its own row number.
+    node_index = {item["id"]: (item["name"], item["node_type"]) for item in nodes}
 
     def nearest_station(coordinate: Coordinate) -> tuple[str | None, float | None]:
         node_id, distance_m = all_index.nearest(coordinate)
@@ -258,7 +359,12 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
         tags = element.get("tags") or {}
         transport_id, transport_distance = nearest_station(coordinate)
         hubs.append({
-            "name": _unique_name(tags.get("name") or "Shopping mall", source_id, used_names),
+            "name": _unique_name(
+                tags.get("name") or "Shopping mall",
+                source_id,
+                used_names,
+                _qualifiers(tags, transport_id, node_index),
+            ),
             "latitude": coordinate.latitude,
             "longitude": coordinate.longitude,
             "semantic_type": "mall",
@@ -281,12 +387,23 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
     known_hours = 0
     branded = 0
     outlet_hub_seen: set[tuple[str, str, str]] = set()
+    # Outlets are unique per (hub, name, category) in the schema. That used
+    # to hold for free because an unnamed outlet carried its element id in
+    # its name; now that two unnamed bakeries in one mall are both "Bakery",
+    # they have to be told apart deliberately.
+    used_outlet_names: dict[str, set[str]] = {}
     for element, coordinate, categories in sorted(pois, key=lambda item: _source_id(item[0])):
         tags = element.get("tags") or {}
         source_id = _source_id(element)
         brand_slug, canonical_name = canonical_brand(tags.get("brand"), tags.get("operator"), tags.get("name"))
-        display_name = canonical_name or tags.get("name") or f"{categories[0].replace('_', ' ').title()} {source_id}"
-        dedupe_key = f"{brand_slug or normalize_text(display_name)}|{','.join(categories)}"
+        base_name = canonical_name or tags.get("name")
+        # Two names, deliberately. The dedupe key stays keyed on the element id
+        # for an unnamed place - collapsing it to "Bakery" would merge two
+        # different unnamed bakeries twenty metres apart into one - while the
+        # display name is what a person reads and must never carry a row id.
+        dedupe_name = base_name or f"{categories[0].replace('_', ' ').title()} {source_id}"
+        display_name = base_name or unnamed_label(categories[0])
+        dedupe_key = f"{brand_slug or normalize_text(dedupe_name)}|{','.join(categories)}"
         if any(key == dedupe_key and haversine_km(coordinate, previous) <= 0.025 for key, previous in dedupe_seen):
             deduplicated += 1
             continue
@@ -312,7 +429,12 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                 hub_source_id = f"poi:{source_id}"
                 transport_id, transport_distance = nearest_station(coordinate)
                 hubs.append({
-                    "name": _unique_name(display_name, source_id, used_names),
+                    "name": _unique_name(
+                        display_name,
+                        source_id,
+                        used_names,
+                        _qualifiers(tags, transport_id, node_index),
+                    ),
                     "latitude": coordinate.latitude,
                     "longitude": coordinate.longitude,
                     "semantic_type": "station_area" if _is_station_area(nearest_rail_distance_m(coordinate)) else "standalone",
@@ -326,18 +448,27 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                     "transport_node_distance_m": transport_distance,
                     "address": _address(tags),
                 })
-        hub_dedupe_key = (hub_source_id, normalize_text(display_name), categories[0])
+        hub_dedupe_key = (hub_source_id, normalize_text(dedupe_name), categories[0])
         if hub_dedupe_key in outlet_hub_seen:
             deduplicated += 1
             continue
         outlet_hub_seen.add(hub_dedupe_key)
+        # This outlet's own nearest node, not `transport_id` - that is assigned
+        # only on the branch that creates a standalone hub, so for anything
+        # inside a mall it still holds the previous iteration's value.
+        outlet_name = _unique_name(
+            display_name,
+            source_id,
+            used_outlet_names.setdefault(hub_source_id, set()),
+            _qualifiers(tags, nearest_station(coordinate)[0], node_index),
+        )
         is_closed = _is_closed(tags)
         closed_count += int(is_closed)
         known_hours += int(bool(tags.get("opening_hours")))
         branded += int(bool(brand_slug))
         outlets.append({
             "hub_source_id": hub_source_id,
-            "name": display_name,
+            "name": outlet_name,
             "original_name": tags.get("name"),
             "alt_names": " | ".join(filter(None, (
                 tags.get("alt_name"), tags.get("short_name"), tags.get("loc_name"),
@@ -351,6 +482,10 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                 tags.get("addr:street"), tags.get("addr:place"), tags.get("addr:postcode"),
             ))) or None,
             "brand_slug": brand_slug,
+            # Only brand:wikidata is safe to present as a consumer-brand logo.
+            # Weaker operator/entity associations remain unused until a future
+            # validation step can prove they match the known outlet brand.
+            "brand_wikidata": _wikidata_id(tags),
             "categories": categories,
             "source": source,
             "source_id": source_id,

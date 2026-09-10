@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 import asyncio
 import hmac
 import logging
@@ -12,7 +14,10 @@ from fastapi.staticfiles import StaticFiles
 from app.config import Settings
 from app.analytics import AnalyticsRepository
 from app.db import HubRepository
-from app.domain import Coordinate, GeocodeMatch, Hub, RouteResult, ScoredCandidate, Store
+from app.domain import (
+    SINGAPORE_TZ,
+    Coordinate, GeocodeMatch, Hub, RouteLeg, RouteResult, ScoredCandidate, Store,
+)
 from app.discovery_models import (
     DiscoveryConfidence, DiscoverySearchContext, DiscoverySource, EvidenceTier,
     ResolvedLocation, ResolvedPlace,
@@ -31,6 +36,13 @@ from app.providers.base import (
     ProviderTimeoutError,
     ProviderUpstreamError,
 )
+from app.providers.datamall import (
+    ATTRIBUTION as DATAMALL_ATTRIBUTION,
+    BusArrivalProvider,
+    LtaDataMallProvider,
+    MockBusArrivalProvider,
+)
+from app.bus_network import is_in_operation, operating_hours_text, stop_display_name
 from app.providers.mock import MockOneMapProvider
 from app.providers.onemap import OneMapProvider
 from app.providers.llm import OpenAIIntentProvider
@@ -38,6 +50,9 @@ from app.providers.place_search import GeoapifyPlaceSearchProvider, TomTomPlaceS
 from app.providers.semantic_expansion import OpenAISemanticExpansionProvider
 from app.providers.web_search import TavilyWebDiscoveryProvider
 from app.schemas import (
+    BusArrivalResponse,
+    BusArrivalsResponse,
+    ArrivalEstimateResponse,
     CoordinateResponse,
     AnalyticsEventRequest,
     AnalyticsEventResponse,
@@ -79,6 +94,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 # httpx's INFO request line includes the full URL. Some upstream APIs require
 # credentials in query parameters, so never allow that logger to emit at INFO.
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+def build_bus_arrival_provider(settings: Settings) -> BusArrivalProvider:
+    """Mock unless a key is present and mock mode is off.
+
+    Deliberately not "live whenever a key exists": switching a demo onto real
+    quota as a side effect of setting an environment variable is the kind of
+    surprise this project avoids. `DATAMALL_MOCK=false` is the explicit opt-in.
+    """
+    if settings.datamall_mock or not settings.lta_account_key:
+        return MockBusArrivalProvider()
+    return LtaDataMallProvider(
+        settings.lta_account_key,
+        timeout_seconds=settings.datamall_timeout_seconds,
+    )
 
 
 def build_provider(settings: Settings) -> MapProvider:
@@ -157,6 +187,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.repository = repository
         app.state.analytics = analytics
         app.state.provider = provider
+        app.state.bus_arrival_provider = build_bus_arrival_provider(app_settings)
         app.state.location_resolver = LocationResolver(repository, provider)
         app.state.need_resolver = NeedResolver(
             repository, live_place_provider,
@@ -197,6 +228,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app_settings.routing_concurrency,
         )
         yield
+        await app.state.bus_arrival_provider.close()
         close = getattr(provider, "close", None)
         if close is not None:
             await close()
@@ -239,6 +271,78 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             query=q,
             results=[resolved_location_response(match) for match in matches],
             provider="along-discovery",
+        )
+
+    @app.get("/api/bus-arrivals", response_model=BusArrivalsResponse)
+    async def bus_arrivals(
+        request: Request,
+        stop_code: str = Query(min_length=5, max_length=5, pattern=r"^\d{5}$"),
+        service: str | None = Query(default=None, max_length=8),
+    ):
+        """Live arrivals at one bus stop.
+
+        Five digits exactly, because that is what a BusStopCode is - a rail
+        leg's `NE17` is not a bus stop and must not reach DataMall as one.
+
+        An empty `services` list is a normal answer, not an error: LTA returns
+        no body at all when nothing is running, and a stop with nothing due
+        looks identical. The client says "no live times" rather than inventing
+        a reason, because telling the two apart needs each service's operating
+        hours from the Bus Routes dataset, which this app does not hold yet.
+        """
+        provider: BusArrivalProvider = request.app.state.bus_arrival_provider
+        try:
+            arrivals = await provider.arrivals(stop_code, service)
+        except ProviderError as error:
+            raise provider_http_error(error) from error
+        now = datetime.now(SINGAPORE_TZ)
+        live = not isinstance(provider, MockBusArrivalProvider)
+        # The static network, if it has been ingested. Its only job here is to
+        # let an empty answer explain itself: "nothing due" and "stopped for the
+        # night" look identical on the arrivals feed.
+        repository: HubRepository = request.app.state.repository
+        stop = repository.bus_stop(stop_code)
+        in_operation: bool | None = None
+        operating_hours: str | None = None
+        if service:
+            for row in repository.bus_routes_at_stop(stop_code):
+                if row["service_no"] != service:
+                    continue
+                scheduled = is_in_operation(row, now)
+                # A service can pass a stop in one direction only, so any
+                # direction that is running means the service is running here.
+                if scheduled:
+                    in_operation, operating_hours = True, operating_hours_text(row, now)
+                    break
+                if in_operation is None:
+                    in_operation = scheduled
+                    operating_hours = operating_hours_text(row, now)
+        return BusArrivalsResponse(
+            stop_name=stop_display_name(stop) if stop else None,
+            in_operation=in_operation,
+            operating_hours=operating_hours,
+            stop_code=stop_code,
+            checked_at=now,
+            source="lta_datamall" if live else "mock",
+            attribution=DATAMALL_ATTRIBUTION if live else None,
+            services=[
+                BusArrivalResponse(
+                    service_no=arrival.service_no,
+                    operator=arrival.operator,
+                    estimates=[
+                        ArrivalEstimateResponse(
+                            minutes=estimate.minutes_away(now),
+                            arrival_time=estimate.arrival_time,
+                            live=estimate.live,
+                            load=estimate.load,
+                            wheelchair_accessible=estimate.wheelchair_accessible,
+                            vehicle_type=estimate.vehicle_type,
+                        )
+                        for estimate in arrival.estimates
+                    ],
+                )
+                for arrival in arrivals
+            ],
         )
 
     @app.get("/api/discovery/needs", response_model=NeedDiscoveryResponse)
@@ -308,7 +412,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             origin = await resolve_location(request.app.state.location_resolver, payload.origin)
             destination = await resolve_location(request.app.state.location_resolver, payload.destination)
-            baseline, recommendations, diagnostics = await optimizer.optimize(
+            baseline, recommendations, diagnostics, considered = await optimizer.optimize(
                 origin.coordinate,
                 destination.coordinate,
                 payload.errands,
@@ -331,8 +435,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             errands=list(categories),
             baseline=route_response(baseline),
             recommendations={
-                key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
-                for key, candidate in recommendations.items()
+                **{
+                    key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
+                    for key, candidate in recommendations.items()
+                },
+                # Routed, rejected, and selectable anyway. Keyed separately so
+                # the client can tell what was volunteered from what was merely
+                # compared without inspecting the flag on every entry.
+                **{
+                    f"compared_{index}": recommendation_response(
+                        "Also compared", candidate, categories, app_settings.dwell_times,
+                        offered=False,
+                    )
+                    for index, candidate in enumerate(considered)
+                },
             },
             diagnostics=diagnostics,
             outcome=str(diagnostics["outcome"]),
@@ -512,7 +628,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 request.app.state.need_resolver, canonical, payload.confirmed_discovery_places,
                 route_context,
             )
-            baseline, recommendations, diagnostics, optimized_categories = (
+            baseline, recommendations, diagnostics, optimized_categories, considered = (
                 await asyncio.wait_for(optimize_intent(
                     optimizer,
                     origin.coordinate,
@@ -552,8 +668,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             errands=list(categories),
             baseline=route_response(baseline),
             recommendations={
-                key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
-                for key, candidate in recommendations.items()
+                **{
+                    key: recommendation_response(labels.get(key, "Alternative"), candidate, categories, app_settings.dwell_times)
+                    for key, candidate in recommendations.items()
+                },
+                # Routed, rejected, and selectable anyway. Keyed separately so
+                # the client can tell what was volunteered from what was merely
+                # compared without inspecting the flag on every entry.
+                **{
+                    f"compared_{index}": recommendation_response(
+                        "Also compared", candidate, categories, app_settings.dwell_times,
+                        offered=False,
+                    )
+                    for index, candidate in enumerate(considered)
+                },
             },
             diagnostics=diagnostics,
             outcome=str(diagnostics["outcome"]),
@@ -744,6 +872,26 @@ def geocode_response(match: GeocodeMatch) -> GeocodeResultResponse:
     )
 
 
+def leg_response(leg: RouteLeg) -> RouteLegResponse:
+    return RouteLegResponse(
+        mode=leg.mode,
+        duration_minutes=leg.duration_minutes,
+        distance_m=leg.distance_m,
+        from_name=leg.from_name,
+        to_name=leg.to_name,
+        departure_time=leg.departure_time,
+        arrival_time=leg.arrival_time,
+        geometry_format=leg.geometry_format,
+        route_short_name=leg.route_short_name,
+        route_long_name=leg.route_long_name,
+        agency=leg.agency,
+        stop_count=leg.stop_count,
+        from_stop_code=leg.from_stop_code,
+        to_stop_code=leg.to_stop_code,
+        segment_index=leg.segment_index,
+    )
+
+
 def route_response(route: RouteResult) -> RouteResponse:
     return RouteResponse(
         duration_minutes=route.duration_minutes,
@@ -752,17 +900,7 @@ def route_response(route: RouteResult) -> RouteResponse:
         transfers=route.transfers,
         provider=route.provider,
         legs=[
-            RouteLegResponse(
-                mode=leg.mode,
-                duration_minutes=leg.duration_minutes,
-                distance_m=leg.distance_m,
-                from_name=leg.from_name,
-                to_name=leg.to_name,
-                departure_time=leg.departure_time,
-                arrival_time=leg.arrival_time,
-                geometry_format=leg.geometry_format,
-            )
-            for leg in route.legs
+            leg_response(leg) for leg in route.legs
         ],
         departure_time=route.departure_time,
         arrival_time=route.arrival_time,
@@ -785,6 +923,7 @@ def recommendation_response(
     candidate: ScoredCandidate,
     categories: tuple[str, ...],
     dwell_times,
+    offered: bool = True,
 ) -> RecommendationResponse:
     stops = []
     matched_categories = candidate.option.required_categories or categories
@@ -819,6 +958,7 @@ def recommendation_response(
                     category_labels=[category_label(item) for item in store.all_categories if item in matched_categories],
                     location_context=location.context,
                     opening_status=check_hours(store.opening_hours, arrival, dwell),
+                    logo_url=store.logo_url,
                 ) for store in matching_stores],
                 semantic_type=hub.semantic_type,
                 location_context=location.context,
@@ -834,6 +974,8 @@ def recommendation_response(
     ]
     extra_transport = max(0.0, candidate.incremental_detour_minutes - route.dwell_minutes)
     return RecommendationResponse(
+        offered=offered,
+        legs=[leg_response(leg) for leg in route.legs],
         time_dependent=route.time_dependent,
         departure_time=route.departure_time if route.time_dependent else None,
         arrival_time=route.arrival_time if route.time_dependent else None,

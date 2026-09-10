@@ -139,6 +139,40 @@ class HubRepository:
                     source_id TEXT NOT NULL, last_verified_at TEXT,
                     UNIQUE(source, source_id)
                 );
+                -- The static bus network, keyed on LTA's five-digit stop code -
+                -- the same code OneMap returns on every bus leg, which is what
+                -- makes an arrival lookup a join rather than a guess.
+                CREATE TABLE IF NOT EXISTS bus_stops (
+                    stop_code TEXT PRIMARY KEY,
+                    road_name TEXT, description TEXT,
+                    latitude REAL NOT NULL, longitude REAL NOT NULL,
+                    last_verified_at TEXT
+                );
+                CREATE TABLE IF NOT EXISTS bus_routes (
+                    service_no TEXT NOT NULL,
+                    direction INTEGER NOT NULL,
+                    stop_sequence INTEGER NOT NULL,
+                    stop_code TEXT NOT NULL,
+                    operator TEXT, distance_km REAL,
+                    weekday_first TEXT, weekday_last TEXT,
+                    saturday_first TEXT, saturday_last TEXT,
+                    sunday_first TEXT, sunday_last TEXT,
+                    last_verified_at TEXT,
+                    PRIMARY KEY (service_no, direction, stop_sequence)
+                );
+                CREATE INDEX IF NOT EXISTS idx_bus_routes_stop ON bus_routes(stop_code);
+                -- Brand marks, keyed on the Wikidata id OSM already tags an
+                -- outlet with, so attaching one is a join and not a name match.
+                -- The Commons file name is kept beside the URL because the URL
+                -- is derived from it and the page stating the file's licence is
+                -- addressed by name.
+                CREATE TABLE IF NOT EXISTS brand_logos (
+                    wikidata_id TEXT PRIMARY KEY,
+                    brand_label TEXT,
+                    file_name TEXT NOT NULL,
+                    url TEXT NOT NULL,
+                    fetched_at TEXT
+                );
                 """
             )
             self._migrate_columns(connection, "hubs", {
@@ -157,10 +191,12 @@ class HubRepository:
                 "closure_status": "TEXT NOT NULL DEFAULT 'unknown'",
                 "original_name": "TEXT", "alt_names": "TEXT", "cuisine": "TEXT",
                 "shop": "TEXT", "amenity": "TEXT", "search_metadata": "TEXT",
+                "brand_wikidata": "TEXT",
             })
             connection.executescript(
                 """
                 CREATE INDEX IF NOT EXISTS idx_outlets_category ON outlets(category);
+                CREATE INDEX IF NOT EXISTS idx_outlets_brand_wikidata ON outlets(brand_wikidata);
                 CREATE INDEX IF NOT EXISTS idx_outlets_name_nocase ON outlets(name COLLATE NOCASE);
                 CREATE INDEX IF NOT EXISTS idx_brands_name_nocase ON brands(canonical_name COLLATE NOCASE);
                 CREATE INDEX IF NOT EXISTS idx_categories_name_nocase ON categories(name COLLATE NOCASE);
@@ -533,10 +569,11 @@ class HubRepository:
                     tn.name,
                     o.name, o.category, b.canonical_name, o.opening_hours,
                     o.closure_status, o.source, o.source_id,
-                    GROUP_CONCAT(oc.category_slug)
+                    GROUP_CONCAT(oc.category_slug), bl.url
                 FROM hubs h JOIN outlets o ON o.hub_id=h.id AND o.closure_status != 'closed'
                 LEFT JOIN transport_nodes tn ON tn.id=h.transport_area_id
                 LEFT JOIN brands b ON b.id=o.brand_id
+                LEFT JOIN brand_logos bl ON bl.wikidata_id=o.brand_wikidata
                 LEFT JOIN outlet_categories oc ON oc.outlet_id=o.id
                 WHERE h.id IN ({id_placeholders})
                 GROUP BY h.id, o.id ORDER BY h.id, o.id
@@ -554,7 +591,8 @@ class HubRepository:
              last_verified_at, hub_hours, hub_status, transport_distance, address,
              transport_node_name,
              store_name, primary_category, canonical_name, store_hours,
-             store_status, store_source, store_source_id, category_csv) = row
+             store_status, store_source, store_source_id, category_csv,
+             logo_url) = row
             entry = grouped.setdefault(hub_id, {
                 "name": hub_name, "coordinate": Coordinate(latitude, longitude),
                 "semantic_type": semantic_type, "transport_area_id": transport_area_id,
@@ -572,6 +610,7 @@ class HubRepository:
             entry["stores"].append(Store(
                 store_name, primary_category, canonical_name, extra_categories,
                 store_hours, store_status, store_source, store_source_id,
+                logo_url,
             ))
         mall_grid: dict[tuple[int, int], list[tuple[str, float, float]]] = {}
         grid_size = 0.004
@@ -612,6 +651,149 @@ class HubRepository:
                 data["address"], data["transport_node_name"], nearby_name,
                 nearby_distance))
         return result
+
+    def upsert_brand_logos(
+        self,
+        logos: Iterable[dict[str, Any]],
+        fetched_at: str | None = None,
+    ) -> int:
+        """Merge in brand logos, keyed on the Wikidata id.
+
+        Merged rather than swapped wholesale, which is the opposite of the bus
+        network above and deliberately so. LTA publishes the network as one
+        snapshot where a retired stop must disappear, but logos are fetched one
+        brand at a time over hundreds of requests, and a run that dies at brand
+        four hundred should leave the first three hundred and ninety-nine in
+        place. A logo also does not go stale the way a rerouted service does.
+        """
+        records = list(logos)
+        if not records:
+            return 0
+        with self._connect() as connection:
+            connection.executemany(
+                """
+                INSERT INTO brand_logos(wikidata_id, brand_label, file_name, url, fetched_at)
+                VALUES (:wikidata_id, :brand_label, :file_name, :url, :fetched_at)
+                ON CONFLICT(wikidata_id) DO UPDATE SET
+                    brand_label = excluded.brand_label,
+                    file_name = excluded.file_name,
+                    url = excluded.url,
+                    fetched_at = excluded.fetched_at
+                """,
+                [{**row, "fetched_at": fetched_at} for row in records],
+            )
+        return len(records)
+
+    def brand_wikidata_ids(self) -> list[str]:
+        """Distinct Wikidata ids across the outlets, commonest brand first.
+
+        Ordered by outlet count so that a fetch interrupted halfway has still
+        bought the most visible half of the catalogue.
+        """
+        with self._connect() as connection:
+            return [row[0] for row in connection.execute(
+                """
+                SELECT brand_wikidata, COUNT(*) AS outlets
+                FROM outlets
+                WHERE brand_wikidata IS NOT NULL AND TRIM(brand_wikidata) <> ''
+                GROUP BY brand_wikidata
+                ORDER BY outlets DESC, brand_wikidata
+                """
+            )]
+
+    def brand_logo_urls(self) -> dict[str, str]:
+        """Every known logo, by Wikidata id.
+
+        Small enough to hold whole - a few hundred rows - and read on every
+        catalogue load, so a per-outlet query would be hundreds of round trips
+        for a few kilobytes.
+        """
+        with self._connect() as connection:
+            return {row[0]: row[1] for row in connection.execute(
+                "SELECT wikidata_id, url FROM brand_logos"
+            )}
+
+    def brand_logo_count(self) -> int:
+        with self._connect() as connection:
+            return int(connection.execute("SELECT COUNT(*) FROM brand_logos").fetchone()[0])
+
+    def replace_bus_network(
+        self,
+        stops: Iterable[dict[str, Any]],
+        routes: Iterable[dict[str, Any]],
+        verified_at: str | None = None,
+    ) -> tuple[int, int]:
+        """Swap in a fresh capture of the static bus network.
+
+        Replaced wholesale rather than merged: LTA publishes the network as a
+        complete snapshot, and a retired stop or a rerouted service has to
+        disappear rather than linger. Empty input is refused so that a failed
+        or truncated fetch cannot quietly empty the tables.
+        """
+        stop_records, route_records = list(stops), list(routes)
+        if not stop_records or not route_records:
+            raise ValueError(
+                "Refusing to replace the bus network with an empty capture "
+                f"({len(stop_records)} stops, {len(route_records)} route rows)"
+            )
+        with self._connect() as connection:
+            connection.execute("DELETE FROM bus_routes")
+            connection.execute("DELETE FROM bus_stops")
+            connection.executemany(
+                """
+                INSERT INTO bus_stops(stop_code, road_name, description,
+                    latitude, longitude, last_verified_at)
+                VALUES (:stop_code, :road_name, :description, :latitude,
+                    :longitude, :last_verified_at)
+                """,
+                [{**row, "last_verified_at": verified_at} for row in stop_records],
+            )
+            connection.executemany(
+                """
+                INSERT INTO bus_routes(service_no, direction, stop_sequence,
+                    stop_code, operator, distance_km, weekday_first, weekday_last,
+                    saturday_first, saturday_last, sunday_first, sunday_last,
+                    last_verified_at)
+                VALUES (:service_no, :direction, :stop_sequence, :stop_code,
+                    :operator, :distance_km, :weekday_first, :weekday_last,
+                    :saturday_first, :saturday_last, :sunday_first, :sunday_last,
+                    :last_verified_at)
+                """,
+                [{**row, "last_verified_at": verified_at} for row in route_records],
+            )
+        return len(stop_records), len(route_records)
+
+    def bus_stop(self, stop_code: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(
+                "SELECT stop_code, road_name, description, latitude, longitude"
+                " FROM bus_stops WHERE stop_code=?",
+                (stop_code,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def bus_routes_at_stop(self, stop_code: str) -> list[dict[str, Any]]:
+        """Every service calling here, with its published operating window.
+
+        One row per direction, because a service can pass a stop outbound and
+        not inbound, and the first and last bus differ between them.
+        """
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(
+                "SELECT service_no, direction, operator, weekday_first, weekday_last,"
+                " saturday_first, saturday_last, sunday_first, sunday_last"
+                " FROM bus_routes WHERE stop_code=? ORDER BY service_no, direction",
+                (stop_code,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def bus_network_counts(self) -> tuple[int, int]:
+        with self._connect() as connection:
+            stops = connection.execute("SELECT COUNT(*) FROM bus_stops").fetchone()[0]
+            routes = connection.execute("SELECT COUNT(*) FROM bus_routes").fetchone()[0]
+        return stops, routes
 
     def replace_source_data(
         self, source: str, transport_nodes: Iterable[dict[str, Any]],
@@ -667,7 +849,8 @@ class HubRepository:
             brand_ids = dict(connection.execute("SELECT slug, id FROM brands"))
             for outlet in outlet_records:
                 data = dict(outlet)
-                for field in ("original_name", "alt_names", "cuisine", "shop", "amenity", "search_metadata"):
+                for field in ("original_name", "alt_names", "cuisine", "shop",
+                              "amenity", "search_metadata", "brand_wikidata"):
                     data.setdefault(field, None)
                 data["hub_id"] = hub_id_by_source[data.pop("hub_source_id")]
                 data["brand_id"] = brand_ids.get(data.pop("brand_slug"))
@@ -677,10 +860,12 @@ class HubRepository:
                     """
                     INSERT INTO outlets(hub_id, name, category, brand_id, source,
                         source_id, last_verified_at, opening_hours, closure_status,
-                        original_name, alt_names, cuisine, shop, amenity, search_metadata)
+                        original_name, alt_names, cuisine, shop, amenity, search_metadata,
+                        brand_wikidata)
                     VALUES (:hub_id, :name, :category, :brand_id, :source,
                         :source_id, :last_verified_at, :opening_hours, :closure_status,
-                        :original_name, :alt_names, :cuisine, :shop, :amenity, :search_metadata)
+                        :original_name, :alt_names, :cuisine, :shop, :amenity, :search_metadata,
+                        :brand_wikidata)
                     """, data,
                 )
                 outlet_id = int(cursor.lastrowid)

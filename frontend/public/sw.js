@@ -28,9 +28,11 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(
-        keys.filter((key) => key !== SHELL && key !== ASSETS).map((key) => caches.delete(key)),
-      ))
+      .then((keys) =>
+        Promise.all(
+          keys.filter((key) => key !== SHELL && key !== ASSETS).map((key) => caches.delete(key)),
+        ),
+      )
       .then(() => self.clients.claim()),
   );
 });
@@ -43,13 +45,19 @@ self.addEventListener("message", (event) => {
   const { type, urls } = event.data ?? {};
   if (type !== "warm" || !Array.isArray(urls)) return;
   event.waitUntil(
-    caches.open(ASSETS).then((cache) => Promise.allSettled(
-      urls
-        .filter((url) => {
-          try { return new URL(url).origin === self.location.origin; } catch { return false; }
-        })
-        .map((url) => cache.add(url)),
-    )),
+    caches.open(ASSETS).then((cache) =>
+      Promise.allSettled(
+        urls
+          .filter((url) => {
+            try {
+              return new URL(url).origin === self.location.origin;
+            } catch {
+              return false;
+            }
+          })
+          .map((url) => cache.add(url)),
+      ),
+    ),
   );
 });
 
@@ -67,7 +75,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          caches.open(SHELL).then((cache) => cache.put("/", response.clone())).catch(() => {});
+          caches
+            .open(SHELL)
+            .then((cache) => cache.put("/", response.clone()))
+            .catch(() => {});
           return response;
         })
         .catch(() => caches.match("/").then((cached) => cached ?? Response.error())),
@@ -77,14 +88,24 @@ self.addEventListener("fetch", (event) => {
 
   // Build output is content-hashed, so a hit is always correct: serve from
   // cache and fill on first miss.
-  if (url.pathname.startsWith("/_next/") || /\.(?:png|svg|webmanifest|css|js|woff2?)$/.test(url.pathname)) {
+  if (
+    url.pathname.startsWith("/_next/") ||
+    /\.(?:png|svg|webmanifest|css|js|woff2?)$/.test(url.pathname)
+  ) {
     event.respondWith(
-      caches.match(request).then((cached) => cached ?? fetch(request).then((response) => {
-        if (response.ok) {
-          caches.open(ASSETS).then((cache) => cache.put(request, response.clone())).catch(() => {});
-        }
-        return response;
-      })),
+      caches.match(request).then(
+        (cached) =>
+          cached ??
+          fetch(request).then((response) => {
+            if (response.ok) {
+              caches
+                .open(ASSETS)
+                .then((cache) => cache.put(request, response.clone()))
+                .catch(() => {});
+            }
+            return response;
+          }),
+      ),
     );
   }
 });

@@ -41,7 +41,7 @@ async def test_dwell_advances_onward_departure_when_provider_support_is_verified
     )
     departure = datetime(2026, 8, 27, 9, 0, tzinfo=ZoneInfo("Asia/Singapore"))
 
-    _, recommendations, diagnostics = await optimizer.optimize(
+    _, recommendations, diagnostics, _considered = await optimizer.optimize(
         Coordinate(1.4052, 103.9024),
         Coordinate(1.3043, 103.8322),
         ["groceries"],
@@ -74,7 +74,7 @@ async def test_unverified_time_support_surfaces_limitation(repository) -> None:
     )
     departure = datetime(2026, 8, 27, 9, 0, tzinfo=ZoneInfo("Asia/Singapore"))
 
-    _, recommendations, diagnostics = await optimizer.optimize(
+    _, recommendations, diagnostics, _considered = await optimizer.optimize(
         Coordinate(1.4052, 103.9024),
         Coordinate(1.3043, 103.8322),
         ["parcel"],
@@ -100,7 +100,7 @@ async def test_hard_routing_budget_is_never_exceeded(repository) -> None:
         routing_hard_budget=3,
     )
 
-    _, recommendations, diagnostics = await optimizer.optimize(
+    _, recommendations, diagnostics, _considered = await optimizer.optimize(
         Coordinate(1.4052, 103.9024),
         Coordinate(1.3043, 103.8322),
         ["groceries"],

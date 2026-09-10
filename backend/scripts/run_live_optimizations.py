@@ -99,7 +99,7 @@ async def main() -> int:
     ]
     try:
         for scenario_name, errands in scenarios:
-            baseline, recommendations, diagnostics = await optimizer.optimize(
+            baseline, recommendations, diagnostics, _ = await optimizer.optimize(
                 Coordinate(1.4052, 103.9024),
                 Coordinate(1.3043, 103.8322),
                 errands,

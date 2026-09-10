@@ -97,7 +97,7 @@ async def test_large_raw_dataset_does_not_scale_route_calls_linearly(repository)
         max_straight_line_detour_km=20, routing_soft_budget=10,
         routing_hard_budget=12,
     )
-    _, recommendations, diagnostics = await optimizer.optimize(
+    _, recommendations, diagnostics, _considered = await optimizer.optimize(
         ORIGIN, DESTINATION, ["convenience"], DEPARTURE
     )
     assert recommendations
@@ -113,8 +113,8 @@ async def test_route_cache_uses_directed_coordinate_and_one_minute_time_bucket(r
         routing_soft_budget=10, routing_hard_budget=12,
     )
     await optimizer.optimize(ORIGIN, DESTINATION, ["parcel"], DEPARTURE)
-    _, _, repeated = await optimizer.optimize(ORIGIN, DESTINATION, ["parcel"], DEPARTURE)
-    _, _, later = await optimizer.optimize(
+    _, _, repeated, _ = await optimizer.optimize(ORIGIN, DESTINATION, ["parcel"], DEPARTURE)
+    _, _, later, _ = await optimizer.optimize(
         ORIGIN, DESTINATION, ["parcel"], DEPARTURE + timedelta(minutes=2)
     )
     assert repeated["routing_call_count"] == 0
@@ -130,7 +130,7 @@ async def test_internal_detour_boundary_keeps_a_best_available_option(repository
         routing_soft_budget=10, routing_hard_budget=12,
         max_reasonable_detour_minutes=0,
     )
-    baseline, recommendations, diagnostics = await optimizer.optimize(
+    baseline, recommendations, diagnostics, _ = await optimizer.optimize(
         ORIGIN, DESTINATION, ["groceries"], DEPARTURE
     )
     assert isinstance(baseline, RouteResult)
@@ -176,7 +176,7 @@ async def test_candidate_routing_concurrency_is_bounded(repository) -> None:
         routing_soft_budget=10, routing_hard_budget=12,
         routing_concurrency=2,
     )
-    _, _, diagnostics = await optimizer.optimize(
+    _, _, diagnostics, _ = await optimizer.optimize(
         ORIGIN, DESTINATION, ["groceries"], DEPARTURE
     )
     assert provider.maximum_active == 2

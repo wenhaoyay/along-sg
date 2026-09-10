@@ -93,6 +93,12 @@ class Settings:
     openai_intent_model: str = "gpt-4.1-mini"
     openai_base_url: str = "https://api.openai.com/v1"
     openai_timeout_seconds: float = 20.0
+    # LTA DataMall. Free, 10 million calls a day, and served under the
+    # Singapore Open Data Licence - so unlike the place providers weighed up
+    # for opening hours, its data may be stored and served onward.
+    lta_account_key: str | None = None
+    datamall_mock: bool = True
+    datamall_timeout_seconds: float = 8.0
     tomtom_api_key: str | None = None
     geoapify_api_key: str | None = None
     tavily_api_key: str | None = None
@@ -121,6 +127,9 @@ class Settings:
     def from_env(cls) -> "Settings":
         return cls(
             onemap_mock=_bool_env("ONEMAP_MOCK", True),
+            lta_account_key=os.getenv("LTA_ACCOUNT_KEY") or None,
+            datamall_mock=_bool_env("DATAMALL_MOCK", True),
+            datamall_timeout_seconds=float(os.getenv("DATAMALL_TIMEOUT_SECONDS", "8")),
             onemap_email=os.getenv("ONEMAP_EMAIL") or os.getenv("ONEMAP_API_EMAIL"),
             onemap_password=os.getenv("ONEMAP_PASSWORD") or os.getenv("ONEMAP_API_PASSWORD"),
             onemap_base_url=os.getenv("ONEMAP_BASE_URL", "https://www.onemap.gov.sg").rstrip("/"),

@@ -26,6 +26,17 @@ MOCK_PLACES = (
 )
 
 
+# (short name, long name, is_rail, agency)
+_MOCK_LINES = (
+    ("NE", "NORTH EAST LINE", True, "SBS Transit"),
+    ("NS", "NORTH SOUTH LINE", True, "SMRT Corporation"),
+    ("CC", "CIRCLE LINE", True, "SMRT Corporation"),
+    ("DT", "DOWNTOWN LINE", True, "SBS Transit"),
+    ("95", "SBST BUS 95", False, "SBS Transit"),
+    ("196", "SBST BUS 196", False, "SBS Transit"),
+)
+
+
 def haversine_km(first: Coordinate, second: Coordinate) -> float:
     radius_km = 6371.0
     lat1, lat2 = math.radians(first.latitude), math.radians(second.latitude)
@@ -69,10 +80,50 @@ class MockOneMapProvider(MapProvider):
         transfers = 0 if distance_km < 7.0 else (1 if distance_km < 18.0 else 2)
         transit_minutes = distance_km / 26.0 * 60.0 + 3.0 + transfers * 2.5
         duration = walking_minutes + transit_minutes
+        # Deterministic but plausible service identity, so the journey timeline
+        # can be developed and tested without live OneMap credentials. Derived
+        # from the distance so a given journey always names the same service.
+        line = _MOCK_LINES[int(distance_km * 10) % len(_MOCK_LINES)]
+        is_rail = line[2]
+        # Deterministic stop identifiers of the right shape for the mode: a bus
+        # stop is a five-digit LTA BusStopCode, a station is a line code plus an
+        # ordinal. Without these the live-arrivals path cannot be exercised
+        # offline at all - and getting the shapes right is the point, since the
+        # client decides whether to ask DataMall by testing for five digits.
+        seed = int(distance_km * 1000)
+        board_code = f"{line[0]}{seed % 30 + 1}" if is_rail else f"{seed % 90000 + 10000:05d}"
+        alight_code = (
+            f"{line[0]}{seed % 30 + 4}" if is_rail else f"{(seed * 7) % 90000 + 10000:05d}"
+        )
+        walk_minutes = walking_minutes / 2
+        board_at = departure + timedelta(minutes=walk_minutes) if departure else None
+        alight_at = (
+            board_at + timedelta(minutes=transit_minutes) if board_at is not None else None
+        )
         legs = (
-            RouteLeg("WALK", walking_minutes / 2, walking_distance_m / 2, "Origin", "Stop"),
-            RouteLeg("TRANSIT", transit_minutes, distance_km * 1000, "Stop", "Stop"),
-            RouteLeg("WALK", walking_minutes / 2, walking_distance_m / 2, "Stop", "Destination"),
+            RouteLeg(
+                "WALK", walk_minutes, walking_distance_m / 2, "Origin", "Stop",
+                departure_time=departure, arrival_time=board_at,
+                to_stop_code=board_code,
+            ),
+            RouteLeg(
+                "SUBWAY" if is_rail else "BUS",
+                transit_minutes, distance_km * 1000, "Stop", "Stop",
+                route_short_name=line[0], route_long_name=line[1], agency=line[3],
+                stop_count=max(1, round(distance_km / 1.4)),
+                departure_time=board_at, arrival_time=alight_at,
+                from_stop_code=board_code, to_stop_code=alight_code,
+            ),
+            RouteLeg(
+                "WALK", walk_minutes, walking_distance_m / 2, "Stop", "Destination",
+                departure_time=alight_at,
+                arrival_time=(
+                    alight_at + timedelta(minutes=walk_minutes)
+                    if alight_at is not None
+                    else None
+                ),
+                from_stop_code=alight_code,
+            ),
         )
         return RouteResult(
             duration_minutes=round(duration, 2),

@@ -25,8 +25,9 @@ function read(): ThemePreference {
 
 export function resolveTheme(preference: ThemePreference): "light" | "dark" {
   if (preference !== "system") return preference;
-  return typeof window !== "undefined"
-    && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 /** The browser chrome is tinted by <meta name="theme-color">, which carries a
@@ -36,8 +37,9 @@ export function applyTheme(preference: ThemePreference): "light" | "dark" {
   const theme = resolveTheme(preference);
   document.documentElement.setAttribute("data-theme", theme);
   const ground = theme === "dark" ? "#0c1211" : "#dfe7e3";
-  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
-    .forEach((meta) => { meta.content = ground; });
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
+    meta.content = ground;
+  });
   return theme;
 }
 

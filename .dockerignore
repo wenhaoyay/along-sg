@@ -9,5 +9,8 @@ frontend/out
 frontend/test-results
 frontend/playwright-report
 backend/data/*.db
+backend/data/*.db-*
+backend/data/*.sqlite
+backend/data/*.sqlite-*
 work
 outputs

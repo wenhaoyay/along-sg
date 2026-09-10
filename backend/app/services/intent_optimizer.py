@@ -121,10 +121,11 @@ async def optimize_intent(
     dict[str, ScoredCandidate],
     dict[str, float | int | bool | str | None],
     list[str],
+    tuple[ScoredCandidate, ...],
 ]:
     all_errands = intent.required_errands + intent.optional_errands
     categories = [item.category for item in all_errands]
-    baseline, recommendations, diagnostics = await optimizer.optimize(
+    baseline, recommendations, diagnostics, considered = await optimizer.optimize(
         origin,
         destination,
         categories,
@@ -140,4 +141,4 @@ async def optimize_intent(
         if primary and primary.match_classification == "partial_option"
         else categories
     )
-    return baseline, recommendations, diagnostics, optimized_categories
+    return baseline, recommendations, diagnostics, optimized_categories, considered

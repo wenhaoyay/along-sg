@@ -13,7 +13,10 @@ COPY backend/requirements.txt ./backend/requirements.txt
 RUN python -m pip install --no-cache-dir -r backend/requirements.txt
 COPY backend/app ./backend/app
 COPY backend/scripts/prepare_beta_data.py ./backend/scripts/prepare_beta_data.py
-COPY backend/data/singapore-osm-pois.json ./backend/data/singapore-osm-pois.json
+# Package the tracked static backend data as one bounded set. .dockerignore
+# excludes local/generated SQLite artefacts so persistent databases and WAL
+# files are never copied into the image by this directory-level COPY.
+COPY backend/data ./backend/data
 COPY --from=frontend-build /build/frontend/out ./frontend/out
 ENV PYTHONPATH=/app/backend SERVE_FRONTEND_DIR=/app/frontend/out DATABASE_PATH=/data/errands.db ANALYTICS_DATABASE_PATH=/data/analytics.db
 EXPOSE 8000
