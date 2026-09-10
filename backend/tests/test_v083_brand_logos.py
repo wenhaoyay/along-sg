@@ -38,6 +38,15 @@ def claim(value, prop_type: str = "value", rank: str = "normal") -> dict:
     return {"mainsnak": snak, "rank": rank}
 
 
+def logo_row(qid: str, file_name: str, url: str) -> dict:
+    return {
+        "wikidata_id": qid,
+        "brand_label": qid,
+        "file_name": file_name,
+        "url": url,
+    }
+
+
 def test_a_commons_url_is_derived_from_the_file_name() -> None:
     """The path is the first one and two hex digits of the MD5 of the
     underscored name. Published rule, and the reason no second request is
@@ -153,31 +162,76 @@ def test_a_body_with_no_logo_yields_nothing_rather_than_a_blank_row() -> None:
 
 
 def test_logos_merge_rather_than_replace(tmp_path) -> None:
-    """The opposite of the bus network, deliberately: a fetch that dies at brand
-    four hundred must leave the first three hundred and ninety-nine alone."""
+    """A partial fetch must not replace the whole logo table."""
     from app.db import HubRepository
 
     repository = HubRepository(tmp_path / "logos.db")
     repository.initialize()
     assert (
         repository.upsert_brand_logos(
-            [{"wikidata_id": "Q1", "brand_label": "One", "file_name": "a.svg", "url": "u1"}],
+            [logo_row("Q1", "a.svg", "u1")],
             "2026-09-10T00:00:00+08:00",
         )
         == 1
     )
     repository.upsert_brand_logos(
-        [{"wikidata_id": "Q2", "brand_label": "Two", "file_name": "b.svg", "url": "u2"}],
+        [logo_row("Q2", "b.svg", "u2")],
         "2026-09-10T00:00:00+08:00",
     )
     assert repository.brand_logo_urls() == {"Q1": "u1", "Q2": "u2"}
     # A re-fetch updates in place rather than duplicating.
     repository.upsert_brand_logos(
-        [{"wikidata_id": "Q1", "brand_label": "One", "file_name": "c.svg", "url": "u3"}],
+        [logo_row("Q1", "c.svg", "u3")],
         "2026-09-11T00:00:00+08:00",
     )
     assert repository.brand_logo_urls() == {"Q1": "u3", "Q2": "u2"}
     assert repository.brand_logo_count() == 2
+
+
+def test_successful_refresh_updates_an_existing_logo(tmp_path) -> None:
+    from app.db import HubRepository
+    from scripts.ingest_brand_logos import reconcile_capture
+
+    repository = HubRepository(tmp_path / "updated.db")
+    repository.initialize()
+    repository.upsert_brand_logos([logo_row("Q1", "old.svg", "old")])
+    captured = {"Q1": {"entities": {"Q1": entity({"P154": [claim("new.svg")]})}}}
+
+    written, deleted, usable = reconcile_capture(repository, captured, "now")
+
+    assert (written, deleted, usable) == (1, 0, 1)
+    assert repository.brand_logo_urls()["Q1"] == commons_file_url("new.svg")
+
+
+def test_successful_response_without_a_logo_removes_the_stale_row(tmp_path) -> None:
+    from app.db import HubRepository
+    from scripts.ingest_brand_logos import reconcile_capture
+
+    repository = HubRepository(tmp_path / "removed.db")
+    repository.initialize()
+    repository.upsert_brand_logos([logo_row("Q1", "old.svg", "old")])
+    captured = {"Q1": {"entities": {"Q1": entity({})}}}
+
+    written, deleted, usable = reconcile_capture(repository, captured, "now")
+
+    assert (written, deleted, usable) == (0, 1, 0)
+    assert repository.brand_logo_urls() == {}
+
+
+def test_failed_fetch_preserves_the_existing_logo(tmp_path) -> None:
+    """Failed QIDs are absent from fetch_all's successful capture mapping, so
+    reconciliation cannot mistake a network failure for a no-logo response."""
+    from app.db import HubRepository
+    from scripts.ingest_brand_logos import reconcile_capture
+
+    repository = HubRepository(tmp_path / "failed.db")
+    repository.initialize()
+    repository.upsert_brand_logos([logo_row("Q1", "old.svg", "old")])
+
+    written, deleted, usable = reconcile_capture(repository, {}, "now")
+
+    assert (written, deleted, usable) == (0, 0, 0)
+    assert repository.brand_logo_urls() == {"Q1": "old"}
 
 
 def test_an_empty_fetch_writes_nothing_and_does_not_raise(tmp_path) -> None:
@@ -189,14 +243,32 @@ def test_an_empty_fetch_writes_nothing_and_does_not_raise(tmp_path) -> None:
     assert repository.brand_logo_urls() == {}
 
 
-def test_an_outlet_without_a_brand_gets_no_logo_and_that_is_not_an_error(tmp_path) -> None:
-    """83.6% of outlets. The client draws a category glyph, so a null here is
-    the ordinary path rather than a hole to be filled."""
+def test_an_outlet_without_a_brand_gets_no_logo_and_that_is_not_an_error() -> None:
     from app.poi_ingestion import _wikidata_id
 
     assert _wikidata_id({}) is None
     assert _wikidata_id({"brand:wikidata": "not-an-id"}) is None
     assert _wikidata_id({"brand:wikidata": "Q0"}) is None, "Q0 is not a real entity"
     assert _wikidata_id({"brand:wikidata": "Q259340"}) == "Q259340"
-    # A branch's own item is a weaker claim than the brand's, so it is last.
-    assert _wikidata_id({"wikidata": "Q1", "brand:wikidata": "Q2"}) == "Q2"
+
+
+def test_brand_wikidata_wins_over_weaker_associations() -> None:
+    from app.poi_ingestion import _wikidata_id
+
+    assert _wikidata_id(
+        {"brand:wikidata": "Q2", "operator:wikidata": "Q3", "wikidata": "Q4"}
+    ) == "Q2"
+
+
+def test_generic_poi_wikidata_is_not_automatically_a_brand() -> None:
+    from app.poi_ingestion import _wikidata_id
+
+    assert _wikidata_id({"name": "Example Shop", "wikidata": "Q4"}) is None
+
+
+def test_operator_id_does_not_override_a_known_different_consumer_brand() -> None:
+    from app.poi_ingestion import _wikidata_id
+
+    assert _wikidata_id(
+        {"brand": "7-Eleven", "name": "7-Eleven", "operator:wikidata": "Q999"}
+    ) is None

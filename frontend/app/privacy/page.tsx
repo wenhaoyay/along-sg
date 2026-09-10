@@ -51,17 +51,18 @@ export default function PrivacyPage() {
           <a href="https://datamall.lta.gov.sg/" target="_blank" rel="noopener noreferrer">
             LTA DataMall
           </a>{" "}
-          under the Singapore Open Data Licence. Brand logos come from{" "}
+          under the Singapore Open Data Licence. Brand-logo metadata comes from{" "}
           <a href="https://www.wikidata.org/" target="_blank" rel="noopener noreferrer">
             Wikidata
-          </a>{" "}
-          and{" "}
+          </a>
+          , and available logo files are loaded directly by your browser from{" "}
           <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">
             Wikimedia Commons
           </a>
-          , each file under its own terms; a brand mark is shown to identify that brand at its own
-          shop. Where no logo is held the app draws a symbol for what the place sells, which is the
-          usual case rather than a failure to load.
+          . AlongSG does not locally host those logo image files, so displaying one causes the
+          browser to contact Wikimedia in the normal way for an external image request. Each Commons
+          file has its own licensing and attribution terms. Where no usable logo is available, or a
+          logo fails to load, the app draws a symbol for what the place sells instead.
         </p>
         <h2>External navigation</h2>
         <p>

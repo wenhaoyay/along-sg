@@ -4,7 +4,7 @@ Idea 3 wanted pictures of the places. Photographs are not in this data - 20 of
 21,280 OSM elements carry an `image` tag, and the providers that do have photos
 are paid, uncacheable, or forbid storing what they return. Logos are: 601
 distinct `brand:wikidata` ids cover 4,077 outlets, and Wikidata and Commons are
-free, keyless and licensed to be served onward.
+free and keyless to query for this optional identity layer.
 
 This buys visual identity for the chains only. A hawker stall has no logo and
 never will, so the interface must treat a missing one as the ordinary case
@@ -19,11 +19,10 @@ up: the path is the first one and two hex digits of the MD5 of the underscored
 file name. That is a published rule rather than a guess, and it means no second
 request per logo - 601 requests for the whole catalogue instead of 1,202.
 
-Licensing: a file on Commons carries its own terms, and the per-file lookup is
-behind the same blocked API. What is stored is the Commons file name, so the
-page stating the terms is always one click away, and the client attributes
-Wikimedia Commons on any view that renders one. Brand marks are shown to
-identify the brand at its own shop, which is what a shopfront sign does.
+Licensing and attribution vary by Commons file. The database deliberately keeps
+the original Commons file name beside the derived URL, preserving enough
+provenance to identify the source file/page and inspect its individual terms
+later. The application makes no blanket licensing claim for all logo files.
 """
 
 from __future__ import annotations
@@ -104,23 +103,29 @@ def entity_label(entity: dict[str, Any]) -> str | None:
     return None
 
 
-def parse_entity_payload(payload: dict[str, Any], qid: str) -> dict[str, Any] | None:
-    """One EntityData response into a storable row, or nothing.
+def resolve_entity_payload(payload: dict[str, Any], qid: str) -> dict[str, Any] | None:
+    """Resolve one requested QID from an EntityData payload without guessing.
 
-    Nothing is an ordinary answer: most brands on Wikidata have no logo claim,
-    and a redirected or deleted id comes back under a different key.
+    A direct entity is accepted. Wikidata redirects/merges can answer under a
+    different key, which is safe only when exactly one entity object is present.
+    Anything else is a parsing/resolution failure and must not be interpreted as
+    evidence that an existing logo was removed.
     """
     entities = payload.get("entities")
     if not isinstance(entities, dict):
         return None
     entity = entities.get(qid)
-    if not isinstance(entity, dict):
-        # A redirect answers under its target id. One entity in the body is
-        # unambiguous, so follow it rather than dropping the brand.
-        values = [item for item in entities.values() if isinstance(item, dict)]
-        if len(values) != 1:
-            return None
-        entity = values[0]
+    if isinstance(entity, dict):
+        return entity
+    values = [item for item in entities.values() if isinstance(item, dict)]
+    return values[0] if len(values) == 1 else None
+
+
+def parse_entity_payload(payload: dict[str, Any], qid: str) -> dict[str, Any] | None:
+    """One resolvable EntityData response into a storable row, or nothing."""
+    entity = resolve_entity_payload(payload, qid)
+    if entity is None:
+        return None
     file_name = logo_file_name(entity)
     if not file_name:
         return None

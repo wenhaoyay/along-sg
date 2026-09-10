@@ -171,11 +171,17 @@ _STOP_PREFIX = re.compile(r"^(?:before|after|opposite|opp|bef|aft)\.?\s+", re.IG
 
 
 def _wikidata_id(tags: dict[str, str]) -> str | None:
-    for key in ("brand:wikidata", "operator:wikidata", "wikidata"):
-        value = (tags.get(key) or "").strip()
-        # Q followed by digits. The tag is free text and does carry rubbish.
-        if re.fullmatch(r"Q[1-9]\d*", value):
-            return value
+    """Return only the high-confidence consumer-brand Wikidata association.
+
+    ``operator:wikidata`` can identify a franchise/operator that is not the
+    shop's displayed brand, while bare ``wikidata`` usually identifies the POI
+    or building itself. Until those weaker associations are validated against
+    the known consumer brand, showing no logo is safer than showing a wrong one.
+    """
+    value = (tags.get("brand:wikidata") or "").strip()
+    # Q followed by digits. The tag is free text and does carry rubbish.
+    if re.fullmatch(r"Q[1-9]\d*", value):
+        return value
     return None
 
 
@@ -476,9 +482,9 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                 tags.get("addr:street"), tags.get("addr:place"), tags.get("addr:postcode"),
             ))) or None,
             "brand_slug": brand_slug,
-            # OSM's own link to Wikidata, which is what a logo is joined on.
-            # `brand:wikidata` is the brand; a bare `wikidata` on a chain outlet
-            # is usually that one branch, so it is only trusted as a fallback.
+            # Only brand:wikidata is safe to present as a consumer-brand logo.
+            # Weaker operator/entity associations remain unused until a future
+            # validation step can prove they match the known outlet brand.
             "brand_wikidata": _wikidata_id(tags),
             "categories": categories,
             "source": source,

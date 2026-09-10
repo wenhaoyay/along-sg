@@ -4,10 +4,10 @@
     python scripts/ingest_brand_logos.py --input cap.json # replay a capture
     python scripts/ingest_brand_logos.py --capture cap.json
 
-Free and keyless. Wikidata and Wikimedia Commons carry no account, no quota and
-no per-call cost, which is the whole reason logos are the answer to idea 3 and
-photographs are not - the providers that hold photographs of Singapore shopfronts
-either charge, forbid storing what they return, or both.
+Free and keyless. Wikidata and Wikimedia Commons carry no account or per-call
+cost, which is the whole reason logos are the answer to idea 3 and photographs
+are not - the providers that hold photographs of Singapore shopfronts either
+charge, forbid storing what they return, or both.
 
 One request per distinct brand, not per outlet: 601 brands cover 4,077 outlets.
 The Commons URL is derived from the file name rather than looked up, so there is
@@ -36,6 +36,7 @@ from app.brand_logos import (  # noqa: E402
     USER_AGENT,
     WIKIDATA_ENTITY_URL,
     parse_entity_payload,
+    resolve_entity_payload,
 )
 from app.config import Settings  # noqa: E402
 from app.db import HubRepository  # noqa: E402
@@ -55,7 +56,10 @@ async def fetch_entity(client: httpx.AsyncClient, qid: str) -> dict | None:
         logger.warning("%s: request failed (%s)", qid, type(error).__name__)
         return None
     if response.status_code == 404:
-        # A deleted id. Ordinary: OSM tags outlive Wikidata items.
+        # Treat an HTTP failure as an unsuccessful fetch. A stale OSM tag can
+        # point at a deleted entity, but a transient/proxy 404 is still not a
+        # trustworthy signal for deleting the last known logo.
+        logger.warning("%s: HTTP 404", qid)
         return None
     if response.status_code != 200:
         logger.warning("%s: HTTP %s", qid, response.status_code)
@@ -68,6 +72,12 @@ async def fetch_entity(client: httpx.AsyncClient, qid: str) -> dict | None:
 
 
 async def fetch_all(qids: list[str]) -> dict[str, dict]:
+    """Return only QIDs whose EntityData request completed successfully.
+
+    Missing entries are fetch failures and must preserve any previously stored
+    logo. A successful payload that contains no usable logo is different: that
+    QID is present here and reconciliation may remove its stale row.
+    """
     captured: dict[str, dict] = {}
     async with httpx.AsyncClient(
         timeout=20.0, headers={"User-Agent": USER_AGENT}, follow_redirects=True
@@ -80,6 +90,51 @@ async def fetch_all(qids: list[str]) -> dict[str, dict]:
                 logger.info("fetched %s of %s", index, len(qids))
             await asyncio.sleep(REQUEST_INTERVAL_SECONDS)
     return captured
+
+
+def reconcile_capture(
+    repository: HubRepository,
+    captured: dict[str, dict],
+    fetched_at: str,
+) -> tuple[int, int, int]:
+    """Reconcile only successfully fetched and safely parsed QIDs.
+
+    Valid logos are upserted. A valid entity that no longer exposes a usable
+    logo removes the old row. Request failures are absent from ``captured`` and
+    malformed or ambiguous payloads cannot be resolved, so both cases preserve
+    the prior database value. This keeps partial refreshes safe.
+    """
+    logos = []
+    no_logo_qids = []
+    for qid, payload in captured.items():
+        entity = resolve_entity_payload(payload, qid)
+        if entity is None or not isinstance(entity.get("claims"), dict):
+            logger.warning(
+                "%s: EntityData payload could not be parsed safely; preserving prior logo",
+                qid,
+            )
+            continue
+        row = parse_entity_payload(payload, qid)
+        if row is None:
+            no_logo_qids.append(qid)
+        else:
+            logos.append(row)
+
+    written = repository.upsert_brand_logos(logos, fetched_at)
+    deleted = 0
+    if no_logo_qids:
+        placeholders = ",".join("?" for _ in no_logo_qids)
+        # HubRepository owns the SQLite path and connection policy. This stays
+        # at the ingestion boundary rather than changing generic upsert
+        # semantics: deletion is valid only for entities resolved successfully
+        # in this particular refresh.
+        with repository._connect() as connection:
+            cursor = connection.execute(
+                f"DELETE FROM brand_logos WHERE wikidata_id IN ({placeholders})",
+                no_logo_qids,
+            )
+            deleted = max(0, int(cursor.rowcount))
+    return written, deleted, len(logos)
 
 
 def main() -> int:
@@ -112,19 +167,14 @@ def main() -> int:
             arguments.capture.write_text(json.dumps(captured), encoding="utf-8")
             logger.info("capture written to %s", arguments.capture)
 
-    logos = [
-        row for row in (
-            parse_entity_payload(payload, qid) for qid, payload in captured.items()
-        ) if row is not None
-    ]
-    written = repository.upsert_brand_logos(
-        logos, datetime.now(SINGAPORE_TZ).isoformat()
-    )
+    fetched_at = datetime.now(SINGAPORE_TZ).isoformat()
+    written, deleted, usable = reconcile_capture(repository, captured, fetched_at)
     # Most brands genuinely have no logo claim, so this is a coverage figure
     # rather than a failure count.
     logger.info(
-        "%s brands answered, %s carried a usable logo, %s stored (%s held in total)",
-        len(captured), len(logos), written, repository.brand_logo_count(),
+        "%s brands answered, %s carried a usable logo, %s stored, %s stale removed "
+        "(%s held in total)",
+        len(captured), usable, written, deleted, repository.brand_logo_count(),
     )
     return 0
 
