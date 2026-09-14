@@ -160,6 +160,19 @@ async function resolveJourney(page: Page) {
   await page.getByRole("option").first().getByRole("button").click();
 }
 
+const liveTiles = Boolean(process.env.LIVE_TILES);
+
+/* Leaflet loads its tiles lazily and fades each one in, so a shot taken the
+ * instant a panel appears catches a half-drawn map. Only worth waiting for when
+ * the tiles are real; against the stub there is nothing to settle. */
+async function settle(page: Page, ms = 400) {
+  if (liveTiles) {
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForTimeout(900);
+  }
+  await page.waitForTimeout(ms);
+}
+
 test("capture required V0.7.2 UI review states", async ({ page }, testInfo) => {
   const output = path.resolve(
     process.cwd(),
@@ -171,9 +184,15 @@ test("capture required V0.7.2 UI review states", async ({ page }, testInfo) => {
   mkdirSync(output, { recursive: true });
   let optimizeBody = resultWith({ best_overall: baseRecommendation });
   let conflictMode = false;
-  await page.route("https://www.onemap.gov.sg/maps/tiles/**", (route) =>
-    route.fulfill({ status: 204 }),
-  );
+  /* The basemap is stubbed away by default so a capture is deterministic and
+   * offline. LIVE_TILES=1 lets the real OneMap tiles through, which is what the
+   * README screenshots need: a plan drawn over a blank rectangle shows the panel
+   * and hides the one thing the app is about. */
+  if (!liveTiles) {
+    await page.route("https://www.onemap.gov.sg/maps/tiles/**", (route) =>
+      route.fulfill({ status: 204 }),
+    );
+  }
   await page.route("**/api/catalog/categories", (route) =>
     route.fulfill({
       status: 200,
@@ -285,27 +304,32 @@ test("capture required V0.7.2 UI review states", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Find what you need/ })).toBeVisible();
   await page.waitForTimeout(100);
+  await settle(page);
   await page.screenshot({ path: path.join(output, "A-empty.png") });
 
   await resolveJourney(page);
   await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
+  await settle(page);
   await page.screenshot({ path: path.join(output, "B-resolved-input.png") });
 
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
   await page.waitForTimeout(850);
+  await settle(page);
   await page.screenshot({ path: path.join(output, "C-one-stop.png") });
 
   await page.getByRole("button", { name: /Edit journey/ }).click();
   optimizeBody = resultWith({ best_overall: multiRecommendation, least_walking: alternative });
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await page.waitForTimeout(850);
+  await settle(page);
   await page.screenshot({ path: path.join(output, "D-multi-errand.png") });
 
   await page.getByText("Other options").click();
   await page.locator(".planner").evaluate((panel) => {
     panel.scrollTop = Math.max(0, panel.scrollHeight - panel.clientHeight - 16);
   });
+  await settle(page);
   await page.screenshot({ path: path.join(output, "E-alternatives-open.png") });
 
   await page.getByRole("button", { name: /Edit journey/ }).click();
@@ -313,10 +337,12 @@ test("capture required V0.7.2 UI review states", async ({ page }, testInfo) => {
   await page.getByLabel("What do you need on the way?").fill("bubble tea then Orchard MRT");
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByText("Your journey changed")).toBeVisible();
+  await settle(page);
   await page.screenshot({ path: path.join(output, "F-destination-conflict.png") });
 
   await page.reload();
   await page.getByLabel("Origin").fill("chuachukang");
   await expect(page.getByRole("listbox")).toBeVisible();
+  await settle(page);
   await page.screenshot({ path: path.join(output, "G-location-autocomplete.png") });
 });

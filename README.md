@@ -6,6 +6,37 @@ Along helps you fit one or two errands into an existing trip without turning the
 
 > **Status:** active development. Along currently targets Singapore and is being iterated as a portfolio/personal project.
 
+## What it looks like
+
+<p align="center">
+  <img src="docs/screenshots/plan-desktop.png" alt="Two errands planned onto one Choa Chu Kang to Fajar journey, with the detour drawn against the direct route" width="100%">
+</p>
+
+<p align="center">
+  <sub><b>Two errands, one journey.</b> The dashed line is the direct trip; the solid line is the trip with both stops folded in. The headline is the difference between them — <b>+8 min</b> — not the total.</sub>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/start-desktop.png" alt="The planner before a journey is entered, over the whole island" width="100%"></td>
+    <td width="50%"><img src="docs/screenshots/alternatives-dark.png" alt="Alternative stops and the ranking control, in dark mode" width="100%"></td>
+  </tr>
+  <tr>
+    <td><sub><b>Start with the island.</b> Origin, destination and the errand in plain words. The rail network is drawn in its own line colours, so a local reads the map before reading the form.</sub></td>
+    <td><sub><b>Say what matters.</b> Every routed option can be re-ranked by time, walking or transfers — arithmetic over results already in hand, so it is instant. Dark mode swaps the basemap too, not just the panel.</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/screenshots/plan-mobile.png" alt="The same plan on a phone, with the map above and a draggable summary sheet below" width="320">
+</p>
+
+<p align="center">
+  <sub><b>On a phone</b> the map keeps the top third and the plan becomes a sheet you can drag over it.</sub>
+</p>
+
+<sub>Captured by the Playwright harness (`CAPTURE_VISUALS=1 LIVE_TILES=1 npx playwright test e2e/visual-review.spec.ts`). The basemap and the rail geometry are live OneMap; the journey itself is the fixture the harness routes, so the shots are reproducible rather than hand-picked.</sub>
+
 ## Why I built it
 
 A normal maps search can tell you where a shop is, but not whether stopping there actually makes sense **on the way** from A to B.
@@ -199,7 +230,7 @@ wrong bus.
 ## Current limitations
 
 - Singapore only.
-- No public hosted demo yet.
+- No public hosted demo yet — [the screenshots above](#what-it-looks-like) are the closest thing.
 - Real routing quality and availability depend on OneMap.
 - Place coverage is not a guaranteed real-time business directory.
 - Opening hours are published for only about 20% of outlets; the rest are shown as unknown rather than guessed.
