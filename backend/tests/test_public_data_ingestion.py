@@ -106,6 +106,31 @@ def test_park_fitness_area_maps_to_fitness_and_park_facilities() -> None:
     assert parsed.geo_features[0]["routeable"] == 1
 
 
+def test_nparks_pcn_label_is_kept_as_park_connector_geometry() -> None:
+    raw = json.dumps(
+        {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [[103.84, 1.31], [103.841, 1.311]],
+                    },
+                    "properties": {
+                        "OBJECTID": 7,
+                        "PARK": "Test Connector",
+                        "TYPE": "Shared Path",
+                        "PARK_TYPE": "PCN",
+                    },
+                }
+            ],
+        }
+    ).encode()
+    parsed = parse_dataset(DATASETS["nparks_tracks"], raw)
+    assert parsed.geo_features[0]["layer"] == "park_connectors"
+
+
 def test_sportsg_rows_are_context_only_when_public_access_is_unknown() -> None:
     raw = (
         "VenueName,PostalCode,Latitude,Longitude,SportsFacility\n"
