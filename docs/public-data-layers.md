@@ -55,7 +55,9 @@ better transit proximity/context while retaining the existing rail/bus graph.
 
 ### Hawker centres
 
-NEA hawker centres are routeable. They receive the `hawker_centres` category and their
+NEA hawker centres are routeable only when the published `STATUS` is `Existing`.
+Planned or under-construction centres remain visible as map context but do not enter the
+journey optimiser. Existing centres receive the `hawker_centres` category and their
 published status/address are retained when present.
 
 ### NParks facilities
