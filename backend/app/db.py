@@ -811,7 +811,7 @@ class HubRepository:
                 for hub in hub_records
             }
             for row in connection.execute(
-                "SELECT id, name, latitude, longitude FROM hubs WHERE source<>?", (source,)
+                "SELECT id, name, latitude, longitude FROM hubs WHERE source='curated'"
             ):
                 match = incoming.get(normalize_text(row[1]))
                 if match is not None and _seed_distance_km(row[2], row[3], match) <= 0.4:
