@@ -1,9 +1,10 @@
 name: PR verification
 
 on:
+  pull_request:
   push:
     branches:
-      - journey-comparison-and-bus-arrivals
+      - main
   workflow_dispatch:
 
 permissions:

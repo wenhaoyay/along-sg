@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import Settings
 from app.analytics import AnalyticsRepository
 from app.db import HubRepository
+from app.public_data import PublicGeoStore
 from app.domain import (
     SINGAPORE_TZ,
     Coordinate, GeocodeMatch, Hub, RouteLeg, RouteResult, ScoredCandidate, Store,
@@ -135,6 +136,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         repository = HubRepository(app_settings.database_path)
         repository.initialize()
+        public_geo_store = PublicGeoStore(app_settings.database_path)
+        public_geo_store.initialize()
         analytics = AnalyticsRepository(
             app_settings.analytics_database_path,
             app_settings.analytics_retention_days,
@@ -185,6 +188,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         app.state.settings = app_settings
         app.state.repository = repository
+        app.state.public_geo_store = public_geo_store
         app.state.analytics = analytics
         app.state.provider = provider
         app.state.bus_arrival_provider = build_bus_arrival_provider(app_settings)
@@ -259,6 +263,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/health")
     async def health() -> dict[str, str | bool]:
         return {"status": "ok", "onemap_mock": app_settings.onemap_mock}
+
+
+    @app.get("/api/public-layers")
+    async def public_layers(
+        request: Request,
+        min_lat: float = Query(ge=1.1, le=1.6),
+        min_lon: float = Query(ge=103.5, le=104.2),
+        max_lat: float = Query(ge=1.1, le=1.6),
+        max_lon: float = Query(ge=103.5, le=104.2),
+        layers: str | None = Query(default=None, max_length=300),
+        limit: int = Query(default=2000, ge=1, le=5000),
+    ) -> dict:
+        if min_lat > max_lat or min_lon > max_lon:
+            raise HTTPException(status_code=422, detail="Invalid bounding box")
+        requested_layers = tuple(
+            item.strip()
+            for item in (layers or "").split(",")
+            if item.strip()
+        )
+        store: PublicGeoStore = request.app.state.public_geo_store
+        return store.feature_collection(
+            requested_layers,
+            min_lat,
+            min_lon,
+            max_lat,
+            max_lon,
+            limit,
+        )
 
     @app.get("/api/geocode", response_model=GeocodeResponse)
     async def geocode(request: Request, q: str = Query(min_length=2, max_length=160), limit: int = Query(default=6, ge=1, le=10)):

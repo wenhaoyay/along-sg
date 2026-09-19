@@ -3,10 +3,14 @@
 import { createElement, useState } from "react";
 import {
   Banknote,
+  Baby,
   Cake,
+  CircleParking,
   Coffee,
   CupSoda,
   Croissant,
+  Dog,
+  Dumbbell,
   Flower2,
   Glasses,
   Hammer,
@@ -21,6 +25,8 @@ import {
   ShoppingCart,
   Sofa,
   Store,
+  Toilet,
+  TreePine,
   Utensils,
   Wrench,
 } from "lucide-react";
@@ -50,6 +56,13 @@ type Props = {
 // Matched on the human label the API already sends, longest key first so
 // "bubble tea" is not swallowed by "tea" and "fast food" beats "food".
 const GLYPHS: Array<[string, typeof Store]> = [
+  ["public toilets", Toilet],
+  ["fitness and exercise", Dumbbell],
+  ["hawker centres", Utensils],
+  ["park facilities", TreePine],
+  ["playgrounds", Baby],
+  ["parking", CircleParking],
+  ["dog runs", Dog],
   ["bubble tea", CupSoda],
   ["convenience store", ShoppingBasket],
   ["household goods", Sofa],
