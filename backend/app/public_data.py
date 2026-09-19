@@ -296,16 +296,26 @@ class _TransitIndex:
         if not self._items:
             return None
         cell = self._key(latitude, longitude)
-        candidates: list[tuple[str, str, float, float]] = []
-        for radius in range(0, 6):
-            candidates = [
-                item
-                for dx in range(-radius, radius + 1)
-                for dy in range(-radius, radius + 1)
-                for item in self._buckets.get((cell[0] + dx, cell[1] + dy), ())
-            ]
-            if candidates:
-                break
+        # Never stop at the first occupied cell: a point can sit on a grid
+        # boundary while a much closer station is in the adjacent cell.
+        # A 5x5 neighbourhood spans well beyond the optimiser's 1.2 km
+        # transit-proximity threshold in Singapore; expand only when it is empty.
+        candidates = [
+            item
+            for dx in range(-2, 3)
+            for dy in range(-2, 3)
+            for item in self._buckets.get((cell[0] + dx, cell[1] + dy), ())
+        ]
+        if not candidates:
+            for radius in range(3, 8):
+                candidates = [
+                    item
+                    for dx in range(-radius, radius + 1)
+                    for dy in range(-radius, radius + 1)
+                    for item in self._buckets.get((cell[0] + dx, cell[1] + dy), ())
+                ]
+                if candidates:
+                    break
         if not candidates:
             candidates = self._items
         best = min(
