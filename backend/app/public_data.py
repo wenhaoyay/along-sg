@@ -425,8 +425,8 @@ def _geo_record(
     }
 
 
-def _internal_hub_name(display_name: str, source_id: str) -> str:
-    return f"{display_name} · data.gov.sg/{source_id}"
+def _internal_hub_name(spec: DatasetSpec, display_name: str, source_id: str) -> str:
+    return f"{display_name} · data.gov.sg/{spec.dataset_id}:{source_id}"
 
 
 def _hub(
@@ -442,7 +442,7 @@ def _hub(
     last_verified_at: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "name": _internal_hub_name(name, source_id),
+        "name": _internal_hub_name(spec, name, source_id),
         "latitude": latitude,
         "longitude": longitude,
         "semantic_type": "standalone",
