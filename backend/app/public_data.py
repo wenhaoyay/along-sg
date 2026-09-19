@@ -527,7 +527,8 @@ def parse_mrt_exits(spec: DatasetSpec, payload: dict[str, Any]) -> ParsedDataset
         source_id = _source_id(properties, index)
         station = str(properties.get("STATION_NA") or "MRT station").strip()
         exit_code = str(properties.get("EXIT_CODE") or "Exit").strip()
-        display_name = f"{station.title()} {exit_code}"
+        station_name = station.title().replace(" Mrt ", " MRT ").replace(" Lrt ", " LRT ")
+        display_name = f"{station_name} {exit_code}"
         nodes.append(
             {
                 "id": f"dgov:mrt-exit:{source_id}",
