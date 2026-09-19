@@ -165,7 +165,22 @@ cd backend
 That yields 14,777 outlets across 27 categories, 252 malls and 5,978 transport nodes.
 Coverage limits and the licensing boundary are in [`backend/data/README.md`](backend/data/README.md).
 
-See [`backend/data/README.md`](backend/data/README.md) for the data and licensing boundary.
+Along can also ingest official data.gov.sg layers without depending on a third-party map:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\ingest_public_data.py
+```
+
+The first official bundle adds MRT exits, NEA hawker centres, NParks facilities, parks
+and tracks/park connectors, plus SportSG facility context. Only evidence-backed point
+destinations enter the optimiser: parks/tracks stay as geometry, and SportSG facilities
+remain context-only because the source does not establish public access. The bounded
+`/api/public-layers` endpoint exposes those context layers for map use.
+
+See [`docs/public-data-layers.md`](docs/public-data-layers.md) for the source ids,
+routeability rules and refresh model, and [`backend/data/README.md`](backend/data/README.md)
+for the data and licensing boundary.
 
 ### Live bus arrivals (optional, free)
 
