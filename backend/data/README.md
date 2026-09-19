@@ -49,3 +49,31 @@ about 130 rail stations - classifying the two alike would relabel most of the ca
 Opening hours remain the weakest field: 3,000 of 14,774 active outlets (20%) publish
 them. That is twice the previous absolute count and the same proportion. Everything
 else is unknown and is presented as unknown.
+
+
+## Official data.gov.sg layers
+
+Along can enrich the local database directly from six official datasets:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\ingest_public_data.py
+```
+
+The importer keeps two different data contracts on purpose:
+
+- routeable point destinations (currently NEA hawker centres and suitable NParks point
+  facilities) enter the existing `hubs` / `outlets` catalogue;
+- map/context geometry (MRT exits, SportSG facilities, parks, park connectors and other
+  NParks tracks) is retained in `public_geo_features` without inventing a destination
+  centroid or claiming access that the source does not establish.
+
+MRT exits are additionally stored as transport nodes so imported official places can use
+the existing transit-proximity shortlist.
+
+The source ids, dataset ids, refresh behaviour and routeability decisions are documented
+in [`docs/public-data-layers.md`](../../docs/public-data-layers.md).
+
+The official datasets are supplied through data.gov.sg under the Singapore Open Data
+Licence: https://data.gov.sg/open-data-licence. This is a separate licence boundary from
+the OpenStreetMap ODbL capture above; preserve the attribution required by each source.
