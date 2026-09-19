@@ -200,6 +200,64 @@ def test_routeable_public_place_uses_nearest_existing_transport_node(tmp_path) -
     assert imported.transport_node_distance_m < 20
 
 
+def test_transit_linking_checks_adjacent_grid_cells(tmp_path) -> None:
+    database = tmp_path / "boundary.db"
+    repository = HubRepository(database)
+    repository.initialize()
+    repository.replace_source_data(
+        "boundary-transit",
+        [
+            {
+                "id": "same-cell-far",
+                "name": "Far stop",
+                "latitude": 1.3101,
+                "longitude": 103.84,
+                "node_type": "station",
+                "source": "boundary-transit",
+                "source_id": "far",
+                "last_verified_at": None,
+            },
+            {
+                "id": "adjacent-cell-near",
+                "name": "Near stop",
+                "latitude": 1.32001,
+                "longitude": 103.84,
+                "node_type": "station",
+                "source": "boundary-transit",
+                "source_id": "near",
+                "last_verified_at": None,
+            },
+        ],
+        [],
+        [],
+    )
+    parsed = parse_dataset(
+        DATASETS["hawker_centres"],
+        _geojson(
+            _feature(
+                {
+                    "UNIQUEID": "hawker-boundary",
+                    "NAME": "Boundary Food Centre",
+                    "STATUS": "Existing",
+                },
+                latitude=1.31999,
+            )
+        ),
+    )
+    store = PublicGeoStore(database)
+    store.initialize()
+    ingest_parsed_dataset(repository, store, parsed)
+
+    imported = next(
+        hub
+        for hub in repository.find_for_categories(("hawker_centres",))
+        if hub.source == parsed.spec.source
+    )
+    assert imported.transport_area_id == "adjacent-cell-near"
+    assert imported.transport_node_distance_m is not None
+    assert imported.transport_node_distance_m < 5
+
+
 def test_source_refresh_does_not_delete_another_non_curated_source(tmp_path) -> None:
     repository = HubRepository(tmp_path / "sources.db")
     repository.initialize()
