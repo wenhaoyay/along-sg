@@ -582,10 +582,9 @@ def parse_hawker_centres(spec: DatasetSpec, payload: dict[str, Any]) -> ParsedDa
             or properties.get("ADDRESSBUILDINGNAME")
             or "Hawker centre"
         ).strip()
-        status = str(properties.get("STATUS") or "").casefold()
-        closure_status = (
-            "open" if status == "existing" else "closed" if "closed" in status else "unknown"
-        )
+        status = normalize_text(str(properties.get("STATUS") or ""))
+        is_existing = status == "existing"
+        closure_status = "open" if is_existing else "closed"
         address = properties.get("ADDRESS_MYENV")
         if not address:
             parts = [
@@ -597,30 +596,31 @@ def parse_hawker_centres(spec: DatasetSpec, payload: dict[str, Any]) -> ParsedDa
         verified = _verified_at(properties)
         stalls = properties.get("NUMBER_OF_COOKED_FOOD_STALLS")
         metadata = f"{stalls} cooked-food stalls" if stalls not in (None, "") else None
-        hubs.append(
-            _hub(
-                spec,
-                source_id,
-                name,
-                coordinate[0],
-                coordinate[1],
-                address=str(address).strip() if address else None,
-                closure_status=closure_status,
-                last_verified_at=verified,
+        if is_existing:
+            hubs.append(
+                _hub(
+                    spec,
+                    source_id,
+                    name,
+                    coordinate[0],
+                    coordinate[1],
+                    address=str(address).strip() if address else None,
+                    closure_status=closure_status,
+                    last_verified_at=verified,
+                )
             )
-        )
-        outlets.append(
-            _outlet(
-                spec,
-                source_id,
-                source_id,
-                name,
-                ("hawker_centres",),
-                closure_status=closure_status,
-                last_verified_at=verified,
-                search_metadata=metadata,
+            outlets.append(
+                _outlet(
+                    spec,
+                    source_id,
+                    source_id,
+                    name,
+                    ("hawker_centres",),
+                    closure_status=closure_status,
+                    last_verified_at=verified,
+                    search_metadata=metadata,
+                )
             )
-        )
         geo_features.append(
             _geo_record(
                 spec,
@@ -628,7 +628,7 @@ def parse_hawker_centres(spec: DatasetSpec, payload: dict[str, Any]) -> ParsedDa
                 feature["geometry"],
                 properties,
                 name=name,
-                routeable=True,
+                routeable=is_existing,
             )
         )
     return ParsedDataset(spec, [], hubs, outlets, geo_features, len(features), skipped)
