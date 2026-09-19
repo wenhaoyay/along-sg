@@ -718,8 +718,7 @@ def parse_generic_geojson(spec: DatasetSpec, payload: dict[str, Any]) -> ParsedD
         if spec.key == "nparks_tracks":
             track_type = normalize_text(str(properties.get("TYPE") or ""))
             park_type = normalize_text(str(properties.get("PARK_TYPE") or ""))
-            if "park connector" in track_type or "park connector" in park_type or "pcn" in track_type:
-                layer = "park_connectors"
+            if (\n                "park connector" in track_type\n                or "park connector" in park_type\n                or "pcn" in track_type\n                or "pcn" in park_type\n            ):\n                layer = "park_connectors"
             else:
                 layer = "park_tracks"
         try:
