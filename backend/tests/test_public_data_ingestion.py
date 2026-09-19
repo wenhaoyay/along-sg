@@ -55,7 +55,7 @@ def test_mrt_exit_parser_keeps_authoritative_exit_identity() -> None:
     assert parsed.transport_nodes == [
         {
             "id": "dgov:mrt-exit:exit-1",
-            "name": "Beauty World Mrt Station Exit C",
+            "name": "Beauty World MRT Station Exit C",
             "latitude": 1.31,
             "longitude": 103.84,
             "node_type": "mrt_exit",
