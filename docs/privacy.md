@@ -20,7 +20,7 @@ For this private beta, the operator should limit report and backup access to the
 
 ## External navigation and data sources
 
-Navigation opens only after an explicit click and is handled by the user’s selected external mapping service, whose privacy terms then apply. Public place data is derived from OpenStreetMap and remains attributed **© OpenStreetMap contributors, ODbL 1.0**. Public-transport routing and geocoding are supplied through the backend OneMap adapter.
+Navigation opens only after an explicit click and is handled by the user’s selected external mapping service, whose privacy terms then apply. Public place data is derived from OpenStreetMap and remains attributed **© OpenStreetMap contributors, ODbL 1.0**. Selected official amenities and geographic layers are sourced from **data.gov.sg under the Singapore Open Data Licence**. Public-transport routing and geocoding are supplied through the backend OneMap adapter.
 
 ## Optional catalog-gap tracking
 
