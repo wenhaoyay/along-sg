@@ -38,6 +38,9 @@ const POPULAR = [
   "banking",
   "clothing",
   "parcel",
+  "hawker_centres",
+  "fitness",
+  "public_toilets",
 ];
 
 export function DiscoveryPalette({
