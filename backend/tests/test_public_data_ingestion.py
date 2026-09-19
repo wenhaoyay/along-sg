@@ -237,7 +237,7 @@ def test_source_refresh_does_not_delete_another_non_curated_source(tmp_path) -> 
     repository.replace_source_data("source-one", [], [first_hub], [first_outlet])
 
     second_hub, second_outlet = records("source-two")
-    second_hub["name"] = "Shared Place · second"
+    second_hub["name"] = "Shared-Place"
     repository.replace_source_data("source-two", [], [second_hub], [second_outlet])
 
     assert any(
