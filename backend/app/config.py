@@ -56,6 +56,13 @@ class DwellTimes:
     haircuts: float = 30.0
     optical: float = 20.0
     repairs: float = 20.0
+    hawker_centres: float = 30.0
+    fitness: float = 45.0
+    public_toilets: float = 5.0
+    playgrounds: float = 30.0
+    parking: float = 5.0
+    dog_runs: float = 20.0
+    park_facilities: float = 10.0
 
     def for_categories(self, categories: tuple[str, ...]) -> float:
         return sum(float(getattr(self, category, 10.0 if category.startswith("open_") else 0.0)) for category in categories)
