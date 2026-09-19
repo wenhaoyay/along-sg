@@ -89,6 +89,27 @@ def test_hawker_parser_creates_routeable_errand_place() -> None:
     assert parsed.geo_features[0]["routeable"] == 1
 
 
+def test_under_construction_hawker_is_context_only() -> None:
+    parsed = parse_dataset(
+        DATASETS["hawker_centres"],
+        _geojson(
+            _feature(
+                {
+                    "UNIQUEID": "hawker-planned",
+                    "NAME": "Future Food Centre",
+                    "STATUS": "Under Construction",
+                    "ADDRESS_MYENV": "1 Future Street Singapore 123456",
+                }
+            )
+        ),
+    )
+    assert parsed.rows_seen == 1
+    assert not parsed.hubs
+    assert not parsed.outlets
+    assert len(parsed.geo_features) == 1
+    assert parsed.geo_features[0]["routeable"] == 0
+
+
 def test_park_fitness_area_maps_to_fitness_and_park_facilities() -> None:
     parsed = parse_dataset(
         DATASETS["park_facilities"],
