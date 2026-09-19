@@ -43,7 +43,12 @@ export default function PrivacyPage() {
           >
             OpenStreetMap
           </a>{" "}
-          contributors, under the Open Database Licence. Routing and the base map come from{" "}
+          contributors, under the Open Database Licence. Selected official amenities and geographic
+          layers come from{" "}
+          <a href="https://data.gov.sg/" target="_blank" rel="noopener noreferrer">
+            data.gov.sg
+          </a>{" "}
+          under the Singapore Open Data Licence. Routing and the base map come from{" "}
           <a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">
             OneMap
           </a>{" "}
