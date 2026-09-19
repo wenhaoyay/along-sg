@@ -272,6 +272,8 @@ class PublicGeoStore:
             "features": features,
             "truncated": truncated,
             "limit": bounded_limit,
+            "attribution": "Official Singapore datasets from data.gov.sg",
+            "licence_url": OPEN_DATA_LICENCE_URL,
         }
 
 
