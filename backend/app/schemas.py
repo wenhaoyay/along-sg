@@ -296,8 +296,10 @@ class OptimizeResponse(BaseModel):
     diagnostics: DiagnosticsResponse
     outcome: str = "ok"
     message: str | None = None
-    data_attribution: str = (\n        "POI data © OpenStreetMap contributors, ODbL 1.0; "
-        "official Singapore datasets from data.gov.sg under the Singapore Open Data Licence"\n    )
+    data_attribution: str = (
+        "POI data © OpenStreetMap contributors, ODbL 1.0; "
+        "official Singapore datasets from data.gov.sg under the Singapore Open Data Licence"
+    )
     intent: IntentV1 | None = None
     near_misses: list[NearMissResponse] = Field(default_factory=list)
 
