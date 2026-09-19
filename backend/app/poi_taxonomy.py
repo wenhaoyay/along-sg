@@ -24,6 +24,7 @@ CATEGORIES = (
     CategoryDefinition("chinese_food", "Chinese food", "food_drink"),
     CategoryDefinition("bakeries", "Bakeries", "food_drink"),
     CategoryDefinition("dessert", "Dessert", "food_drink"),
+    CategoryDefinition("hawker_centres", "Hawker centres", "food_drink"),
     CategoryDefinition("retail", "Retail"),
     CategoryDefinition("groceries", "Supermarket", "retail"),
     CategoryDefinition("pharmacy", "Pharmacy", "retail"),
@@ -42,6 +43,14 @@ CATEGORIES = (
     CategoryDefinition("haircuts", "Haircuts and barbers", "services"),
     CategoryDefinition("optical", "Optical shops", "services"),
     CategoryDefinition("repairs", "Repairs", "services"),
+    CategoryDefinition("public_amenities", "Public amenities"),
+    CategoryDefinition("park_facilities", "Park facilities", "public_amenities"),
+    CategoryDefinition("public_toilets", "Public toilets", "public_amenities"),
+    CategoryDefinition("parking", "Parking", "public_amenities"),
+    CategoryDefinition("playgrounds", "Playgrounds", "public_amenities"),
+    CategoryDefinition("dog_runs", "Dog runs", "public_amenities"),
+    CategoryDefinition("activities", "Activities"),
+    CategoryDefinition("fitness", "Fitness and exercise", "activities"),
 )
 
 CATEGORY_ALIASES = {
@@ -91,6 +100,27 @@ CATEGORY_ALIASES = {
     "optical": "optical",
     "convenience": "convenience",
     "convenience store": "convenience",
+    "hawker": "hawker_centres",
+    "hawker centre": "hawker_centres",
+    "hawker center": "hawker_centres",
+    "food centre": "hawker_centres",
+    "food center": "hawker_centres",
+    "fitness": "fitness",
+    "fitness corner": "fitness",
+    "exercise": "fitness",
+    "outdoor exercise": "fitness",
+    "gym": "fitness",
+    "toilet": "public_toilets",
+    "public toilet": "public_toilets",
+    "restroom": "public_toilets",
+    "washroom": "public_toilets",
+    "playground": "playgrounds",
+    "parking": "parking",
+    "car park": "parking",
+    "carpark": "parking",
+    "dog run": "dog_runs",
+    "park facility": "park_facilities",
+    "park facilities": "park_facilities",
 }
 
 
@@ -111,6 +141,7 @@ UNNAMED_LABELS = {
     "chinese_food": "Chinese restaurant",
     "bakeries": "Bakery",
     "dessert": "Dessert shop",
+    "hawker_centres": "Hawker centre",
     "retail": "Shop",
     "groceries": "Supermarket",
     "pharmacy": "Pharmacy",
@@ -129,6 +160,14 @@ UNNAMED_LABELS = {
     "haircuts": "Barber or salon",
     "optical": "Optical shop",
     "repairs": "Repair shop",
+    "public_amenities": "Public amenity",
+    "park_facilities": "Park facility",
+    "public_toilets": "Public toilet",
+    "parking": "Car park",
+    "playgrounds": "Playground",
+    "dog_runs": "Dog run",
+    "activities": "Activity",
+    "fitness": "Fitness facility",
 }
 
 
