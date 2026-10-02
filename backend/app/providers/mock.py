@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 
 from app.domain import Coordinate, GeocodeMatch, RouteLeg, RouteResult
 from app.providers.base import MapProvider
+from app.providers.rail_network import (
+    FIRST_WAIT_MIN, LINES, TRANSFER_MIN, encode_polyline, load_rail_network,
+)
 
 
 MOCK_PLACES = (
@@ -23,17 +26,6 @@ MOCK_PLACES = (
     GeocodeMatch("Boon Lay MRT Station", Coordinate(1.3386, 103.7061), "649846", "301 Boon Lay Way", "station"),
     GeocodeMatch("National University of Singapore", Coordinate(1.2966, 103.7764), "119077", "21 Lower Kent Ridge Road", "place"),
     GeocodeMatch("Jurong Point", Coordinate(1.3397, 103.7068), "648886", "1 Jurong West Central 2", "mall"),
-)
-
-
-# (short name, long name, is_rail, agency)
-_MOCK_LINES = (
-    ("NE", "NORTH EAST LINE", True, "SBS Transit"),
-    ("NS", "NORTH SOUTH LINE", True, "SMRT Corporation"),
-    ("CC", "CIRCLE LINE", True, "SMRT Corporation"),
-    ("DT", "DOWNTOWN LINE", True, "SBS Transit"),
-    ("95", "SBST BUS 95", False, "SBS Transit"),
-    ("196", "SBST BUS 196", False, "SBS Transit"),
 )
 
 
@@ -74,66 +66,130 @@ class MockOneMapProvider(MapProvider):
         end: Coordinate,
         departure: datetime | None = None,
     ) -> RouteResult:
-        distance_km = haversine_km(start, end)
-        walking_distance_m = min(900.0, 220.0 + distance_km * 42.0)
-        walking_minutes = walking_distance_m / 78.0
-        transfers = 0 if distance_km < 7.0 else (1 if distance_km < 18.0 else 2)
-        transit_minutes = distance_km / 26.0 * 60.0 + 3.0 + transfers * 2.5
-        duration = walking_minutes + transit_minutes
-        # Deterministic but plausible service identity, so the journey timeline
-        # can be developed and tested without live OneMap credentials. Derived
-        # from the distance so a given journey always names the same service.
-        line = _MOCK_LINES[int(distance_km * 10) % len(_MOCK_LINES)]
-        is_rail = line[2]
-        # Deterministic stop identifiers of the right shape for the mode: a bus
-        # stop is a five-digit LTA BusStopCode, a station is a line code plus an
-        # ordinal. Without these the live-arrivals path cannot be exercised
-        # offline at all - and getting the shapes right is the point, since the
-        # client decides whether to ask DataMall by testing for five digits.
-        seed = int(distance_km * 1000)
-        board_code = f"{line[0]}{seed % 30 + 1}" if is_rail else f"{seed % 90000 + 10000:05d}"
-        alight_code = (
-            f"{line[0]}{seed % 30 + 4}" if is_rail else f"{(seed * 7) % 90000 + 10000:05d}"
-        )
-        walk_minutes = walking_minutes / 2
-        board_at = departure + timedelta(minutes=walk_minutes) if departure else None
-        alight_at = (
-            board_at + timedelta(minutes=transit_minutes) if board_at is not None else None
-        )
-        legs = (
-            RouteLeg(
-                "WALK", walk_minutes, walking_distance_m / 2, "Origin", "Stop",
-                departure_time=departure, arrival_time=board_at,
-                to_stop_code=board_code,
-            ),
-            RouteLeg(
-                "SUBWAY" if is_rail else "BUS",
-                transit_minutes, distance_km * 1000, "Stop", "Stop",
-                route_short_name=line[0], route_long_name=line[1], agency=line[3],
-                stop_count=max(1, round(distance_km / 1.4)),
-                departure_time=board_at, arrival_time=alight_at,
-                from_stop_code=board_code, to_stop_code=alight_code,
-            ),
-            RouteLeg(
-                "WALK", walk_minutes, walking_distance_m / 2, "Stop", "Destination",
-                departure_time=alight_at,
-                arrival_time=(
-                    alight_at + timedelta(minutes=walk_minutes)
-                    if alight_at is not None
-                    else None
-                ),
-                from_stop_code=alight_code,
-            ),
+        """A plausible route over the real rail network.
+
+        Lines, stations, interchanges and stop counts are Singapore's own (see
+        rail_network); only the minutes are estimates. Getting to and from a
+        station is a walk, or a feeder bus when the walk would be long - and
+        that bus is never given a service number, because an invented "Bus 95"
+        is exactly the kind of confident wrong fact mock mode must not show.
+        """
+        network = load_rail_network()
+        direct_km = haversine_km(start, end)
+        if direct_km <= WALK_ONLY_KM:
+            return self._walk_only(start, end, direct_km, departure)
+        boards = {s.code: (s, d) for s, d in network.nearest(start)}
+        alights = {s.code: (s, d) for s, d in network.nearest(end)}
+        found = None
+        if boards and alights:
+            found = network.shortest(
+                {code: _access(d)[0] + FIRST_WAIT_MIN for code, (_, d) in boards.items()},
+                {code: _access(d)[0] for code, (_, d) in alights.items()},
+            )
+        rides = network.rides(found[1]) if found else []
+        if not rides:
+            return self._walk_only(start, end, direct_km, departure)
+        first_station, last_station = rides[0].stations[0], rides[-1].stations[-1]
+        access_km = max(PLATFORM_WALK_KM, haversine_km(start, first_station.coordinate))
+        egress_km = max(PLATFORM_WALK_KM, haversine_km(last_station.coordinate, end))
+
+        legs: list[RouteLeg] = []
+        clock = departure
+        transfers = len(rides) - 1
+
+        def advance(minutes: float):
+            nonlocal clock
+            begin = clock
+            clock = clock + timedelta(minutes=minutes) if clock else None
+            return begin, clock
+
+        def path_leg(mode, minutes, metres, origin, dest, points, **extra):
+            begin, finish = advance(minutes)
+            legs.append(RouteLeg(
+                mode, round(minutes, 2), round(metres, 1), origin, dest,
+                departure_time=begin, arrival_time=finish,
+                geometry=encode_polyline(points), geometry_format="encoded_polyline",
+                **extra,
+            ))
+
+        minutes, bus = _access(access_km)
+        if bus:
+            transfers += 1
+            path_leg("BUS", minutes, access_km * 1300, "Origin", first_station.name,
+                     [start, first_station.coordinate], route_long_name=FEEDER_BUS, agency=None)
+        else:
+            path_leg("WALK", minutes, access_km * 1000 * WALK_DETOUR, "Origin", first_station.name,
+                     [start, first_station.coordinate], to_stop_code=first_station.code)
+        for index, ride in enumerate(rides):
+            wait = FIRST_WAIT_MIN if index == 0 else TRANSFER_MIN
+            advance(wait)
+            long_name, agency, _ = LINES.get(ride.stations[0].prefix, (ride.service, None, False))
+            path_leg(
+                "SUBWAY", ride.minutes,
+                sum(haversine_km(a.coordinate, b.coordinate) for a, b in zip(ride.stations, ride.stations[1:])) * 1000,
+                ride.stations[0].name, ride.stations[-1].name,
+                [station.coordinate for station in ride.stations],
+                route_short_name=ride.service, route_long_name=long_name, agency=agency,
+                stop_count=ride.stop_count,
+                from_stop_code=ride.stations[0].code, to_stop_code=ride.stations[-1].code,
+            )
+        minutes, bus = _access(egress_km)
+        if bus:
+            transfers += 1
+            advance(FIRST_WAIT_MIN)
+            path_leg("BUS", minutes, egress_km * 1300, last_station.name, "Destination",
+                     [last_station.coordinate, end], route_long_name=FEEDER_BUS, agency=None)
+        else:
+            path_leg("WALK", minutes, egress_km * 1000 * WALK_DETOUR, last_station.name, "Destination",
+                     [last_station.coordinate, end], from_stop_code=last_station.code)
+
+        walking = [leg for leg in legs if leg.mode == "WALK"]
+        duration = (clock - departure).total_seconds() / 60 if departure else (
+            sum(leg.duration_minutes for leg in legs) + FIRST_WAIT_MIN + TRANSFER_MIN * (len(rides) - 1)
         )
         return RouteResult(
             duration_minutes=round(duration, 2),
-            walking_minutes=round(walking_minutes, 2),
-            walking_distance_m=round(walking_distance_m, 1),
+            walking_minutes=round(sum(leg.duration_minutes for leg in walking), 2),
+            walking_distance_m=round(sum(leg.distance_m for leg in walking), 1),
             transfers=transfers,
-            legs=legs,
+            legs=tuple(legs),
             provider="onemap-mock",
-            raw_metadata={"distance_km": round(distance_km, 3)},
+            raw_metadata={"distance_km": round(direct_km, 3), "rail_path": found[1]},
             departure_time=departure,
-            arrival_time=departure + timedelta(minutes=duration) if departure else None,
+            arrival_time=clock,
             time_dependent=True,
         )
+
+    def _walk_only(self, start, end, distance_km, departure) -> RouteResult:
+        metres = max(distance_km * 1000 * WALK_DETOUR, 1.0)
+        minutes = metres / WALK_M_PER_MIN
+        arrival = departure + timedelta(minutes=minutes) if departure else None
+        leg = RouteLeg(
+            "WALK", round(minutes, 2), round(metres, 1), "Origin", "Destination",
+            departure_time=departure, arrival_time=arrival,
+            geometry=encode_polyline([start, end]), geometry_format="encoded_polyline",
+        )
+        return RouteResult(
+            duration_minutes=round(minutes, 2), walking_minutes=round(minutes, 2),
+            walking_distance_m=round(metres, 1), transfers=0, legs=(leg,),
+            provider="onemap-mock", raw_metadata={"distance_km": round(distance_km, 3)},
+            departure_time=departure, arrival_time=arrival, time_dependent=True,
+        )
+
+
+WALK_M_PER_MIN = 78.0
+WALK_DETOUR = 1.25          # streets are not straight lines
+WALK_ONLY_KM = 1.0
+PLATFORM_WALK_KM = 0.12
+MAX_WALK_KM = 1.1           # beyond this a feeder bus is the realistic access
+BUS_KMH = 18.0
+FEEDER_BUS = "Feeder bus (sample routing)"
+
+
+def _access(distance_km: float) -> tuple[float, bool]:
+    """Minutes to cover a station access leg, and whether it is a bus. Even a
+    trip that starts on the station's doorstep walks to the platform."""
+    distance_km = max(distance_km, PLATFORM_WALK_KM)
+    if distance_km <= MAX_WALK_KM:
+        return distance_km * 1000 * WALK_DETOUR / WALK_M_PER_MIN, False
+    return 4.0 + distance_km * 1.3 / BUS_KMH * 60, True

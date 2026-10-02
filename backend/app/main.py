@@ -27,6 +27,7 @@ from app.intent_models import (
     JourneyConflict, JourneyMention,
 )
 from app.providers.base import (
+    LocationNotFoundError,
     MapProvider,
     ProviderAuthenticationError,
     ProviderError,
@@ -523,7 +524,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         resolver: NeedResolver = request.app.state.need_resolver
         open_needs = resolver.parse_open_needs(errand_text)
         parsed_count = len(parsed.intent.required_errands + parsed.intent.optional_errands) if parsed.intent else 0
-        needs_open_discovery = parsed.status == IntentStatus.UNRESOLVED or len(open_needs) > parsed_count
+        # More clauses than errands is only a sign of something missed when a
+        # clause is one the parser did not understand: "milk and eggs" is two
+        # clauses and one groceries errand, and was thrown away for discovery.
+        uncovered = [
+            need for need in open_needs
+            if not parser.deterministic.understands(need.normalized_text)
+        ]
+        needs_open_discovery = parsed.status == IntentStatus.UNRESOLVED or (
+            len(open_needs) > parsed_count and bool(uncovered)
+        )
         if needs_open_discovery and open_needs:
             from app.intent_models import IntentErrand, IntentV1, ParseMethod
 
@@ -1047,6 +1057,8 @@ def near_miss_responses(
 
 
 def provider_http_error(error: ProviderError) -> HTTPException:
+    if isinstance(error, LocationNotFoundError):
+        return HTTPException(status_code=422, detail=str(error))
     if isinstance(error, ProviderRateLimitError):
         return HTTPException(status_code=503, detail=str(error), headers={"Retry-After": "2"})
     if isinstance(error, ProviderTimeoutError):

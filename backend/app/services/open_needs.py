@@ -19,9 +19,49 @@ INTENT_PREFIX = re.compile(
 )
 NON_ERRAND = re.compile(
     r"\b(?:i\s+(?:like|love|hate|think)|tell\s+me|what\s+is|who\s+is|why\s+is|"
-    r"how\s+are|make\s+me\s+laugh|joke|weather|news)\b",
+    r"how\s+are|make\s+me\s+laugh|joke|weather|news)\b"
+    # A greeting or a test is not an errand, however short: "hello" was being
+    # sent to discovery and came back as an errand called "hello".
+    r"|^(?:hi|hello|hey|hiya|yo|ok|okay|thanks|thank\s+you|test|testing|asdf\w*|lol|nothing|idk)$",
     re.IGNORECASE,
 )
+# Words that open a clause without being the thing wanted ("some groceries",
+# "also a coffee", "quickly grab panadol"). Stripped repeatedly together with
+# INTENT_PREFIX, so "need to grab some panadol" reaches "panadol".
+FILLER_PREFIX = re.compile(
+    r"^(?:also|then|maybe|quickly|just|and|to|some|a\s+few|a\s+bit\s+of|a|an|the|my|me|"
+    r"go(?:\s+to)?|stop\s+(?:by|at)|drop\s+by|on\s+the\s+way)\s+",
+    re.IGNORECASE,
+)
+FILLER_SUFFIX = re.compile(
+    r"\s+(?:please|too|as\s+well|also|on\s+the\s+way|along\s+the\s+way)$", re.IGNORECASE
+)
+# A clause that says HOW to travel, not WHAT to get. The intent parser reads
+# these as preferences; counted as needs, "prefer Guardian" was sent to
+# discovery as if it were an errand. Matched against normalized text.
+PREFERENCE_CLAUSE = re.compile(
+    r"^(?:(?:i\s+)?(?:prefer(?:ably)?|ideally|rather)\b"
+    r"|(?:i\s+)?(?:dont|don\s+t|do\s+not)\s+(?:want|like|mind)\s+(?:to\s+)?walk"
+    r"|(?:not\s+too\s+much|not\s+much|minimal|less|little|no\s+long|as\s+little)\s+walk"
+    r"|(?:minimi[sz]e|avoid|fewer|less|no(?:\s+extra)?)\s+(?:walking|transfers?|changes?)"
+    r"|(?:i\s*m\s+)?in\s+a\s+(?:rush|hurry)$|urgent$|asap$|quick(?:ly)?$"
+    r"|(?:under|within|less\s+than|no\s+more\s+than|max(?:imum)?)\s+\d+\s*(?:min|mins|minutes?)\b"
+    r"|any\s+brand|brand\s+doesn?\s*t\s+matter|if\s+(?:convenient|possible)$"
+    r"|(?:in\s+)?(?:one|the\s+same)\s+(?:stop|mall|place)$|together$)",
+    re.IGNORECASE,
+)
+
+
+def clean_clause(part: str) -> str:
+    """The thing wanted, without the words around it."""
+    previous = None
+    value = part.strip(" -")
+    while value != previous:
+        previous = value
+        value = INTENT_PREFIX.sub("", value)
+        value = FILLER_PREFIX.sub("", value)
+        value = FILLER_SUFFIX.sub("", value).strip(" -")
+    return value
 
 
 def open_category(raw_text: str, index: int = 0) -> str:
@@ -78,8 +118,14 @@ class PlausibleNeedParser:
     @staticmethod
     def _split(text: str) -> list[str]:
         cleaned = re.sub(r"[.!?]+$", "", text.strip())
-        parts = re.split(r"\s*(?:,|&|\+|\band\b|\bplus\b)\s*", cleaned, flags=re.IGNORECASE)
-        return [INTENT_PREFIX.sub("", part).strip(" -") for part in parts if part.strip()]
+        parts = re.split(
+            r"\s*(?:,|;|&|\+|\band\b|\bplus\b|\bthen\b|\bbut\b)\s*", cleaned, flags=re.IGNORECASE
+        )
+        cleaned_parts = (clean_clause(part) for part in parts if part.strip())
+        return [
+            part for part in cleaned_parts
+            if part and not PREFERENCE_CLAUSE.search(normalize_text(part))
+        ]
 
     @staticmethod
     def _plausible(part: str) -> bool:

@@ -469,4 +469,40 @@ def prune_candidates(
         )
     )
     within_limit = [candidate for candidate in measured if candidate.straight_line_detour_km <= max_detour_km]
-    return (within_limit if within_limit else measured)[:max_candidates]
+    pool = within_limit if within_limit else measured
+    chosen = pool[:max_candidates]
+    # A stop beside where you start or finish is the obvious answer, and the
+    # corridor proxy can still rank it out: Waterway Point, 400 m from Punggol
+    # MRT, lost its slot to malls sitting directly on the NE line and was
+    # never priced. The best such option at each end always gets routed.
+    reserved: list[CandidateOption] = []
+    for endpoint in (origin, destination):
+        beside = [
+            candidate for candidate in pool
+            if all(haversine_km(endpoint, stop.coordinate) <= ENDPOINT_RESERVE_KM for stop in candidate.stops)
+        ]
+        if not beside:
+            continue
+        best = min(
+            beside,
+            key=lambda candidate: (
+                len(candidate.stops),
+                max(haversine_km(endpoint, stop.coordinate) for stop in candidate.stops),
+                tuple(stop.id for stop in candidate.stops),
+            ),
+        )
+        if best not in reserved:
+            reserved.append(best)
+    for best in reserved:
+        if best in chosen or max_candidates < 2:
+            continue
+        replaceable = [index for index, candidate in enumerate(chosen) if candidate not in reserved]
+        if len(chosen) < max_candidates:
+            chosen.append(best)
+        elif replaceable:
+            chosen[replaceable[-1]] = best
+    return chosen
+
+
+# A stop this close to the origin or destination is always routed (see above).
+ENDPOINT_RESERVE_KM = 1.0

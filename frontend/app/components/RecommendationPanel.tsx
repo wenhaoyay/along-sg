@@ -162,6 +162,7 @@ export function RecommendationPanel({
   // Everything routed, the plan on screen included - the number the ranking
   // note quotes has to be the size of the set being reordered.
   const routedCount = otherOptions.length + compared.length + 1;
+  const roundTrip = isRoundTrip(result);
   /* Only the bus legs of the plan on screen, and only while boarding is close
    * enough for "next in 4 min" to be about the bus you will actually catch. */
   const boardings = useMemo<Boarding[]>(() => {
@@ -207,15 +208,19 @@ export function RecommendationPanel({
         )}
       </div>
 
-      {/* The headline is extra travel, not total added time. Dwell is roughly
-        constant across every option that satisfies the same errands, so
-        leading with the total made every stop look expensive and squeezed the
-        real differences between them into the last digit. */}
+      {/* The headline is what the traveller lives with: how much later they
+        arrive than going direct, and when. Extra travel alone (+6 min) read
+        as the whole cost while the ~30 min in shops sat in small print; it
+        stays in the caption, since it is what differs between options. */}
       <div className="result-impact">
         <strong>
-          +{Math.round(recommendation.detour_breakdown.extra_transport_minutes)}
+          +{Math.round(recommendation.incremental_detour_minutes)}
           <small> min</small>
-          <em>extra travel</em>
+          <em>
+            {recommendation.arrival_time
+              ? `arrive ${clockTime(recommendation.arrival_time)}`
+              : "later than going direct"}
+          </em>
         </strong>
         <div>
           <span>
@@ -236,8 +241,9 @@ export function RecommendationPanel({
       </p>
       <p className="impact-caption">
         {Math.round(recommendation.detour_breakdown.dwell_minutes) >= 1
-          ? `Plus ~${Math.round(recommendation.detour_breakdown.dwell_minutes)} min at your stops, so +${Math.round(recommendation.incremental_detour_minutes)} min added in total.`
-          : `+${Math.round(recommendation.incremental_detour_minutes)} min added in total.`}
+          ? `${Math.round(recommendation.detour_breakdown.extra_transport_minutes)} min extra travel + ~${Math.round(recommendation.detour_breakdown.dwell_minutes)} min at your stops.`
+          : `${Math.round(recommendation.detour_breakdown.extra_transport_minutes)} min extra travel.`}
+        {roundTrip && " A round trip: you start and finish at the same place."}
       </p>
 
       <div className="stop-summary journey-timeline" aria-label="Errand stops">
@@ -903,6 +909,26 @@ export function hoursNotes(
 
 function metres(value: number) {
   return value >= 1000 ? `${(value / 1000).toFixed(1)} km` : `${Math.round(value)} m`;
+}
+
+function clockTime(value: string) {
+  return new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+/* Start and finish within a short walk of each other: "from home and back"
+ * is a real trip, so it is labelled rather than refused. */
+function isRoundTrip(result: Result) {
+  const a = result.origin.coordinate;
+  const b = result.destination.coordinate;
+  if (!a || !b) return false;
+  const kmPerDegree = 111.32;
+  const dx = (a.longitude - b.longitude) * kmPerDegree * Math.cos((a.latitude * Math.PI) / 180);
+  const dy = (a.latitude - b.latitude) * kmPerDegree;
+  return Math.hypot(dx, dy) < 0.3;
 }
 
 function sgTime(value: string) {

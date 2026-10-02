@@ -590,7 +590,13 @@ export default function Home() {
                   <select
                     aria-label="Departure mode"
                     value={leaveMode}
-                    onChange={(event) => setLeaveMode(event.target.value as "now" | "later")}
+                    onChange={(event) => {
+                      const mode = event.target.value as "now" | "later";
+                      setLeaveMode(mode);
+                      /* An empty time field met with the browser's own "Please
+                       * fill out this field". Start from a sensible answer. */
+                      if (mode === "later" && !leaveAt) setLeaveAt(sgLocalInput(30));
+                    }}
                   >
                     <option value="now">Leave now</option>
                     <option value="later">Leave later</option>
@@ -603,6 +609,7 @@ export default function Home() {
                       aria-label="Departure time in Singapore"
                       type="datetime-local"
                       value={leaveAt}
+                      min={sgLocalInput(0)}
                       onChange={(event) => setLeaveAt(event.target.value)}
                       required
                     />
@@ -881,4 +888,13 @@ function errorMessage(status: number, body: { detail?: unknown }) {
       ? body.detail
       : "Part of that request needs another look.";
   return "We couldn’t check routes right now. Please try again.";
+}
+
+/* A datetime-local value ("2026-10-02T14:05") for Singapore time, `ahead`
+ * minutes from now and rounded up to five, whatever the device's own zone. */
+function sgLocalInput(ahead: number) {
+  const at = new Date(Date.now() + ahead * 60_000);
+  at.setUTCMinutes(Math.ceil(at.getUTCMinutes() / 5) * 5, 0, 0);
+  const sg = new Date(at.getTime() + 8 * 60 * 60_000);
+  return sg.toISOString().slice(0, 16);
 }

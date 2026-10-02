@@ -1,0 +1,567 @@
+{
+ "version": 1,
+ "description": "Everyday phrasings of an errand request, as people type them, and what the parser must make of each. `expect` lists the errand categories that must be found (order free); an open need counts by its category hint. `reject` means the text is not an errand and must not become one. `walking` / `preferred_brand` check that a preference stayed a preference. `set` is `tuned` for the phrasings the parser was fixed against and `held_out` for ones written afterwards and never tuned for; the held-out rate is the honest one. Scored by tools/evaluate_phrasings.py against the built catalog.",
+ "cases": [
+  {
+   "text": "groceries",
+   "expect": [
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "pharmacy",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "coffee",
+   "expect": [
+    "coffee"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "bubble tea",
+   "expect": [
+    "bubble_tea"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "KFC",
+   "expect": [
+    "fried_chicken"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "KFC and bubble tea",
+   "expect": [
+    "fried_chicken",
+    "bubble_tea"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "groceries and pharmacy",
+   "expect": [
+    "groceries",
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "need to grab panadol",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "need to grab panadol and some groceries",
+   "expect": [
+    "pharmacy",
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "need to grab panadol and some groceries, prefer FairPrice, don't want to walk much",
+   "expect": [
+    "pharmacy",
+    "groceries"
+   ],
+   "walking": "minimal",
+   "preferred_brand": "FairPrice",
+   "set": "tuned"
+  },
+  {
+   "text": "need to grab panadol, prefer Guardian",
+   "expect": [
+    "pharmacy"
+   ],
+   "preferred_brand": "Guardian",
+   "set": "tuned"
+  },
+  {
+   "text": "buy some milk and eggs",
+   "expect": [
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "pick up some bread",
+   "expect": [
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "I want to get a coffee",
+   "expect": [
+    "coffee"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "grab a coffee please",
+   "expect": [
+    "coffee"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "get some boba",
+   "expect": [
+    "bubble_tea"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "quickly grab bubble tea",
+   "expect": [
+    "bubble_tea"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "withdraw cash",
+   "expect": [
+    "banking"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "need an ATM",
+   "expect": [
+    "banking"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "collect parcel",
+   "expect": [
+    "parcel"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "post a parcel",
+   "expect": [
+    "parcel"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "toothpaste",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "buy toothpaste with minimal walking",
+   "expect": [
+    "pharmacy"
+   ],
+   "walking": "minimal",
+   "set": "tuned"
+  },
+  {
+   "text": "phone charger",
+   "expect": [
+    "electronics"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "need a phone charger and coffee",
+   "expect": [
+    "electronics",
+    "coffee"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "snacks",
+   "expect": [
+    "convenience"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "coffee if convenient",
+   "expect": [
+    "coffee"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "groceries, pharmacy, in a rush",
+   "expect": [
+    "groceries",
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "pharmacy and groceries in one stop",
+   "expect": [
+    "pharmacy",
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "coffee and groceries, less walking",
+   "expect": [
+    "coffee",
+    "groceries"
+   ],
+   "walking": "minimal",
+   "set": "tuned"
+  },
+  {
+   "text": "bubble tea, under 10 minutes",
+   "expect": [
+    "bubble_tea"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "groceries, ideally FairPrice",
+   "expect": [
+    "groceries"
+   ],
+   "preferred_brand": "FairPrice",
+   "set": "tuned"
+  },
+  {
+   "text": "Starbucks",
+   "expect": [
+    "coffee"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "Starbucks and Guardian",
+   "expect": [
+    "coffee",
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "McDonald's",
+   "expect": [
+    "burgers"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "a birthday cake",
+   "expect": [
+    "bakeries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "buy a birthday cake and post a parcel",
+   "expect": [
+    "bakeries",
+    "parcel"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "medicine",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "vitamins",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "sunscreen and snacks",
+   "expect": [
+    "pharmacy",
+    "convenience"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "fruits and vegetables",
+   "expect": [
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "haircut",
+   "expect": [
+    "haircuts"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "printing",
+   "expect": [
+    "printing"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "passport photo",
+   "expect": [
+    "printing"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "flowers",
+   "expect": [
+    "florists"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "cat food",
+   "expect": [
+    "pet_supplies"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "printer ink",
+   "expect": [
+    "stationery"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "groceries then coffee",
+   "expect": [
+    "groceries",
+    "coffee"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "coffee plus groceries",
+   "expect": [
+    "coffee",
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "get coffee and also some groceries",
+   "expect": [
+    "coffee",
+    "groceries"
+   ],
+   "set": "tuned"
+  },
+  {
+   "text": "hello",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "hi",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "thanks",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "test",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "asdfgh",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "what is the weather",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "tell me a joke",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "I like trains",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "ok",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "nothing",
+   "reject": true,
+   "set": "tuned"
+  },
+  {
+   "text": "pls get me some panadol and bubble tea",
+   "expect": [
+    "pharmacy",
+    "bubble_tea"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "i need to buy groceries at fairprice",
+   "expect": [
+    "groceries"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "coffee and a haircut",
+   "expect": [
+    "coffee",
+    "haircuts"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "drop by guardian",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "stop at a supermarket",
+   "expect": [
+    "groceries"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "buy plasters",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "get cash from an atm and coffee",
+   "expect": [
+    "banking",
+    "coffee"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "pick up a parcel and some snacks",
+   "expect": [
+    "parcel",
+    "convenience"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "want bubble tea, nothing too far",
+   "expect": [
+    "bubble_tea"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "Need sunscreen pls",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "grab dinner",
+   "expect": [
+    "fast_food"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "some fruits",
+   "expect": [
+    "groceries"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "buy flowers for my mum",
+   "expect": [
+    "florists"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "Watsons",
+   "expect": [
+    "pharmacy"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "Toast Box",
+   "expect": [
+    "coffee"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "koi and kfc",
+   "expect": [
+    "bubble_tea",
+    "fried_chicken"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "need groceries, no extra transfers",
+   "expect": [
+    "groceries"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "a phone cable",
+   "expect": [
+    "electronics"
+   ],
+   "set": "held_out"
+  },
+  {
+   "text": "good morning",
+   "reject": true,
+   "set": "held_out"
+  },
+  {
+   "text": "can you help me",
+   "reject": true,
+   "set": "held_out"
+  }
+ ]
+}
