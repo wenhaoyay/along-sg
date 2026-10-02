@@ -374,8 +374,8 @@ Objective views are deduplicated by ordered stop IDs and rounded detour/walking/
 signature. The consumer UI shows only genuinely different alternatives, human quality
 labels, location context and an inconvenience/dwell breakdown. Routing-call counts,
 candidate counts, scores and provider terminology remain in logs and API diagnostics,
-not in result cards. Benchmark evidence is in `docs/v072-benchmark-mock.json`; manual and
-browser evidence is in `docs/v072-manual-qa.md`.
+not in result cards. Benchmark evidence is in `docs/archive/v072-benchmark-mock.json`; manual and
+browser evidence is in `docs/archive/v072-manual-qa.md`.
 
 ## V0.7.2-UI presentation boundary
 
@@ -403,7 +403,7 @@ Visual capture is deterministic: Playwright intercepts APIs and map tiles and re
 seven required states at 1440×900 and 390×844 only when `CAPTURE_VISUALS=1`. The ordinary
 suite skips capture, so CI does not create local artifacts. Screenshots are ignored under
 `outputs/v072-ui-screenshots/`; review findings and the viewport matrix are documented in
-`docs/v072-ui-manual-qa.md`.
+`docs/archive/v072-ui-manual-qa.md`.
 
 ## V0.7.4 open-world discovery boundary
 

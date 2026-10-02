@@ -394,39 +394,6 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="map-area">
-        <SpatialMap
-          origin={origin}
-          destination={destination}
-          stops={selected?.stops ?? []}
-          considered={comparedPoints}
-          onConsideredSelect={setSelectedKey}
-          baselineGeometry={result?.baseline.geometry ?? []}
-          routeGeometry={selected?.route_geometry ?? []}
-          activeStop={activeStop}
-          activeConsidered={activeConsidered}
-          onStopSelect={setActiveStop}
-        />
-        {selected && (
-          <div className="map-key" aria-label="Map route key">
-            <span>
-              <i className="baseline" />
-              Direct
-            </span>
-            <span>
-              <i className="recommended" />
-              With stop
-            </span>
-            {comparedPoints.length > 0 && (
-              <span>
-                <i className="considered" />
-                Compared
-              </span>
-            )}
-          </div>
-        )}
-      </section>
-
       <aside
         ref={plannerRef}
         className={`planner ${result ? `result-mode sheet-${sheet}` : ""}`}
@@ -861,6 +828,41 @@ export default function Home() {
           </section>
         )}
       </aside>
+      {/* The map follows the planner in the document so a keyboard reaches
+        the journey form first, not the zoom buttons and attribution links.
+        Both are positioned, so the order on screen is unchanged. */}
+      <section className="map-area">
+        <SpatialMap
+          origin={origin}
+          destination={destination}
+          stops={selected?.stops ?? []}
+          considered={comparedPoints}
+          onConsideredSelect={setSelectedKey}
+          baselineGeometry={result?.baseline.geometry ?? []}
+          routeGeometry={selected?.route_geometry ?? []}
+          activeStop={activeStop}
+          activeConsidered={activeConsidered}
+          onStopSelect={setActiveStop}
+        />
+        {selected && (
+          <div className="map-key" aria-label="Map route key">
+            <span>
+              <i className="baseline" />
+              Direct
+            </span>
+            <span>
+              <i className="recommended" />
+              With stop
+            </span>
+            {comparedPoints.length > 0 && (
+              <span>
+                <i className="considered" />
+                Compared
+              </span>
+            )}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

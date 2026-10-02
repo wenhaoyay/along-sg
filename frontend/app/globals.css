@@ -150,6 +150,14 @@
 .leaflet-tile-pane {
   filter: var(--tile-filter);
 }
+/* Paints over OneMap's printed inset box at the overview zooms (SpatialMap).
+   The two values are the basemap's own sea, sampled from its tiles. */
+.inset-mask {
+  fill: #6da8e4;
+}
+:root[data-theme="dark"] .inset-mask {
+  fill: #003753;
+}
 /* Leaflet paints its container #ddd, which is what shows while tiles load and
    through any gap - a bright grey slab in dark mode. leaflet.css is imported
    after this file, so an equal-specificity selector loses; scope it to win. */

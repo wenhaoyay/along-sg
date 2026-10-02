@@ -107,8 +107,14 @@ export function SpatialMap({
           zoomControl: false,
           attributionControl: true,
         }).setView([1.3521, 103.8198], 12);
+        /* On a phone the result sheet covers the lower half of the map, so a
+         * route has to be framed in the top half - which for a trip along the
+         * south coast means the map centre sits well south of Singapore. With
+         * the island's own bounds as the limit, Leaflet refused that pan and
+         * left the route under the sheet. The south edge leaves room for it. */
+        const compactLayout = window.innerWidth <= 820;
         mapRef.current.setMaxBounds([
-          [1.144, 103.535],
+          [compactLayout ? 0.9 : 1.144, 103.535],
           [1.494, 104.502],
         ]);
         tileRef.current = L.tileLayer(BASEMAP[currentScheme()], {
@@ -118,6 +124,45 @@ export function SpatialMap({
           attribution:
             '<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a> © contributors | <a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a>',
         }).addTo(mapRef.current);
+        /* OneMap's tiles at zoom 11-12 carry a printed "INSET - Not to Scale"
+         * box for Pedra Branca in the sea off East Coast, which reads as a
+         * glitch on an interactive map. From zoom 13 the tiles are clean, so
+         * at the overview zooms the box is painted over in the sea's own
+         * colour (set per theme in CSS) on a pane just above the tiles. The
+         * box is drawn at a fixed pixel size, so it covers different ground
+         * at each zoom; the bounds were measured from the tiles themselves. */
+        mapRef.current.createPane("inset-mask").style.zIndex = "250";
+        const insetBounds: Record<number, [[number, number], [number, number]]> = {
+          11: [
+            [1.1405, 103.963],
+            [1.2435, 104.103],
+          ],
+          12: [
+            [1.2355, 103.908],
+            [1.3015, 103.999],
+          ],
+        };
+        const insetMask = L.rectangle(insetBounds[12], {
+          pane: "inset-mask",
+          stroke: false,
+          fillOpacity: 1,
+          interactive: false,
+          className: "inset-mask",
+        });
+        const map = mapRef.current;
+        const syncInsetMask = () => {
+          // Keyed by the zoom of the tiles drawn, not the map's: with
+          // detectRetina a high-density screen draws tiles one level up.
+          const tileZoom = Math.round(map.getZoom()) + (L.Browser.retina ? 1 : 0);
+          const bounds = insetBounds[tileZoom];
+          if (!bounds) {
+            insetMask.remove();
+            return;
+          }
+          insetMask.setBounds(L.latLngBounds(bounds)).addTo(map);
+        };
+        map.on("zoomend", syncInsetMask);
+        syncInsetMask();
         L.control.zoom({ position: "bottomright" }).addTo(mapRef.current);
         // Overlap is a pixel question, so it has to be recomputed whenever the
         // projection moves. Registered once here, not per data change.
