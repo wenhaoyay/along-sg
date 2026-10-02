@@ -2,6 +2,39 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.9.0 - A demo that tells the truth
+
+A devil's-advocate review of the project as a portfolio piece found that its most visible
+surface, the offline demo, was its weakest. These are the fixes.
+
+- **Mock routing runs on the real rail network.** It used to name a line by hashing the trip
+  distance ("Punggol, NS line"). It now runs Dijkstra over a graph built from the LTA
+  gazetteer's station codes, with real interchanges, the Changi Airport shuttle and the LRT
+  loops. Route geometry follows the stations ridden instead of a straight chord. A long walk
+  to a station becomes an unnamed feeder bus, never an invented service number.
+- **Everyday phrasing.** Filler words are stripped, preference clauses stay preferences,
+  greetings are turned away, and a good parse is no longer discarded for discovery. A new
+  phrasing evaluation measures it: 74% → 99% on 60 tuned phrasings and 70% → 95% on 20
+  held-out ones. CI fails below 90%.
+- **The obvious answer is always priced.** The best stop beside the origin and the destination
+  always survives pruning. Waterway Point, beside Punggol MRT, had never been routed for a
+  Punggol trip.
+- **Input errors are the user's to fix.** An unknown or ambiguous place is a 422 with a "did you
+  mean", not a 502. Postal codes resolve offline from catalog addresses.
+- **The headline is the time you lose.** Total added minutes and arrival time lead; extra
+  travel and time at the stops are broken out beneath. Leave later starts 30 minutes ahead.
+  Round trips are labelled.
+- **Smaller fixes.** Diagnostics are hidden unless `EXPOSE_DIAGNOSTICS=true`. The keyboard
+  reaches the form before the map. OneMap's printed inset box no longer shows at overview
+  zooms. On a phone the route is framed above the result sheet.
+- **Structure.** `main.py` is wiring only, with routes in `app/api/` by area. The result
+  panel's types, ranking, ride legs and formatting are modules of their own.
+- **Verification.** A full-stack browser suite runs against the real API serving the
+  production build. CI now runs on `main` and on pull requests; it had been watching a stale
+  feature branch.
+- **Packaging.** One name ("Along") and one version. The README is rewritten around a demo GIF
+  and measured results, there's a case study, and dated QA notes move to `docs/archive/`.
+
 ## 0.8.4 - Giving the app a face
 
 A re-skin, prompted by the app reading as lifeless and machine-made. No component moved, no
