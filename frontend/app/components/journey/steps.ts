@@ -121,7 +121,7 @@ export function buildTimeline(
         stopIndex: segment,
         // Without timestamps, trust this stop's allowance from the optimiser.
         // Older/stubbed responses without it should not invent an even split.
-        dwellMinutes: minutesBetween(arrived, leave) ?? (stop.dwell_minutes ?? null),
+        dwellMinutes: minutesBetween(arrived, leave) ?? stop.dwell_minutes ?? null,
         leaveTime: leave,
       });
     }
