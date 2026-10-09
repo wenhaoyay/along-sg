@@ -175,6 +175,7 @@ class StopResponse(BaseModel):
     location_quality: float = Field(ge=0, le=1)
     navigation_ready: bool = True
     arrival_time: datetime | None = None
+    dwell_minutes: float = Field(default=0.0, ge=0)
 
 
 class DisplayBusinessResponse(BaseModel):

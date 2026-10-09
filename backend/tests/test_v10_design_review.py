@@ -55,3 +55,39 @@ def test_a_ride_path_runs_between_its_own_stations(client) -> None:
     # Punggol is the north-east end of the line; the leg starts there, not at
     # Orchard.
     assert start["latitude"] > 1.39 and start["longitude"] > 103.89
+
+
+def test_onemap_geojson_leg_geometry_is_drawable() -> None:
+    """The live provider may return GeoJSON instead of an encoded polyline."""
+    import json
+
+    from app.api.responses import leg_geometry_response, route_geometry_response
+    from app.domain import RouteLeg, RouteResult
+
+    geometry = json.dumps({
+        "type": "LineString",
+        "coordinates": [[103.839, 1.312], [103.845, 1.318]],
+    })
+    leg = RouteLeg(
+        mode="SUBWAY", duration_minutes=3.0, distance_m=900.0,
+        geometry=geometry, geometry_format="geojson",
+    )
+    points = leg_geometry_response(leg)
+    assert len(points) == 2
+    assert points[0].latitude == pytest.approx(1.312)
+    assert points[0].longitude == pytest.approx(103.839)
+    route = RouteResult(
+        duration_minutes=3.0, walking_minutes=0.0,
+        walking_distance_m=0.0, transfers=0, legs=(leg,),
+    )
+    assert route_geometry_response(route) == points
+
+
+def test_stop_dwell_estimates_are_exposed_individually(client) -> None:
+    recommendation = plan(client)["recommendations"]["best_overall"]
+    stops = recommendation["stops"]
+    assert stops
+    assert all(stop["dwell_minutes"] >= 0 for stop in stops)
+    assert sum(stop["dwell_minutes"] for stop in stops) == pytest.approx(
+        recommendation["detour_breakdown"]["dwell_minutes"], abs=0.02
+    )

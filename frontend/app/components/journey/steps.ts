@@ -80,8 +80,6 @@ export function buildTimeline(
     },
   ];
   const stops = recommendation.stops;
-  const allowance = stops.length ? recommendation.detour_breakdown.dwell_minutes / stops.length : 0;
-
   for (let segment = 0; segment <= stops.length; segment += 1) {
     let previousRide: Leg | null = null;
     for (const leg of segmentLegs(recommendation.legs, segment)) {
@@ -121,7 +119,9 @@ export function buildTimeline(
         time: arrived,
         stop,
         stopIndex: segment,
-        dwellMinutes: minutesBetween(arrived, leave) ?? (allowance || null),
+        // Without timestamps, trust this stop's allowance from the optimiser.
+        // Older/stubbed responses without it should not invent an even split.
+        dwellMinutes: minutesBetween(arrived, leave) ?? (stop.dwell_minutes ?? null),
         leaveTime: leave,
       });
     }

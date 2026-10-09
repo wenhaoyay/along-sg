@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import math
 
 from fastapi import HTTPException
 
@@ -213,11 +215,43 @@ def leg_response(leg: RouteLeg) -> RouteLegResponse:
 
 
 def leg_geometry_response(leg: RouteLeg) -> list[CoordinateResponse]:
-    if not leg.geometry or leg.geometry_format not in {None, "encoded_polyline"}:
+    """Decode both geometry variants supported by the OneMap normalizer."""
+    if not leg.geometry:
+        return []
+    if leg.geometry_format in {None, "encoded_polyline"}:
+        points = decode_polyline(leg.geometry)
+    elif leg.geometry_format == "geojson":
+        try:
+            geometry = json.loads(leg.geometry)
+            if not isinstance(geometry, dict):
+                return []
+            raw = geometry.get("coordinates")
+            if geometry.get("type") == "LineString":
+                lines = [raw]
+            elif geometry.get("type") == "MultiLineString":
+                lines = raw
+            else:
+                return []
+            if not isinstance(lines, list):
+                return []
+            points = []
+            for line in lines:
+                if not isinstance(line, list):
+                    return []
+                for pair in line:
+                    if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+                        return []
+                    lon, lat = float(pair[0]), float(pair[1])
+                    if not (math.isfinite(lat) and math.isfinite(lon)):
+                        return []
+                    points.append(Coordinate(latitude=lat, longitude=lon))
+        except (TypeError, ValueError):
+            return []
+    else:
         return []
     return [
         CoordinateResponse(latitude=round(point.latitude, 6), longitude=round(point.longitude, 6))
-        for point in decode_polyline(leg.geometry)
+        for point in points
     ]
 
 
@@ -240,11 +274,8 @@ def route_response(route: RouteResult) -> RouteResponse:
 
 
 def route_geometry_response(route: RouteResult) -> list[CoordinateResponse]:
-    points: list[Coordinate] = []
-    for leg in route.legs:
-        if leg.geometry and leg.geometry_format in {None, "encoded_polyline"}:
-            points.extend(decode_polyline(leg.geometry))
-    return [CoordinateResponse(latitude=point.latitude, longitude=point.longitude) for point in points]
+    # Keep the combined path consistent with each leg's decoded geometry.
+    return [point for leg in route.legs for point in leg_geometry_response(leg)]
 
 
 def recommendation_response(
@@ -275,6 +306,7 @@ def recommendation_response(
             StopResponse(
                 name=display_name,
                 arrival_time=arrival,
+                dwell_minutes=round(dwell, 2),
                 display_name=display_name,
                 coordinate=CoordinateResponse(
                     latitude=hub.coordinate.latitude,

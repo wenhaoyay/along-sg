@@ -22,6 +22,8 @@ export type Stop = {
   location_quality: number;
   navigation_ready: boolean;
   arrival_time?: string | null;
+  /** Planned allowance for the errands at this stop, not an average. */
+  dwell_minutes?: number;
 };
 
 export type Recommendation = {
