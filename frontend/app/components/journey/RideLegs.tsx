@@ -1,63 +1,11 @@
 "use client";
 
-import { Bus, TrainFront } from "lucide-react";
-import { lineColor } from "../../lineColors";
 import { boardingKey, isBusStopCode } from "../../useBusArrivals";
 import type { ArrivalEstimate, StopArrivals } from "../../useBusArrivals";
 import { type Leg } from "./types";
 import { titleCase } from "./format";
 
 export const WALKING_MODES = new Set(["WALK", "BICYCLE", "SCOOTER"]);
-
-/** The services you actually board on one leg of the journey.
- *
- * OneMap returns `routeShortName`, `routeLongName`, `agencyName` and
- * `intermediateStops` on every transit leg, and all of it was being discarded
- * - so a plan could say "37 minutes" without ever saying which train or bus to
- * get on, which is the one thing the traveller has to act on. */
-export function RideLegs({
-  legs,
-  segment,
-  arrivals = {},
-}: {
-  legs?: Leg[];
-  segment: number;
-  arrivals?: Record<string, StopArrivals>;
-}) {
-  const rides = (legs ?? []).filter(
-    (leg) => leg.segment_index === segment && !WALKING_MODES.has(leg.mode.toUpperCase()),
-  );
-  if (!rides.length) return null;
-  return (
-    <>
-      {rides.map((leg, index) => (
-        <p
-          className="ride-leg"
-          key={`${segment}-${index}`}
-          /* The official line colour, which the router was already returning
-             and nobody was reading. Null for a bus, and for any line this
-             table has not heard of - the accent then applies, because a wrong
-             line colour is a confident claim about which train you are on. */
-          style={
-            {
-              "--service-color":
-                lineColor(leg.route_short_name, leg.route_long_name) ?? "var(--green)",
-            } as React.CSSProperties
-          }
-        >
-          {isRail(leg) ? (
-            <TrainFront size={13} aria-hidden="true" />
-          ) : (
-            <Bus size={13} aria-hidden="true" />
-          )}
-          <span className="service">{serviceName(leg)}</span>
-          <span className="ride-detail">{rideDetail(leg)}</span>
-          <NextBuses leg={leg} arrivals={arrivals} />
-        </p>
-      ))}
-    </>
-  );
-}
 
 /* When the next buses on this service are due at the stop you board.
  *

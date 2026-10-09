@@ -2,6 +2,43 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.10.0 - Showing the detour
+
+A design review found that the product's one idea, the cost of a detour measured against the
+trip you were already making, appeared on screen only as three lines of text. The comparison
+behind it sat in two collapsed lists under the Navigate button. The layout was the default
+map-app template. These changes make the idea something you can see.
+
+- **The detour diagram.** Each routed option is drawn as its journey on one time axis: rides
+  in their line's colour, walks, waits, and time at the stops as its own block. The direct
+  trip is the top bar, and a dashed line marks when it arrives on every row, so how far an
+  option runs past that line is its added time. Up to four options are on screen, sorted with
+  the same words as the planner ("Best overall / Faster / Less walking / Fewer changes"), and
+  each says what it gains or costs. "Easier alternative" and "one errand only" are labelled.
+- **A timeline that adds up.** Leave, walk, ride, change, shop, ride, arrive, with a clock time
+  down the left wherever the router gave one. Time at each stop is the gap between arriving
+  and the next leg, so every figure on screen can be checked against its neighbours.
+- **Errands, not shops.** A stop says which shop covers each errand ("Groceries · FairPrice"
+  plus how many more could), with the brand mark and an open/unconfirmed dot, and one note
+  about hours instead of one per shop.
+- **The map shows the route by line.** OneMap's Grey basemap keeps stations and line colours
+  and mutes everything else. The route is drawn per leg in its line's colour over a casing,
+  with walks as dots and the direct trip as a faint ghost. It draws itself in travel order.
+  Compared places are pins carrying their extra minutes. The API now returns each leg's own
+  geometry for this.
+- **A starting point.** The landing copy says what the app does in one sentence. Three
+  example journeys run a real plan in one tap, and the empty map previews one of them.
+- **Layout fixes.** The phone sheet's height lives in one variable that the zoom buttons and
+  attribution read, so the attribution no longer covers the address or floats mid-map. The
+  route is framed against the sheet's measured height. Tablets from 768 px get the side
+  panel. Notices and Browse categories scroll into view. The phone tabs are "Map" and "Plan".
+- **Identity.** A logo drawn from a route with a detour and a stop, Bricolage Grotesque for
+  headlines and figures, tabular numerals for times, sentence-case labels, no beta pill, and
+  a deep pine accent that no MRT line uses.
+- **Smaller details.** The need field grows with its text; the departure choice is a segmented
+  control like the one above it; "Navigate" is "Open in Google Maps"; the quality label
+  explains itself on tap; a date appears only when the trip isn't today.
+
 ## 0.9.0 - A demo that tells the truth
 
 A devil's-advocate review of the project as a portfolio piece found that its most visible

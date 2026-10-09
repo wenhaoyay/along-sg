@@ -208,7 +208,17 @@ def leg_response(leg: RouteLeg) -> RouteLegResponse:
         from_stop_code=leg.from_stop_code,
         to_stop_code=leg.to_stop_code,
         segment_index=leg.segment_index,
+        geometry=leg_geometry_response(leg),
     )
+
+
+def leg_geometry_response(leg: RouteLeg) -> list[CoordinateResponse]:
+    if not leg.geometry or leg.geometry_format not in {None, "encoded_polyline"}:
+        return []
+    return [
+        CoordinateResponse(latitude=round(point.latitude, 6), longitude=round(point.longitude, 6))
+        for point in decode_polyline(leg.geometry)
+    ]
 
 
 def route_response(route: RouteResult) -> RouteResponse:

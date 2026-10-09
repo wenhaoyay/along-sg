@@ -280,13 +280,13 @@ test("partial requests require consent and mobile sheets resize", async ({ page,
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
   expect(calls).toBe(1);
   await expect(page.locator(".impact-caption")).toContainText(/min extra travel/);
-  await expect(page.getByText(/Hours not confirmed/).first()).toBeVisible();
+  await expect(page.getByText(/hours not confirmed/i).first()).toBeVisible();
   if (isMobile) {
     await page.getByRole("button", { name: "Map", exact: true }).click();
     await expect(page.getByTestId("recommendation-sheet")).toBeHidden();
-    await page.getByRole("button", { name: "Details", exact: true }).click();
+    await page.getByRole("button", { name: "Plan", exact: true }).click();
     await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Details", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Plan", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -307,7 +307,7 @@ test("scheduled departure uses Singapore offset and stop selection stays in sync
   });
   await page.goto("/");
   await resolveJourney(page);
-  await page.getByLabel("Departure mode").selectOption("later");
+  await page.getByRole("button", { name: "Leave later", exact: true }).click();
   await page.getByLabel("Departure time in Singapore").fill("2099-09-08T10:30");
   await page.getByLabel("What do you need on the way?").fill("KFC");
   await page.getByRole("button", { name: "Find best stop" }).click();
@@ -457,12 +457,17 @@ test("resolved journey produces a hub-first map recommendation", async ({ page }
   await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
-  await expect(page.getByText("KFC · KOI Thé")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Navigate" })).toBeVisible();
+  // The stop answers each errand with a shop, rather than listing the building.
+  const errands = page.locator(".errand-lines li");
+  await expect(errands).toHaveCount(2);
+  await expect(errands.nth(0)).toContainText("Fried chicken");
+  await expect(errands.nth(0)).toContainText("KFC");
+  await expect(errands.nth(1)).toContainText("KOI Thé");
+  await expect(page.getByRole("button", { name: "Open in Google Maps" })).toBeVisible();
   // The headline now carries an "extra travel" label of its own, so assert on
   // the breakdown itself rather than on a phrase that appears in both places.
   await expect(page.locator(".breakdown-list")).not.toBeVisible();
-  await page.getByText("Why this option").click();
+  await page.getByText("How the +8 min adds up").click();
   await expect(page.locator(".breakdown-list")).toBeVisible();
   await expect(page.locator(".breakdown-list")).toContainText("Extra travel");
   await expect(page.getByText("Other options")).toHaveCount(0);
@@ -474,7 +479,9 @@ test("resolved journey produces a hub-first map recommendation", async ({ page }
   await expect(page.locator(".along-marker.origin")).toContainText("A");
   await expect(page.locator(".along-marker.stop")).toContainText("1");
   await expect(page.locator(".along-marker.destination")).toContainText("B");
-  await expect(page.locator(".leaflet-overlay-pane path")).toHaveCount(2);
+  // The direct ghost, and the plan on its casing.
+  await expect(page.locator(".leaflet-overlay-pane path.route-direct")).toHaveCount(1);
+  await expect(page.locator(".leaflet-overlay-pane path.route-ride")).toHaveCount(1);
   await expect(page.locator("body")).not.toContainText(/node\/|way\/|relation\//);
   if (test.info().project.name === "mobile-chromium") {
     const sheet = await page
@@ -486,7 +493,7 @@ test("resolved journey produces a hub-first map recommendation", async ({ page }
   }
 });
 
-test("different alternatives stay collapsed until requested", async ({ page }) => {
+test("alternatives are drawn beside the plan, and say what they cost", async ({ page }) => {
   await commonRoutes(page);
   await page.route("**/api/intent/parse", (route) =>
     route.fulfill({
@@ -515,14 +522,16 @@ test("different alternatives stay collapsed until requested", async ({ page }) =
   await resolveJourney(page);
   await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
   await page.getByRole("button", { name: /Find best stop/ }).click();
-  await expect(page.getByText("Hillion Mall")).not.toBeVisible();
-  await page.getByText("Other options").click();
-  await expect(page.getByText("Hillion Mall")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Less walking/ })).toHaveCount(1);
+  // The comparison is the product, so it is on screen with the plan: the
+  // direct trip as the yardstick, then each option on the same time axis.
+  const rows = page.locator(".detour-row");
+  await expect(rows.first()).toContainText("Direct");
+  const hillion = page.locator(".detour-row.option").filter({ hasText: "Hillion Mall" });
+  await expect(hillion).toBeVisible();
+  await expect(hillion.locator(".detour-track .piece").first()).toBeVisible();
   // An alternative that reads better on the headline number must say what it
   // costs, or the ranking looks broken.
-  await expect(page.getByText(/less walking/i).last()).toBeVisible();
-  await expect(page.locator(".alternative-tradeoff")).toContainText(
+  await expect(hillion.locator(".detour-trade")).toContainText(
     /m (less|more) walking|min (less|more) travel/,
   );
 });
@@ -765,10 +774,10 @@ test("a stop whose shops share an hours state says so once", async ({ page }) =>
 
   // Two shops, both unknown: one grouped line, not the same caveat twice.
   await expect(page.locator(".hours-status")).toHaveCount(1);
-  await expect(page.locator(".hours-status")).toContainText("Hours not confirmed for both");
+  await expect(page.locator(".hours-status")).toContainText("Opening hours not confirmed");
 });
 
-test("a mixed hours stop names each shop", async ({ page }) => {
+test("a mixed hours stop names the shop that is not confirmed", async ({ page }) => {
   await commonRoutes(page);
   const mixed = {
     ...recommendation,
@@ -808,9 +817,11 @@ test("a mixed hours stop names each shop", async ({ page }) => {
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
 
-  await expect(page.locator(".hours-status")).toHaveCount(2);
-  await expect(page.locator(".hours-status").first()).toContainText("KFC:");
-  await expect(page.locator(".hours-status").last()).toContainText("KOI Thé:");
+  // One note, naming only the shop it is about; the open one carries a dot.
+  await expect(page.locator(".hours-status")).toHaveCount(1);
+  await expect(page.locator(".hours-status")).toContainText("Hours not confirmed for KOI Thé");
+  await expect(page.locator(".hours-status")).not.toContainText("KFC");
+  await expect(page.locator(".errand-lines .status-dot.open")).toHaveCount(1);
 });
 
 test("the headline is the time added, with travel and dwell broken out beneath", async ({
@@ -931,11 +942,12 @@ test("the timeline names the service you board, per segment", async ({ page }) =
   await expect(rides.nth(0)).toContainText("4 stops");
   await expect(rides.nth(1)).toContainText("Bus 190");
   await expect(rides.nth(1)).toContainText("3 stops");
-  // Walking legs are not services and must not appear.
+  // Walking legs are not services: they are rows of their own, not rides.
   expect((await rides.allTextContents()).join(" ")).not.toMatch(/walk/i);
+  await expect(page.locator(".timeline-row.walk")).toHaveCount(2);
   // Segment 0's service sits above the stop, segment 1's below it.
   const rideOne = await rides.nth(0).boundingBox();
-  const stopRow = await page.locator(".stop-summary-row").first().boundingBox();
+  const stopRow = await page.locator(".timeline-row.stop").first().boundingBox();
   const rideTwo = await rides.nth(1).boundingBox();
   expect(rideOne!.y).toBeLessThan(stopRow!.y);
   expect(rideTwo!.y).toBeGreaterThan(stopRow!.y);
@@ -1123,7 +1135,9 @@ test("the map shows every routed place that is not the plan", async ({ page }) =
   // One offered alternative plus three compared candidates. Before this the map
   // carried the winning stop and nothing else.
   await expect(page.locator(".along-marker.considered")).toHaveCount(4);
-  await expect(page.locator(".map-key")).toContainText("Compared");
+  await expect(page.locator(".map-key")).toContainText("Other options");
+  // Each carries its extra travel, so the map states the comparison.
+  await expect(page.locator(".along-marker.considered").first()).toContainText(/^\+\d+$/);
 });
 
 test("a compared place can be picked off the map", async ({ page }) => {
@@ -1138,9 +1152,12 @@ test("a compared place can be picked off the map", async ({ page }) => {
 
 test("a compared row promotes its option, and states what it costs", async ({ page }) => {
   await comparedJourney(page);
-  await page.getByText(/^Also compared/).click();
-  const rows = page.locator(".considered-list button");
-  await expect(rows).toHaveCount(3);
+  // The plan, one offered alternative and three compared places; the
+  // diagram shows four and folds the rest.
+  const rows = page.locator(".detour-row.option");
+  await expect(rows).toHaveCount(4);
+  await page.getByRole("button", { name: "Show all 5 routed options" }).click();
+  await expect(rows).toHaveCount(5);
   await expect(rows.filter({ hasText: "Bukit Panjang Plaza" })).toContainText("12 min more travel");
   await rows.filter({ hasText: "Bukit Panjang Plaza" }).click();
   await expect(planName(page)).toContainText("Bukit Panjang Plaza");
@@ -1149,14 +1166,14 @@ test("a compared row promotes its option, and states what it costs", async ({ pa
 test("the weighting control changes the plan, not just the order", async ({ page }) => {
   await comparedJourney(page);
   await expect(planName(page)).toContainText("Lot One");
-  await page.getByRole("button", { name: "Least time", exact: true }).click();
+  await page.getByRole("button", { name: "Faster", exact: true }).click();
   await expect(planName(page)).toContainText("Yew Tee Point");
-  await page.getByRole("button", { name: "Least walking", exact: true }).click();
+  await page.getByRole("button", { name: "Less walking", exact: true }).click();
   await expect(planName(page)).toContainText("Bukit Panjang Plaza");
-  await page.getByRole("button", { name: "Fewest transfers", exact: true }).click();
+  await page.getByRole("button", { name: "Fewer changes", exact: true }).click();
   // Yew Tee is quickest but needs two transfers, so it must lose this one.
   await expect(planName(page)).not.toContainText("Yew Tee Point");
-  await page.getByRole("button", { name: "Our pick", exact: true }).click();
+  await page.getByRole("button", { name: "Best overall", exact: true }).click();
   await expect(planName(page)).toContainText("Lot One");
 });
 
@@ -1166,23 +1183,24 @@ test("no weighting ever promotes an option that drops an errand", async ({ page 
    * weighting pick it would answer a question the traveller did not ask. It
    * stays selectable by hand. */
   await comparedJourney(page);
-  for (const label of ["Our pick", "Least time", "Least walking", "Fewest transfers"]) {
+  for (const label of ["Best overall", "Faster", "Less walking", "Fewer changes"]) {
     await page.getByRole("button", { name: label, exact: true }).click();
     await expect(planName(page)).not.toContainText("Half Errand Mall");
   }
-  await page.getByText(/^Also compared/).click();
-  await page.locator(".considered-list button").filter({ hasText: "Half Errand Mall" }).click();
+  await page.getByRole("button", { name: /Show all \d+ routed options/ }).click();
+  const half = page.locator(".detour-row.option").filter({ hasText: "Half Errand Mall" });
+  await expect(half).toContainText("one errand only");
+  await half.click();
   await expect(planName(page)).toContainText("Half Errand Mall");
 });
 
 test("pointing at a compared place lifts its own marker only", async ({ page }) => {
   await comparedJourney(page);
-  await page.getByText(/^Also compared/).click();
   await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(0);
-  await page.locator(".considered-list button").first().hover();
+  const others = page.locator(".detour-row.option:not(.selected)");
+  await others.nth(0).hover();
   await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(1);
-  await page.getByText(/^Other options/).click();
-  await page.locator(".alternative-list button").first().hover();
+  await others.nth(1).hover();
   await expect(page.locator(".along-marker.considered.highlighted")).toHaveCount(1);
 });
 
@@ -1237,10 +1255,9 @@ test("an alternative that differs only in dwell does not claim less travel", asy
   await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
-  await page.getByText(/^Other options/).click();
-  const list = page.locator(".alternative-list");
-  await expect(list).toContainText("Easier option");
-  expect((await list.allTextContents()).join(" ")).not.toMatch(/less travel/i);
+  const row = page.locator(".detour-row.option").filter({ hasText: "Hillion Mall" });
+  await expect(row).toContainText("easier alternative");
+  expect((await row.allTextContents()).join(" ")).not.toMatch(/less travel/i);
 });
 
 /* Idea 1: OneMap already hands back the operator's own stopCode on every
@@ -1558,7 +1575,7 @@ test("a place shows its brand mark, and a glyph where there is no logo", async (
   await resolveJourney(page);
   await page.getByLabel("What do you need on the way?").fill("KFC and bubble tea");
   await page.getByRole("button", { name: /Find best stop/ }).click();
-  await expect(page.getByText("KFC · KOI Thé")).toBeVisible();
+  await expect(page.locator(".errand-lines li")).toHaveCount(2);
 
   const marks = page.getByTestId("place-mark");
   await expect(marks).toHaveCount(2);
@@ -1647,7 +1664,7 @@ test("the basemap follows the theme rather than being filtered into one", async 
   await expect.poll(() => tiles.length, { timeout: 10_000 }).toBeGreaterThan(0);
 
   const theme = await page.evaluate(() => document.documentElement.dataset.theme);
-  const expected = theme === "dark" ? "/Night/" : "/Default/";
+  const expected = theme === "dark" ? "/Night/" : "/Grey/";
   expect(tiles.every((url) => url.includes(expected))).toBe(true);
   expect(tiles.some((url) => url.includes("/GreyLite/"))).toBe(false);
 
@@ -1688,13 +1705,17 @@ test("a rail leg is drawn in its own line colour", async ({ page }) => {
   const rides = page.locator(".ride-leg");
   await expect(rides).toHaveCount(2);
 
-  // Downtown Line blue, LTA's own identity colour.
-  await expect(rides.nth(0)).toHaveCSS("border-left-color", "rgb(0, 94, 196)");
+  // Downtown Line blue, LTA's own identity colour, on the timeline's rail.
+  const rail = (index: number) =>
+    rides
+      .nth(index)
+      .locator(".timeline-rail")
+      .evaluate((el) => getComputedStyle(el, "::before").backgroundColor);
+  expect(await rail(0)).toBe("rgb(0, 94, 196)");
 
   // A bus has no line colour system to borrow, so it keeps the app accent
   // rather than being assigned an invented hue.
-  const busEdge = await rides.nth(1).evaluate((el) => getComputedStyle(el).borderLeftColor);
-  expect(busEdge).not.toBe("rgb(0, 94, 196)");
+  expect(await rail(1)).not.toBe("rgb(0, 94, 196)");
 
   // The badge must stay legible: its text is a darkened mix, never the raw
   // signage colour, which fails contrast on a pale panel.

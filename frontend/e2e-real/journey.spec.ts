@@ -19,12 +19,6 @@ async function choose(page: Page, label: "Origin" | "Destination", text: string,
   await page.getByRole("option", { name: option }).first().click();
 }
 
-async function showSummary(page: Page) {
-  // On a phone the result opens as a sheet; the summary is one tap away.
-  const summary = page.getByRole("button", { name: "Summary", exact: true });
-  if (await summary.isVisible()) await summary.click();
-}
-
 test("a typed request is planned end to end on the real network", async ({ page }) => {
   await choose(page, "Origin", "Punggol", /Punggol/);
   await choose(page, "Destination", "Orchard", /Orchard/);
@@ -34,7 +28,6 @@ test("a typed request is planned end to end on the real network", async ({ page 
   await page.getByRole("button", { name: "Find best stop" }).click();
 
   const planner = page.locator("#planner");
-  await showSummary(page);
   await expect(planner.getByText(/^arrive \d{1,2}:\d{2}/)).toBeVisible({ timeout: 30_000 });
   // The route rides the North East Line out of Punggol - a real line, not
   // one picked by hashing the trip distance.
@@ -80,8 +73,45 @@ test("a greeting is not planned as an errand", async ({ page }) => {
 });
 
 test("leave later starts from a time that can be submitted", async ({ page }) => {
-  await page.getByLabel("Departure mode").selectOption({ label: "Leave later" });
+  await page.getByRole("button", { name: "Leave later", exact: true }).click();
   const time = page.getByLabel("Departure time in Singapore");
   await expect(time).not.toHaveValue("");
   expect(Date.parse(`${await time.inputValue()}:00+08:00`)).toBeGreaterThan(Date.now());
+});
+
+test("an example plans a real journey in one tap, drawn line by line", async ({ page }) => {
+  await page.getByRole("button", { name: /Punggol.*Orchard/ }).click();
+  const planner = page.locator("#planner");
+  await expect(planner.getByText(/^arrive \d{1,2}:\d{2}/)).toBeVisible({ timeout: 30_000 });
+
+  // The diagram: the direct trip as the yardstick, then routed options on it.
+  await expect(planner.locator(".detour-row.direct")).toBeVisible();
+  expect(await planner.locator(".detour-row.option").count()).toBeGreaterThanOrEqual(2);
+  // The selected option's first ride is the North East Line, in its colour.
+  const ride = planner.locator(".detour-row.selected .piece.ride").first();
+  await expect(ride).toHaveCSS("background-color", "rgb(153, 0, 170)");
+
+  // On the map each ride is its own path in its line's colour: NE, then NS.
+  const strokes = await page
+    .locator(".leaflet-overlay-pane path.route-ride")
+    .evaluateAll((paths) => paths.map((path) => path.getAttribute("stroke")));
+  expect(strokes).toContain("#9900aa");
+  expect(strokes).toContain("#d42e12");
+});
+
+test("the timeline's clock times run in order and end at the headline arrival", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /Punggol.*Orchard/ }).click();
+  const planner = page.locator("#planner");
+  const headline = planner.locator(".result-impact em");
+  await expect(headline).toHaveText(/^arrive \d/, { timeout: 30_000 });
+  const clocks = (await planner.locator(".timeline-clock").allTextContents()).filter(Boolean);
+  const minutes = clocks.map((clock) => {
+    const [, h, m, half] = clock.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i) ?? [];
+    return ((Number(h) % 12) + (half.toLowerCase() === "pm" ? 12 : 0)) * 60 + Number(m);
+  });
+  for (let index = 1; index < minutes.length; index += 1)
+    expect(minutes[index]).toBeGreaterThanOrEqual(minutes[index - 1]);
+  expect(`arrive ${clocks[clocks.length - 1]}`).toBe(await headline.textContent());
 });
