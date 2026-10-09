@@ -78,8 +78,10 @@ class MockOneMapProvider(MapProvider):
         direct_km = haversine_km(start, end)
         if direct_km <= WALK_ONLY_KM:
             return self._walk_only(start, end, direct_km, departure)
-        boards = {s.code: (s, d) for s, d in network.nearest(start)}
-        alights = {s.code: (s, d) for s, d in network.nearest(end)}
+        # For remote parts of Singapore, retain nearby station options even
+        # beyond 3 km: _access() will model the long approach as a feeder bus.
+        boards = {s.code: (s, d) for s, d in network.nearest(start, within_km=float("inf"))}
+        alights = {s.code: (s, d) for s, d in network.nearest(end, within_km=float("inf"))}
         found = None
         if boards and alights:
             found = network.shortest(
