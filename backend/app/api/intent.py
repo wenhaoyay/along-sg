@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 
 from app.config import Settings
 from app.discovery_models import DiscoveryConfidence
@@ -183,5 +183,8 @@ def register(app: FastAPI, app_settings: Settings) -> None:
 
     @app.get("/api/intent/metrics", response_model=IntentMetricsSnapshot)
     async def intent_metrics(request: Request):
+        # Internal token, cost and latency metrics are opt-in for public APIs.
+        if not app_settings.expose_diagnostics:
+            raise HTTPException(status_code=404, detail="Not found")
         metrics: IntentMetrics = request.app.state.intent_metrics
         return metrics.snapshot()

@@ -237,3 +237,47 @@ def test_a_mall_beside_the_origin_is_routed_and_ranks_near_the_top(repository) -
     names = [item.option.stops[0].name for item in ranked]
     assert "Beside the origin" in names
     assert names.index("Beside the origin") <= 1
+
+
+
+def test_distant_origin_uses_feeder_and_rail_instead_of_only_walking() -> None:
+    # Valid remote area, more than 3 km from the closest rail station.
+    remote = Coordinate(1.43, 103.68)
+    result = route(remote, ORCHARD)
+    assert any(leg.mode == "BUS" for leg in result.legs)
+    assert any(leg.mode == "SUBWAY" for leg in result.legs)
+
+
+def test_live_geocoder_failure_is_not_misreported_as_422(repository) -> None:
+    from app.providers.base import ProviderTimeoutError
+    from app.services.discovery import LocationResolver
+
+    class TimedOutMap(MockOneMapProvider):
+        async def geocode(self, query: str, limit: int = 6):
+            raise ProviderTimeoutError("OneMap timed out")
+
+    resolver = LocationResolver(repository, TimedOutMap())
+    with pytest.raises(ProviderTimeoutError):
+        asyncio.run(resolver.require_confident("Unlisted Warehouse Avenue 123"))
+    with pytest.raises(ProviderTimeoutError):
+        asyncio.run(resolver.require_confident("999999"))
+
+
+def test_parser_metrics_are_hidden_by_default_in_public_mode(tmp_path) -> None:
+    app = create_app(Settings(
+        onemap_mock=True,
+        database_path=tmp_path / "private-metrics.db",
+        analytics_database_path=tmp_path / "private-analytics.db",
+        expose_diagnostics=False,
+    ))
+    with TestClient(app) as private_client:
+        assert private_client.get("/api/intent/metrics").status_code == 404
+
+    app_enabled = create_app(Settings(
+        onemap_mock=True,
+        database_path=tmp_path / "enabled-metrics.db",
+        analytics_database_path=tmp_path / "enabled-analytics.db",
+        expose_diagnostics=True,
+    ))
+    with TestClient(app_enabled) as enabled_client:
+        assert enabled_client.get("/api/intent/metrics").status_code == 200

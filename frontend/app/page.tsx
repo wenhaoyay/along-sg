@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   ArrowDownUp,
   ChevronRight,
@@ -28,8 +29,21 @@ import {
 } from "./components/RecommendationPanel";
 import { SpatialMap } from "./components/SpatialMap";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { LogoMark } from "./components/Logo";
+import { EXAMPLES, placeName, type Example } from "./examples";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+/* The planner's preference and the result's sort are one idea, so they share
+ * one vocabulary, and the result opens sorted the way the search was asked. */
+/* One empty list for the map's props. A fresh `[]` per render is a new
+ * dependency every keystroke, and the map rebuilt and refitted its layers on
+ * each one. */
+const NONE: never[] = [];
+const STYLE_RANK: Record<"balanced" | "faster" | "walking", RankKey> = {
+  balanced: "recommended",
+  faster: "time",
+  walking: "walking",
+};
 const QUICK_NEEDS = [
   ["fast_food", "Food"],
   ["coffee", "Coffee"],
@@ -113,11 +127,17 @@ export default function Home() {
     text: string;
     missing: string[];
   } | null>(null);
-  const [sheet, setSheet] = useState<"peek" | "half" | "full">("half");
+  const [sheet, setSheet] = useState<"peek" | "half">("half");
   const needRef = useRef<HTMLTextAreaElement>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [selectedKey, setSelectedKey] = useState("best_overall");
   const plannerRef = useRef<HTMLElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const noticeRef = useRef<HTMLDivElement>(null);
+  const discoveryRef = useRef<HTMLDivElement>(null);
+  // Set by an example card: run the search once its fields have rendered.
+  const pendingExample = useRef(false);
+  const [previewExample, setPreviewExample] = useState<Example | null>(null);
 
   useEffect(() => {
     void fetch(`${API_BASE}/api/catalog/categories`)
@@ -137,6 +157,42 @@ export default function Home() {
     if (conflict) plannerRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [conflict]);
   useEffect(() => () => searchRef.current?.abort(), []);
+  /* A message answering the button press opened below the fold of the
+   * planner card - "A quick check" for "hello" was cut off at the bottom
+   * edge, and Browse categories opened its search box there with no list in
+   * sight. Whatever just appeared is scrolled into view. */
+  useEffect(() => {
+    if (!clarification && !error && !partial) return;
+    noticeRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [clarification, error, partial]);
+  useEffect(() => {
+    if (discoveryOpen) discoveryRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [discoveryOpen]);
+  useEffect(() => {
+    if (!pendingExample.current || !origin || !destination || !need) return;
+    pendingExample.current = false;
+    formRef.current?.requestSubmit();
+  }, [origin, destination, need]);
+  // The need field grows with what is typed, rather than offering a
+  // textarea's resize grip inside something styled as a search box.
+  useEffect(() => {
+    const field = needRef.current;
+    if (!field) return;
+    field.style.height = "auto";
+    field.style.height = `${field.scrollHeight}px`;
+  }, [need, result]);
+
+  function runExample(example: Example) {
+    setResult(null);
+    setOrigin(example.origin);
+    setDestination(example.destination);
+    setNeed(example.need);
+    setIntent(null);
+    setSelections([]);
+    setPartial(null);
+    setPreviewExample(null);
+    pendingExample.current = true;
+  }
 
   function beginSearch() {
     searchRef.current?.abort();
@@ -227,7 +283,11 @@ export default function Home() {
     if (!response.ok) throw new Error(errorMessage(response.status, body));
     setIntent(interpreted);
     setResult(body);
-    setSelectedKey("best_overall");
+    const rank = STYLE_RANK[tripStyle];
+    setRankBy(rank);
+    const ranked =
+      rank === "recommended" ? [] : rankRoutedOptions(body.recommendations ?? {}, rank);
+    setSelectedKey(ranked[0]?.[0] ?? "best_overall");
     setSheet("half");
     setPartial(null);
     setActiveStop(null);
@@ -377,15 +437,18 @@ export default function Home() {
     [alternatives, compared, selectedKey],
   );
 
+  // The empty map shows an example journey rather than the whole island with
+  // nothing on it; pointing at another example previews that one.
+  const preview = !result && !origin && !destination ? (previewExample ?? EXAMPLES[0]) : null;
+
   return (
-    <main className={`app-shell ${result ? "has-result" : "input-state"}`}>
+    <main className={`app-shell ${result ? `has-result sheet-${sheet}` : "input-state"}`}>
       <header className="app-bar">
         <a href="#planner" className="logo" aria-label="Along home">
-          <span aria-hidden="true">A</span>
+          <LogoMark />
           <strong>Along</strong>
         </a>
         <div>
-          <span className="beta-label">Singapore beta</span>
           <ThemeToggle />
           <a className="icon-link" href="/privacy">
             <Info size={17} aria-hidden="true" />
@@ -403,12 +466,14 @@ export default function Home() {
         <div className="sheet-handle" aria-hidden="true" />
         {result && selected && (
           <>
-            <div className="sheet-controls" role="group" aria-label="Result sheet size">
+            {/* Two states, named for what you then see. "Summary" and
+                "Details" sounded like different content and were the same
+                panel at two heights. */}
+            <div className="sheet-controls" role="group" aria-label="Show on screen">
               {(
                 [
                   ["peek", "Map"],
-                  ["half", "Summary"],
-                  ["full", "Details"],
+                  ["half", "Plan"],
                 ] as const
               ).map(([value, label]) => (
                 <button
@@ -434,18 +499,42 @@ export default function Home() {
           </>
         )}
         {!result && (
-          <form onSubmit={submit}>
+          <form onSubmit={submit} ref={formRef}>
+            {/* One sentence that says what the app does, instead of three
+                taglines that said it was useful. */}
             <div className="planner-intro">
-              <span className="intro-eyebrow">
-                <i aria-hidden="true" />
-                Your journey, a little more useful
-              </span>
               <h1>
-                Find what you need <br />
-                <em>along the way.</em>
+                Errands on the way, <br />
+                <em>not out of the way.</em>
               </h1>
-              <p>One journey. A better way to get things done.</p>
+              <p>
+                Say what you need. Along finds the stop that adds the least time to a trip you are
+                already making by MRT or bus.
+              </p>
             </div>
+            {!origin && !destination && (
+              <div className="examples" aria-labelledby="examples-title">
+                <span id="examples-title">Try one</span>
+                <div onMouseLeave={() => setPreviewExample(null)}>
+                  {EXAMPLES.map((example) => (
+                    <button
+                      type="button"
+                      key={example.id}
+                      onClick={() => runExample(example)}
+                      onMouseEnter={() => setPreviewExample(example)}
+                      onFocus={() => setPreviewExample(example)}
+                      onBlur={() => setPreviewExample(null)}
+                    >
+                      <strong>
+                        {placeName(example.origin)} <ArrowRight size={12} aria-hidden="true" />{" "}
+                        {placeName(example.destination)}
+                      </strong>
+                      <span>{example.need}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <fieldset className="planner-controls" disabled={loading}>
               <div className="journey-fields">
                 <LocationField
@@ -525,7 +614,7 @@ export default function Home() {
                   onClick={() => setTripStyle("balanced")}
                 >
                   <SlidersHorizontal size={14} aria-hidden="true" />
-                  Balanced
+                  Best overall
                 </button>
                 <button
                   type="button"
@@ -549,26 +638,34 @@ export default function Home() {
                   ? "Give easier walks more weight when comparing stops."
                   : tripStyle === "faster"
                     ? "Give extra journey time more weight when comparing stops."
-                    : "Balance extra time, walking and changes."}
+                    : "Weigh extra time, walking and changes, and how sure we are of each place."}
               </p>
+              {/* The same segmented control as the preference above it. A
+                  native select here was smaller, differently styled and the
+                  only one on the page. */}
               <div className="departure-controls">
-                <label>
-                  Departure
-                  <select
-                    aria-label="Departure mode"
-                    value={leaveMode}
-                    onChange={(event) => {
-                      const mode = event.target.value as "now" | "later";
-                      setLeaveMode(mode);
-                      /* An empty time field met with the browser's own "Please
-                       * fill out this field". Start from a sensible answer. */
-                      if (mode === "later" && !leaveAt) setLeaveAt(sgLocalInput(30));
-                    }}
-                  >
-                    <option value="now">Leave now</option>
-                    <option value="later">Leave later</option>
-                  </select>
-                </label>
+                <div className="trip-style departure-mode" role="group" aria-label="Departure">
+                  {(
+                    [
+                      ["now", "Leave now"],
+                      ["later", "Leave later"],
+                    ] as const
+                  ).map(([mode, label]) => (
+                    <button
+                      type="button"
+                      key={mode}
+                      aria-pressed={leaveMode === mode}
+                      onClick={() => {
+                        setLeaveMode(mode);
+                        /* An empty time field met with the browser's own "Please
+                         * fill out this field". Start from a sensible answer. */
+                        if (mode === "later" && !leaveAt) setLeaveAt(sgLocalInput(30));
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 {leaveMode === "later" && (
                   <label>
                     Singapore time (SGT)
@@ -616,91 +713,95 @@ export default function Home() {
                 </div>
               )}
 
-              {clarification && (
-                <div className={conflict ? "notice conflict" : "notice"} role="alert">
-                  <strong>{conflict ? "Your journey changed" : "A quick check"}</strong>
-                  <p>{clarification}</p>
-                  {conflict && (
-                    <div className="conflict-actions">
-                      <button type="button" onClick={() => resolveConflict("keep")}>
-                        Keep {conflict.current_label}
-                      </button>
-                      {conflict.mentioned_label && (
-                        <button type="button" onClick={() => resolveConflict("change")}>
-                          Use {conflict.mentioned_label}
+              <div ref={noticeRef} className="notice-lane">
+                {clarification && (
+                  <div className={conflict ? "notice conflict" : "notice"} role="alert">
+                    <strong>{conflict ? "Your journey changed" : "A quick check"}</strong>
+                    <p>{clarification}</p>
+                    {conflict && (
+                      <div className="conflict-actions">
+                        <button type="button" onClick={() => resolveConflict("keep")}>
+                          Keep {conflict.current_label}
                         </button>
-                      )}
+                        {conflict.mentioned_label && (
+                          <button type="button" onClick={() => resolveConflict("change")}>
+                            Use {conflict.mentioned_label}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (conflict.endpoint === "origin") setOrigin(null);
+                            else setDestination(null);
+                            setConflict(null);
+                          }}
+                        >
+                          Edit {conflict.endpoint}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {error && (
+                  <div className="notice error" role="alert">
+                    <strong>One more thing</strong>
+                    <p>{error}</p>
+                  </div>
+                )}
+                {partial && partial.text === need && !selections.length && (
+                  <div className="notice" role="alert">
+                    <strong>We found part of your request</strong>
+                    <p>
+                      Not resolved: {partial.missing.join(", ")}. Continue with{" "}
+                      {[...partial.intent.required_errands, ...partial.intent.optional_errands]
+                        .map((item) => intentLabel(categories, item))
+                        .join(" and ")}{" "}
+                      only?
+                    </p>
+                    <div className="conflict-actions">
                       <button
                         type="button"
-                        onClick={() => {
-                          if (conflict.endpoint === "origin") setOrigin(null);
-                          else setDestination(null);
-                          setConflict(null);
+                        onClick={async () => {
+                          const controller = beginSearch();
+                          try {
+                            await optimize(partial.intent, controller.signal);
+                          } catch (caught) {
+                            if (!controller.signal.aborted)
+                              setError(
+                                caught instanceof Error
+                                  ? caught.message
+                                  : "We couldn’t compare that journey.",
+                              );
+                          } finally {
+                            if (searchRef.current === controller) setLoading(false);
+                          }
                         }}
                       >
-                        Edit {conflict.endpoint}
+                        Continue with matched errands
+                      </button>
+                      <button type="button" onClick={() => needRef.current?.focus()}>
+                        Edit request
                       </button>
                     </div>
-                  )}
-                </div>
-              )}
-              {error && (
-                <div className="notice error" role="alert">
-                  <strong>One more thing</strong>
-                  <p>{error}</p>
-                </div>
-              )}
-              {partial && partial.text === need && !selections.length && (
-                <div className="notice" role="alert">
-                  <strong>We found part of your request</strong>
-                  <p>
-                    Not resolved: {partial.missing.join(", ")}. Continue with{" "}
-                    {[...partial.intent.required_errands, ...partial.intent.optional_errands]
-                      .map((item) => intentLabel(categories, item))
-                      .join(" and ")}{" "}
-                    only?
-                  </p>
-                  <div className="conflict-actions">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const controller = beginSearch();
-                        try {
-                          await optimize(partial.intent, controller.signal);
-                        } catch (caught) {
-                          if (!controller.signal.aborted)
-                            setError(
-                              caught instanceof Error
-                                ? caught.message
-                                : "We couldn’t compare that journey.",
-                            );
-                        } finally {
-                          if (searchRef.current === controller) setLoading(false);
-                        }
-                      }}
-                    >
-                      Continue with matched errands
-                    </button>
-                    <button type="button" onClick={() => needRef.current?.focus()}>
-                      Edit request
-                    </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {discoveryOpen && (
-                <DiscoveryPalette
-                  apiBase={API_BASE}
-                  categories={categories}
-                  selections={selections}
-                  onClose={() => setDiscoveryOpen(false)}
-                  onChange={(items) => {
-                    setSelections(items);
-                    setNeed("");
-                    setIntent(null);
-                  }}
-                />
-              )}
+              <div ref={discoveryRef}>
+                {discoveryOpen && (
+                  <DiscoveryPalette
+                    apiBase={API_BASE}
+                    categories={categories}
+                    selections={selections}
+                    onClose={() => setDiscoveryOpen(false)}
+                    onChange={(items) => {
+                      setSelections(items);
+                      setNeed("");
+                      setIntent(null);
+                    }}
+                  />
+                )}
+              </div>
             </fieldset>
 
             <button
@@ -806,7 +907,7 @@ export default function Home() {
         {result && !selected && (
           <section className="recommendation empty-result" aria-live="polite">
             <button className="edit-journey" type="button" onClick={() => setResult(null)}>
-              <ArrowRight size={15} aria-hidden="true" />
+              <ArrowLeft size={15} aria-hidden="true" />
               Edit journey
             </button>
             <span>Try another way</span>
@@ -835,15 +936,23 @@ export default function Home() {
         <SpatialMap
           origin={origin}
           destination={destination}
-          stops={selected?.stops ?? []}
+          stops={selected?.stops ?? NONE}
           considered={comparedPoints}
           onConsideredSelect={setSelectedKey}
-          baselineGeometry={result?.baseline.geometry ?? []}
-          routeGeometry={selected?.route_geometry ?? []}
+          baselineGeometry={result?.baseline.geometry ?? NONE}
+          routeGeometry={selected?.route_geometry ?? NONE}
+          legs={selected?.legs ?? NONE}
+          preview={preview}
+          frame={result ? sheet : "input"}
           activeStop={activeStop}
           activeConsidered={activeConsidered}
           onStopSelect={setActiveStop}
         />
+        {preview && (
+          <p className="map-key map-preview-note" aria-live="polite">
+            Example: {placeName(preview.origin)} → {placeName(preview.destination)}, {preview.need}
+          </p>
+        )}
         {selected && (
           <div className="map-key" aria-label="Map route key">
             <span>
@@ -852,12 +961,12 @@ export default function Home() {
             </span>
             <span>
               <i className="recommended" />
-              With stop
+              Your route, by line
             </span>
             {comparedPoints.length > 0 && (
               <span>
-                <i className="considered" />
-                Compared
+                <i className="considered">+</i>
+                Other options
               </span>
             )}
           </div>

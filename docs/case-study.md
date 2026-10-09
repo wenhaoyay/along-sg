@@ -52,11 +52,65 @@ understand. Measured on 60 tuned phrasings and 20 held-out ones: 74% → 99% and
 server broke. It's a 422 now, with a "did you mean" built from the station gazetteer, and
 postal codes resolve offline from catalog addresses.
 
+## Designing the comparison
+
+A design review asked a blunt question: what on screen is only true of this product? The
+answer was nothing. The layout was the default map-app template (a floating card over a full
+map, one green accent, small uppercase labels, a three-line tagline, a lettermark logo, a beta
+pill), and the product's one idea appeared as three lines of text that said the same thing
+three ways: "+32 min", "Direct 44 min → With stops 76 min", "2 min extra travel + ~30 min at
+your stops". The comparison behind it, every option that was routed, sat in two collapsed
+lists under the Navigate button.
+
+| Before | After |
+| --- | --- |
+| ![Before: the result as text, a busy Default basemap, one dark-green route line](images/before-result-desktop.png) | ![After: the detour diagram, a Grey basemap, the route in line colours](images/result-desktop.png) |
+
+**The detour diagram.** I considered three ways to draw it:
+
+- A bar chart of added minutes per option. It's honest, but it loses *why*: two options at +30
+  can be very different trips.
+- A scatter of added time against walking. It's good for an analyst, but it's unreadable at
+  phone width.
+- Each option drawn as its own journey on a shared time axis. This is the one I chose. Rides
+  are in their MRT line's colour, and the time in shops is hatched. The direct trip is the
+  first row, with a dashed "direct arrives" line through every row.
+
+The third answers the questions the other two can't. Why is +2 min of travel +32 min late?
+The hatched block shows the shopping time. Why is a +18 option not the pick? Its row says
+"one errand only". Where is the shopping? At the start, beside the station, because the
+hatching sits before the purple North East Line ride. It reuses the colour system every
+Singaporean already reads, and it needs no legend beyond five swatches.
+
+**Every number checks against its neighbours.** The old timeline printed the departure, one
+stop's arrival and the final arrival, and left the rest of the hour unexplained. The new one
+is built only from the router's own times and the gaps between them. A full-stack test walks
+the clock column and asserts it never runs backwards and ends at the headline's arrival time.
+
+**The map stops competing with the route.** OneMap's Default basemap draws every line,
+expressway and golf course in saturated colour, and the route (one dark-green line) vanished
+beside the East West Line. Grey keeps the stations and line colours and mutes the rest. The
+route is now drawn leg by leg in its line's colour over a white casing, which needed a small
+API change: each leg now carries its own geometry. Compared places are pins with their extra
+minutes instead of anonymous dots.
+
+**A first visitor has somewhere to start.** A reviewer who doesn't know Singapore had nothing
+to type. Three example journeys, each checked against the offline catalog, run a real plan in
+one tap.
+
+Smaller fixes came out of looking at every state at three widths:
+
+- The phone's map attribution was pinned to a fixed height and covered the address.
+- The tablet used the stretched phone layout.
+- Error notices opened below the fold.
+- Sorting the combined option list by score put an "easier alternative" above the app's
+  actual pick.
+
 ## How it's verified
 
-- 367 backend tests, including the network-mock, parser, error-code and ranking cases above.
+- 370 backend tests, including the network-mock, parser, error-code and ranking cases above.
 - A phrasing evaluation that CI fails below 90%.
-- 164 browser tests with the API stubbed (phone and desktop, light and dark), and 10 that run
+- 164 browser tests with the API stubbed (phone and desktop, light and dark), and 14 that run
   the real API serving the production build, so the client and the API can't drift apart
   unnoticed.
 

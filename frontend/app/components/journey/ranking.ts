@@ -10,11 +10,15 @@ import { capitalise } from "./format";
  * weights; this reorders that set, and `rankNote` says so. */
 export type RankKey = "recommended" | "time" | "walking" | "transfers";
 
+/* The same words as the planner's own preference control. The form asked
+ * "Balanced / Faster / Less walking" and the result answered with "Our pick /
+ * Least time / Least walking / Fewest transfers": one idea, two vocabularies,
+ * two places. "Best overall" rather than "Balanced", for the reason below. */
 export const RANK_LABELS: Record<RankKey, string> = {
-  recommended: "Our pick",
-  time: "Least time",
-  walking: "Least walking",
-  transfers: "Fewest transfers",
+  recommended: "Best overall",
+  time: "Faster",
+  walking: "Less walking",
+  transfers: "Fewer changes",
 };
 
 /* An option that drops an errand always sorts last, whatever the weighting.
@@ -75,25 +79,6 @@ export function rankNote(rank: RankKey, count: number) {
   if (rank === "recommended")
     return `Our ranking across ${count} routed options: added time, walking and transfers, and how confidently we know each place.`;
   return `Reordering the same ${count} routed options by one measure. The search itself used our own ranking.`;
-}
-
-/** Why a compared place is not the plan, in the figures the ranking used.
- *
- * Below a minute there is no honest difference to report, and inventing one
- * ("slightly slower") would misrepresent a tie as a decision. */
-export function comparedDetail(option: Recommendation, chosen: Recommendation) {
-  const slower =
-    option.detour_breakdown.extra_transport_minutes -
-    chosen.detour_breakdown.extra_transport_minutes;
-  const further = option.incremental_walking_distance_m - chosen.incremental_walking_distance_m;
-  const transfers = option.incremental_transfers - chosen.incremental_transfers;
-  const parts: string[] = [];
-  if (transfers > 0) parts.push(`${transfers} more transfer${transfers > 1 ? "s" : ""}`);
-  if (slower >= 1) parts.push(`${Math.round(slower)} min more travel`);
-  if (further >= 100) parts.push(`${Math.round(further)} m more walking`);
-  if (parts.length) return parts.join(", ");
-  if (option.stops.length > chosen.stops.length) return "Needs an extra stop";
-  return "Within a minute of the plan above";
 }
 
 /** The comparison is only evidence if its shape is stated. Five places within

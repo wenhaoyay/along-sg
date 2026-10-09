@@ -96,6 +96,10 @@ class RouteLegResponse(BaseModel):
     from_stop_code: str | None = None
     to_stop_code: str | None = None
     segment_index: int | None = None
+    # The leg's own path, decoded. `route_geometry` is the same points run
+    # together, which is enough for one line but not for drawing each ride in
+    # its line's colour - the client cannot tell where the NE leg ends.
+    geometry: list[CoordinateResponse] = Field(default_factory=list)
 
 
 class RouteResponse(BaseModel):
@@ -171,6 +175,7 @@ class StopResponse(BaseModel):
     location_quality: float = Field(ge=0, le=1)
     navigation_ready: bool = True
     arrival_time: datetime | None = None
+    dwell_minutes: float = Field(default=0.0, ge=0)
 
 
 class DisplayBusinessResponse(BaseModel):

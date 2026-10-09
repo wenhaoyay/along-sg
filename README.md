@@ -49,9 +49,26 @@ flowchart LR
 Design notes and trade-offs: [`docs/case-study.md`](docs/case-study.md). The full system:
 [`docs/architecture.md`](docs/architecture.md).
 
+## Seeing the detour
+
+<img src="docs/images/detour-diagram.png" alt="Options drawn as journeys on one time axis, in MRT line colours, against the direct trip" width="300" align="right">
+
+The comparison is the product, so it's drawn rather than described. Every routed option is a
+bar on one time axis: each ride in its line's colour, walks and waits between them, the time
+in shops hatched. The direct trip is the top bar, and the dashed line where it arrives runs
+through every row, so how far an option runs past it is the added time its figure quotes.
+That's why +2 min of travel can still mean arriving 32 minutes later, and why a +18 option
+labelled "one errand only" isn't the bargain it looks like.
+
+Below it, the plan is a timeline whose clock times all come from the router and add up, and
+the map draws the same route leg by leg in the same line colours, with every other routed
+place pinned with its extra minutes.
+
+<br clear="right">
+
 <p>
-  <img src="docs/images/result-mobile.png" alt="A result on a phone: Westgate, +29 min, arrive 2:04 pm" width="260">
-  <img src="docs/images/home-dark.png" alt="The planner in dark mode" width="520">
+  <img src="docs/images/result-mobile.png" alt="A result on a phone: Waterway Point, +32 min, the route drawn in North East Line purple above the sheet" width="260">
+  <img src="docs/images/home-dark.png" alt="The planner in dark mode, with example journeys and one previewed on the map" width="520">
 </p>
 
 ## Measured, not claimed
@@ -60,9 +77,9 @@ Design notes and trade-offs: [`docs/case-study.md`](docs/case-study.md). The ful
 | --- | --- |
 | Request parsing: 60 everyday phrasings | 99% correct (was 74%) |
 | …and 20 written afterwards, never tuned against | 95% correct (was 70%) |
-| Backend tests | 367 passed |
+| Backend tests | 370 passed |
 | Browser tests, API stubbed: 4 viewports × light/dark | 164 passed |
-| Browser tests against the real API and production build | 10 passed |
+| Browser tests against the real API and production build | 14 passed |
 | Six-journey offline optimiser benchmark | repeatable; regression tool only |
 
 The phrasing set is [`backend/data/phrasing-evaluation.json`](backend/data/phrasing-evaluation.json),
@@ -114,7 +131,7 @@ cd frontend; npx tsc --noEmit; npm run lint; npm run test:e2e; npm run test:e2e:
 
 | Area | Technology |
 | --- | --- |
-| Frontend | Next.js 16 (static export), React 19, TypeScript, Leaflet |
+| Frontend | Next.js 16 (static export), React 19, TypeScript, Leaflet; Inter and Bricolage Grotesque |
 | Backend | FastAPI, Pydantic, HTTPX |
 | Data | SQLite + FTS5, OpenStreetMap-derived POIs (ODbL), LTA rail gazetteer |
 | Routing / geocoding | OneMap, behind a provider interface with an offline rail-network mock |
@@ -129,7 +146,8 @@ backend/app/
   providers/       OneMap, the offline rail-network mock, DataMall, place search
 frontend/app/
   page.tsx         the planner
-  components/      map, location fields, result panel; journey/ holds its parts
+  components/      map, location fields, result panel
+  components/journey/  detour diagram, timeline, and the models behind them
   e2e/, e2e-real/  stubbed and full-stack browser suites
 ```
 

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
@@ -17,9 +17,18 @@ const inter = Inter({
   variable: "--font-sans",
   display: "swap",
 });
+/* A display face for the headline figures and names only. Inter everywhere
+   was correct and anonymous; Bricolage has enough character to make "+32 min"
+   and a mall's name look set rather than defaulted, and its figures stay
+   legible at 40px. Body copy, controls and times stay in Inter. */
+const display = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Along the Way — Singapore errand optimiser",
+  title: "Along — errands on the way",
   description: "Fit one or two errands into a Singapore public-transport journey with less detour.",
   manifest: "/manifest.webmanifest",
   applicationName: "Along",
@@ -39,14 +48,14 @@ export const viewport: Viewport = {
   // The planner is a bottom sheet over a full-bleed map, so the browser chrome
   // should tint to the page ground rather than to the brand green.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#dfe7e3" },
+    { media: "(prefers-color-scheme: light)", color: "#eceeed" },
     { media: "(prefers-color-scheme: dark)", color: "#0c1211" },
   ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-SG" className={inter.variable} suppressHydrationWarning>
+    <html lang="en-SG" className={`${inter.variable} ${display.variable}`} suppressHydrationWarning>
       <head>
         {/* Stamps data-theme before the first paint. Without a blocking script
             here the page renders light and then flips, which is worse at night

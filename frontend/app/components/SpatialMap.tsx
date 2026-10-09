@@ -1,25 +1,30 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { lineColor } from "../lineColors";
 import type { Coordinate, ResolvedLocation } from "./LocationField";
+import type { Leg } from "./journey/types";
 
 type Stop = { display_name: string; coordinate: Coordinate };
 
-/* OneMap publishes five basemaps and this used GreyLite, the emptiest of them:
- * at Orchard it draws faint grey outlines, one label, and no station at all.
- * Default draws yellow arterials, named streets and the MRT stations with
- * their codes - which for a journey app is information, not decoration.
+/* OneMap publishes five basemaps. GreyLite, used first, drew faint outlines and
+ * no stations. Default drew them, along with orange expressways, saturated
+ * parks, golf courses and pink restricted-area hatching, and the route - one
+ * dark-green line - disappeared into it beside the East West line.
  *
- * Night is a real dark basemap. It replaces a CSS invert(1) hue-rotate(180deg)
- * filter over GreyLite, which produced muddy inverted grey and turned every
- * label into a negative of itself. */
+ * Grey is the middle: it keeps every station, the MRT lines in their own
+ * colours and the street names, and mutes the land and water, so the only
+ * saturated thing on the map is the journey. Night is a real dark basemap. */
 const BASEMAP = {
-  light: "https://www.onemap.gov.sg/maps/tiles/Default/{z}/{x}/{y}.png",
+  light: "https://www.onemap.gov.sg/maps/tiles/Grey/{z}/{x}/{y}.png",
   dark: "https://www.onemap.gov.sg/maps/tiles/Night/{z}/{x}/{y}.png",
 } as const;
 
 const currentScheme = (): "light" | "dark" =>
   document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+
+// One breakpoint for the whole app: from here down the planner is a sheet.
+export const COMPACT_MAX_WIDTH = 767;
 
 /** A candidate that was routed and lost. Drawn so the map can show the
  *  comparison it made rather than a single line to be taken on trust. */
@@ -35,6 +40,8 @@ type Considered = {
   secondary?: boolean;
 };
 
+type Preview = { origin: ResolvedLocation; destination: ResolvedLocation };
+
 export function SpatialMap({
   origin,
   destination,
@@ -42,6 +49,9 @@ export function SpatialMap({
   considered = [],
   baselineGeometry = [],
   routeGeometry = [],
+  legs = [],
+  preview = null,
+  frame,
   activeStop,
   activeConsidered,
   onStopSelect,
@@ -53,6 +63,14 @@ export function SpatialMap({
   considered?: Considered[];
   baselineGeometry?: Coordinate[];
   routeGeometry?: Coordinate[];
+  /** The plan's legs; with their own geometry each ride is drawn in its
+   *  line's colour. */
+  legs?: Leg[];
+  /** An example journey to show on the empty map. */
+  preview?: Preview | null;
+  /** Changes when the planner's size on screen does, so the route is
+   *  reframed into the space the sheet leaves. */
+  frame?: string;
   activeStop?: number | null;
   activeConsidered?: string | null;
   onStopSelect?: (index: number) => void;
@@ -66,6 +84,7 @@ export function SpatialMap({
   const consideredRef = useRef<import("leaflet").Marker[]>([]);
   const selectionRef = useRef(activeStop);
   const tileRef = useRef<import("leaflet").TileLayer | null>(null);
+  const framingRef = useRef<(animate: boolean) => void>(() => {});
 
   useEffect(() => {
     selectionRef.current = activeStop;
@@ -74,9 +93,9 @@ export function SpatialMap({
     });
   }, [activeStop]);
 
-  // Pointing at a row in the compared list lifts its marker out of the dimmed
-  // set, which is what makes a list of names on the left and a scatter of dots
-  // on the right into one thing.
+  // Pointing at a row in the comparison lifts its marker out of the dimmed
+  // set, which is what makes the rows on the left and the pins on the right
+  // into one thing.
   useEffect(() => {
     consideredRef.current.forEach((marker) => {
       const element = marker.getElement();
@@ -98,6 +117,17 @@ export function SpatialMap({
     return () => observer.disconnect();
   }, []);
 
+  // The sheet changed size: frame the same route into the new space. Not on
+  // the first result, which the layer rebuild below already frames.
+  const frameRef = useRef(frame);
+  useEffect(() => {
+    const previous = frameRef.current;
+    frameRef.current = frame;
+    if (previous === frame || previous === "input" || frame === "input") return;
+    const timer = window.setTimeout(() => framingRef.current(true), 260);
+    return () => window.clearTimeout(timer);
+  }, [frame]);
+
   useEffect(() => {
     let cancelled = false;
     void import("leaflet").then((L) => {
@@ -112,7 +142,7 @@ export function SpatialMap({
          * south coast means the map centre sits well south of Singapore. With
          * the island's own bounds as the limit, Leaflet refused that pan and
          * left the route under the sheet. The south edge leaves room for it. */
-        const compactLayout = window.innerWidth <= 820;
+        const compactLayout = window.innerWidth <= COMPACT_MAX_WIDTH;
         mapRef.current.setMaxBounds([
           [compactLayout ? 0.9 : 1.144, 103.535],
           [1.494, 104.502],
@@ -173,26 +203,103 @@ export function SpatialMap({
       layerRef.current?.remove();
       const layer = L.layerGroup().addTo(mapRef.current);
       layerRef.current = layer;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const points = [origin, ...stops, destination]
         .filter(Boolean)
         .map((item) => (item as ResolvedLocation | Stop).coordinate);
+      const latLngs = (line: Coordinate[]) =>
+        line.map((point) => [point.latitude, point.longitude] as [number, number]);
+
       const baselinePoints =
         baselineGeometry.length > 1
           ? baselineGeometry
           : origin && destination
             ? [origin.coordinate, destination.coordinate]
             : [];
+      // A ghost of the direct trip: there to be compared with, not followed.
       if (baselinePoints.length > 1)
-        L.polyline(
-          baselinePoints.map((point) => [point.latitude, point.longitude]),
-          { color: "#64748b", weight: 4, dashArray: "8 8", opacity: 0.55 },
-        ).addTo(layer);
+        L.polyline(latLngs(baselinePoints), {
+          className: "route-direct",
+          weight: 4,
+          dashArray: "2 9",
+          lineCap: "round",
+          interactive: false,
+        }).addTo(layer);
+
+      /* The plan, one path per leg: each ride in its line's colour over a
+       * casing that lifts it off the basemap, walks as dots. A response
+       * without per-leg geometry draws the whole route in the accent. */
+      const drawable = stops.length ? legs.filter((leg) => (leg.geometry?.length ?? 0) > 1) : [];
       const recommendedPoints = routeGeometry.length > 1 ? routeGeometry : points;
-      if (recommendedPoints.length > 1 && stops.length)
-        L.polyline(
-          recommendedPoints.map((point) => [point.latitude, point.longitude]),
-          { color: "#0d6b57", weight: 5, opacity: 0.9 },
-        ).addTo(layer);
+      // One entry per leg, so a ride's casing draws in step with the ride.
+      const routePaths: import("leaflet").Polyline[][] = [];
+      if (drawable.length) {
+        for (const leg of drawable) {
+          const walk = ["WALK", "BICYCLE", "SCOOTER"].includes(leg.mode.toUpperCase());
+          if (walk) {
+            routePaths.push([
+              L.polyline(latLngs(leg.geometry ?? []), {
+                className: "route-walk",
+                weight: 4,
+                dashArray: "0.5 8",
+                lineCap: "round",
+                interactive: false,
+              }).addTo(layer),
+            ]);
+            continue;
+          }
+          const casing = L.polyline(latLngs(leg.geometry ?? []), {
+            className: "route-casing",
+            weight: 10,
+            lineCap: "round",
+            lineJoin: "round",
+            interactive: false,
+          }).addTo(layer);
+          const color = lineColor(leg.route_short_name, leg.route_long_name);
+          routePaths.push([
+            casing,
+            L.polyline(latLngs(leg.geometry ?? []), {
+              className: color ? "route-ride" : "route-ride route-bus",
+              color: color ?? undefined,
+              weight: 6,
+              lineCap: "round",
+              lineJoin: "round",
+              interactive: false,
+            }).addTo(layer),
+          ]);
+        }
+      } else if (recommendedPoints.length > 1 && stops.length) {
+        routePaths.push([
+          L.polyline(latLngs(recommendedPoints), {
+            className: "route-casing",
+            weight: 10,
+            interactive: false,
+          }).addTo(layer),
+          L.polyline(latLngs(recommendedPoints), {
+            className: "route-ride route-bus",
+            weight: 6,
+            interactive: false,
+          }).addTo(layer),
+        ]);
+      }
+      /* The route draws itself once, leg by leg, in travel order - the eye
+       * follows the journey instead of being handed a finished line. */
+      if (!reduceMotion) {
+        routePaths.forEach((paths, index) => {
+          for (const path of paths) {
+            const element = path.getElement() as SVGPathElement | undefined;
+            if (!element) continue;
+            element.style.setProperty("--draw-delay", `${index * 140}ms`);
+            if (element.classList.contains("route-walk")) {
+              element.classList.add("route-fade");
+              continue;
+            }
+            element.setAttribute("pathLength", "1");
+            element.classList.add("route-draw");
+          }
+        });
+      }
+
       /* Markers used to be already in place the instant a result arrived,
        * which is a good part of what "lifeless" was describing. They settle in
        * now, staggered in creation order so a plan lands as a sequence rather
@@ -211,18 +318,47 @@ export function SpatialMap({
           .bindTooltip(label, { direction: "top", offset: [0, -12] })
           .addTo(layer);
       allMarkersRef.current = [];
+
+      if (preview) {
+        // The example on the empty map: its two ends and the trip between,
+        // drawn faintly enough that it reads as a suggestion.
+        L.polyline(latLngs([preview.origin.coordinate, preview.destination.coordinate]), {
+          className: "route-preview",
+          weight: 3,
+          dashArray: "2 9",
+          lineCap: "round",
+          interactive: false,
+        }).addTo(layer);
+        allMarkersRef.current.push(
+          marker(preview.origin.coordinate, "origin preview", preview.origin.label, "A"),
+          marker(
+            preview.destination.coordinate,
+            "destination preview",
+            preview.destination.label,
+            "B",
+          ),
+        );
+      }
+
       // Drawn before the plan's own markers so a compared place can never
-      // cover the stop that won.
+      // cover the stop that won. Each carries its extra travel, so the map
+      // states the comparison rather than scattering anonymous dots.
       consideredRef.current = considered.map((option) => {
+        const minutes = Math.round(option.extra_transport_minutes);
         const label = option.secondary
           ? option.display_name
-          : `${option.display_name} · +${Math.round(option.extra_transport_minutes)} min · tap to pick`;
-        const item = marker(option.coordinate, "considered", label, "");
+          : `${option.display_name} · +${minutes} min travel · tap to pick`;
+        const item = marker(
+          option.coordinate,
+          option.secondary ? "considered secondary" : "considered",
+          label,
+          option.secondary ? "" : `+${minutes}`,
+        );
         const element = item.getElement();
         if (element) {
           element.dataset.comparedKey = option.key;
           element.classList.toggle("highlighted", option.key === activeConsidered);
-          // Announced, but not focusable: the panel's compared list is the
+          // Announced, but not focusable: the comparison in the panel is the
           // keyboard path to the same action, and a dozen tab stops scattered
           // over a map is not one.
           element.setAttribute("aria-label", `Pick ${option.display_name}`);
@@ -255,30 +391,46 @@ export function SpatialMap({
         ...baselinePoints,
         ...recommendedPoints,
         ...considered.map((option) => option.coordinate),
+        ...(preview ? [preview.origin.coordinate, preview.destination.coordinate] : []),
       ];
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const compact = window.innerWidth <= 820;
-      if (origin && !destination && !stops.length) {
-        if (reduceMotion)
-          mapRef.current.setView([origin.coordinate.latitude, origin.coordinate.longitude], 14);
-        else
-          mapRef.current.flyTo([origin.coordinate.latitude, origin.coordinate.longitude], 14, {
-            duration: 0.65,
-          });
-      } else if (framingPoints.length > 1) {
+
+      framingRef.current = (animate: boolean) => {
+        const map = mapRef.current;
+        if (!map) return;
+        const compact = window.innerWidth <= COMPACT_MAX_WIDTH;
+        const motion = animate && !reduceMotion;
+        if (origin && !destination && !stops.length) {
+          if (motion)
+            map.flyTo([origin.coordinate.latitude, origin.coordinate.longitude], 14, {
+              duration: 0.65,
+            });
+          else map.setView([origin.coordinate.latitude, origin.coordinate.longitude], 14);
+          return;
+        }
+        if (framingPoints.length < 2) return;
         const bounds = L.latLngBounds(
           framingPoints.map((point) => [point.latitude, point.longitude]),
         );
+        /* The sheet's real height, not a guess at it: the old fixed 390px
+         * left the destination under a sheet that is 55% of a phone. The
+         * desktop panel is measured the same way, for its width. */
+        const planner = document.getElementById("planner");
+        const sheet = planner?.getBoundingClientRect();
         const options = {
-          paddingTopLeft: compact ? L.point(42, 82) : L.point(470, 88),
-          paddingBottomRight: compact ? L.point(42, stops.length ? 390 : 330) : L.point(72, 72),
+          paddingTopLeft: compact
+            ? L.point(36, 142)
+            : L.point((sheet ? sheet.right : 424) + 40, 92),
+          paddingBottomRight: compact
+            ? L.point(36, (sheet ? window.innerHeight - sheet.top : 390) + 28)
+            : L.point(72, 84),
           maxZoom: 15,
-          animate: !reduceMotion,
+          animate: motion,
           duration: 0.75,
         };
-        if (reduceMotion) mapRef.current.fitBounds(bounds, options);
-        else mapRef.current.flyToBounds(bounds, options);
-      }
+        if (motion) map.flyToBounds(bounds, options);
+        else map.fitBounds(bounds, options);
+      };
+      framingRef.current(true);
       window.setTimeout(() => {
         mapRef.current?.invalidateSize();
         spreadColliding(mapRef.current, allMarkersRef.current);
@@ -297,6 +449,8 @@ export function SpatialMap({
     considered,
     baselineGeometry,
     routeGeometry,
+    legs,
+    preview,
     onStopSelect,
     onConsideredSelect,
   ]);

@@ -2,37 +2,22 @@
 
 import { useMemo } from "react";
 import {
-  ArrowRight,
+  ArrowLeft,
+  ArrowUpRight,
   Check,
   ChevronDown,
   Clock3,
   Footprints,
-  Navigation,
-  Route,
   TrainFront,
 } from "lucide-react";
 import { boardingIsImminent, boardingKey, isBusStopCode, useBusArrivals } from "../useBusArrivals";
 import type { Boarding } from "../useBusArrivals";
-import PlaceMark from "./PlaceMark";
 import { type Stop, type Recommendation, type Result } from "./journey/types";
-import {
-  RANK_LABELS,
-  rankNote,
-  comparedDetail,
-  comparedSummary,
-  tradeoffCopy,
-  type RankKey,
-} from "./journey/ranking";
-import {
-  businessLine,
-  hoursNotes,
-  metres,
-  clockTime,
-  isRoundTrip,
-  sgTime,
-  transferCopy,
-} from "./journey/format";
-import { WALKING_MODES, RideLegs, isRail } from "./journey/RideLegs";
+import { rankNote, comparedSummary, rankValue, type RankKey } from "./journey/ranking";
+import { metres, clockTime, isRoundTrip, transferCopy } from "./journey/format";
+import { WALKING_MODES, isRail } from "./journey/RideLegs";
+import { DetourDiagram } from "./journey/DetourDiagram";
+import { Timeline } from "./journey/Timeline";
 
 export type { Business, Leg, Recommendation, Result, Stop } from "./journey/types";
 export {
@@ -43,7 +28,6 @@ export {
   tradeoffCopy,
   type RankKey,
 } from "./journey/ranking";
-export { hoursNotes } from "./journey/format";
 
 type Props = {
   recommendation: Recommendation;
@@ -93,6 +77,39 @@ export function RecommendationPanel({
   // note quotes has to be the size of the set being reordered.
   const routedCount = otherOptions.length + compared.length + 1;
   const roundTrip = isRoundTrip(result);
+
+  /* Offered alternatives and compared candidates were two collapsed lists
+   * under the Navigate button, where nobody opened them - and the comparison
+   * is the product. They are one set of rows in the diagram now, in the order
+   * the sort control asks for.
+   *
+   * "Best overall" is the app's own order, not a sort by score: the options
+   * it offers come first, as it ranked them, then the ones it routed and
+   * passed over. Sorting the union by `inconvenience_score` put an "easier
+   * alternative" (a 7-Eleven standing in for a supermarket, 15 minutes less in
+   * shops) above the exact match the app had actually picked. */
+  const rows = useMemo(() => {
+    const byKey = new Map<string, Recommendation>([[selectedKey, recommendation]]);
+    for (const [key, item] of [...alternatives, ...compared])
+      if (!byKey.has(key)) byKey.set(key, item);
+    const offeredOrder = new Map(alternatives.map(([key], index) => [key, index]));
+    const order = (key: string, item: Recommendation) =>
+      rankBy === "recommended"
+        ? (offeredOrder.get(key) ?? 1_000 + rankValue(item, rankBy))
+        : rankValue(item, rankBy);
+    return [...byKey.entries()].sort(
+      ([firstKey, first], [secondKey, second]) => order(firstKey, first) - order(secondKey, second),
+    );
+  }, [selectedKey, recommendation, alternatives, compared, rankBy]);
+  const note = [
+    compared.length
+      ? comparedSummary(compared, recommendation, otherOptions)
+      : rankNote("recommended", routedCount),
+    rankBy !== "recommended" ? rankNote(rankBy, routedCount) : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   /* Only the bus legs of the plan on screen, and only while boarding is close
    * enough for "next in 4 min" to be about the bus you will actually catch. */
   const boardings = useMemo<Boarding[]>(() => {
@@ -121,17 +138,21 @@ export function RecommendationPanel({
   return (
     <section className="recommendation" aria-live="polite" data-testid="recommendation-sheet">
       <button className="edit-journey" type="button" onClick={onEdit}>
-        <ArrowRight size={15} aria-hidden="true" />
+        <ArrowLeft size={15} aria-hidden="true" />
         Edit journey
       </button>
 
       {result.message && <p className="result-context">{result.message}</p>}
 
       <div className="result-heading">
-        <span className="quality-label">
-          <Check size={13} aria-hidden="true" />
-          {recommendation.quality_label}
-        </span>
+        <details className="quality-note">
+          <summary className="quality-label">
+            <Check size={13} aria-hidden="true" />
+            {sentenceCase(recommendation.quality_label)}
+            <span className="quality-why">Why?</span>
+          </summary>
+          <p>{qualityExplanation(recommendation, routedCount)}</p>
+        </details>
         <h1>{primaryStop?.display_name ?? "Your best stop"}</h1>
         {primaryStop && primaryStop.location_context !== primaryStop.display_name && (
           <p>{primaryStop.location_context}</p>
@@ -163,95 +184,39 @@ export function RecommendationPanel({
           </span>
         </div>
       </div>
-
-      <p className="trip-comparison">
-        Direct <strong>{Math.round(result.baseline.duration_minutes)} min</strong>
-        <ArrowRight size={14} aria-hidden="true" />
-        With stops <strong>{Math.round(recommendation.total_duration_minutes)} min</strong>
-      </p>
       <p className="impact-caption">
         {Math.round(recommendation.detour_breakdown.dwell_minutes) >= 1
           ? `${Math.round(recommendation.detour_breakdown.extra_transport_minutes)} min extra travel + ~${Math.round(recommendation.detour_breakdown.dwell_minutes)} min at your stops.`
           : `${Math.round(recommendation.detour_breakdown.extra_transport_minutes)} min extra travel.`}
         {roundTrip && " A round trip: you start and finish at the same place."}
       </p>
+      {/* The one sentence that explains the pick. It sat under the Navigate
+        button, after everything a reader needed it for. */}
+      <p className="why-brief">
+        {relationshipCopy(recommendation)} {transferCopy(recommendation.incremental_transfers)}.
+      </p>
 
-      <div className="stop-summary journey-timeline" aria-label="Errand stops">
-        <p className="timeline-endpoint">
-          A · {originLabel ?? result.origin.label}
-          {recommendation.departure_time ? ` · ${sgTime(recommendation.departure_time)}` : ""}
-        </p>
-        {recommendation.stops.map((stop, stopIndex) => (
-          <div key={`segment-${stopIndex}`}>
-            <RideLegs arrivals={arrivals} legs={recommendation.legs} segment={stopIndex} />
-            <div
-              className={`stop-summary-row ${activeStop === stopIndex ? "selected-stop-card" : ""}`}
-            >
-              <button
-                type="button"
-                className="stop-number"
-                aria-label={`Highlight stop ${stopIndex + 1}: ${stop.display_name}`}
-                aria-pressed={activeStop === stopIndex}
-                onClick={() => onStopSelect?.(stopIndex)}
-              >
-                {recommendation.stops.length > 1 ? (
-                  stopIndex + 1
-                ) : (
-                  <Route size={15} aria-hidden="true" />
-                )}
-              </button>
-              <div>
-                {/* A single-shop stop is often named after the shop, so printing
-              both gave "7-Eleven / 7-Eleven". Show the hub name only when it
-              adds something. */}
-                {recommendation.stops.length > 1 && stop.display_name !== businessLine(stop) && (
-                  <strong>{stop.display_name}</strong>
-                )}
-                <p className="business-line">
-                  {stop.businesses.length > 0 && (
-                    <span className="place-marks">
-                      {stop.businesses.slice(0, 3).map((business, index) => (
-                        <PlaceMark
-                          key={`${business.display_name}-${index}`}
-                          logoUrl={business.logo_url}
-                          categoryLabels={business.category_labels}
-                          name={business.display_name}
-                          size={18}
-                        />
-                      ))}
-                    </span>
-                  )}
-                  {businessLine(stop)}
-                </p>
-                {stop.arrival_time && (
-                  <small>
-                    Estimated arrival{" "}
-                    {new Intl.DateTimeFormat("en-SG", {
-                      timeZone: "Asia/Singapore",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    }).format(new Date(stop.arrival_time))}
-                  </small>
-                )}
-                {hoursNotes(stop.businesses).map((note) => (
-                  <small className={`hours-status hours-${note.status}`} key={note.key}>
-                    {note.text}
-                  </small>
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
-        <RideLegs
-          arrivals={arrivals}
-          legs={recommendation.legs}
-          segment={recommendation.stops.length}
-        />
-        <p className="timeline-endpoint">
-          B · {destinationLabel ?? result.destination.label}
-          {recommendation.arrival_time ? ` · Est. ${sgTime(recommendation.arrival_time)}` : ""}
-        </p>
-      </div>
+      <DetourDiagram
+        result={result}
+        rows={rows}
+        selectedKey={selectedKey}
+        selected={recommendation}
+        onSelect={onSelect}
+        onHover={onComparedHover}
+        rankBy={rankBy}
+        onRankChange={onRankChange}
+        note={note}
+      />
+
+      <h2 className="section-title">Your plan</h2>
+      <Timeline
+        recommendation={recommendation}
+        originName={originLabel ?? result.origin.label}
+        destinationName={destinationLabel ?? result.destination.label}
+        arrivals={arrivals}
+        activeStop={activeStop}
+        onStopSelect={onStopSelect}
+      />
       {recommendation.time_dependent === false && (
         <p className="precision-note">
           Departure-time routing is not verified for this provider. Stop arrival times are
@@ -261,23 +226,18 @@ export function RecommendationPanel({
 
       {primaryStop?.navigation_ready && (
         <button className="navigate-button" type="button" onClick={() => navigate(primaryStop)}>
-          <Navigation size={18} aria-hidden="true" />
           <span>
             {recommendation.stops.length > 1
-              ? `Start with ${primaryStop.display_name}`
-              : "Navigate"}
+              ? `Start in Google Maps: ${primaryStop.display_name}`
+              : "Open in Google Maps"}
           </span>
-          <ArrowRight size={18} aria-hidden="true" />
+          <ArrowUpRight size={18} aria-hidden="true" />
         </button>
       )}
 
-      <p className="why-brief">
-        {relationshipCopy(recommendation)} {transferCopy(recommendation.incremental_transfers)}.
-      </p>
-
       <details className="result-disclosure why-disclosure">
         <summary>
-          <span>Why this option</span>
+          <span>How the +{Math.round(recommendation.incremental_detour_minutes)} min adds up</span>
           <ChevronDown size={18} aria-hidden="true" />
         </summary>
         <div className="disclosure-body">
@@ -297,120 +257,39 @@ export function RecommendationPanel({
               <dd>+{Math.round(recommendation.detour_breakdown.total_incremental_minutes)} min</dd>
             </div>
           </dl>
-          <div className="journey-comparison">
-            <div>
-              <span>Direct</span>
-              <strong>{Math.round(result.baseline.duration_minutes)} min</strong>
-              <small>{metres(result.baseline.walking_distance_m)} walk</small>
-            </div>
-            <ArrowRight size={16} aria-hidden="true" />
-            <div>
-              <span>With errands</span>
-              <strong>{Math.round(recommendation.total_duration_minutes)} min</strong>
-              <small>{metres(recommendation.total_walking_distance_m)} walk</small>
-            </div>
-          </div>
           <p className="precision-note">
             <Clock3 size={13} aria-hidden="true" />
             {recommendation.detour_breakdown.precision_note}
           </p>
         </div>
       </details>
-
-      {routedCount > 1 && (
-        <div className="rank-control">
-          <span id="rank-label">What matters most</span>
-          <div role="group" aria-labelledby="rank-label">
-            {(Object.keys(RANK_LABELS) as RankKey[]).map((key) => (
-              <button
-                type="button"
-                key={key}
-                aria-pressed={rankBy === key}
-                onClick={() => onRankChange(key)}
-              >
-                {RANK_LABELS[key]}
-              </button>
-            ))}
-          </div>
-          <small>{rankNote(rankBy, routedCount)}</small>
-        </div>
-      )}
-
-      {otherOptions.length > 0 && (
-        <details className="result-disclosure alternatives-disclosure">
-          <summary>
-            <span>
-              Other options <small>{otherOptions.length}</small>
-            </span>
-            <ChevronDown size={18} aria-hidden="true" />
-          </summary>
-          <div className="alternative-list">
-            {otherOptions.map(([key, item]) => (
-              <button
-                type="button"
-                onClick={() => onSelect(key)}
-                onMouseEnter={() => onComparedHover?.(key)}
-                onFocus={() => onComparedHover?.(key)}
-                onMouseLeave={() => onComparedHover?.(null)}
-                onBlur={() => onComparedHover?.(null)}
-                key={key}
-              >
-                <span>
-                  <strong>{alternativeLabel(key, item)}</strong>
-                  <small>{item.stops.map((stop) => stop.display_name).join(" then ")}</small>
-                  {tradeoffCopy(item, recommendation) && (
-                    <small className="alternative-tradeoff">
-                      {tradeoffCopy(item, recommendation)}
-                    </small>
-                  )}
-                </span>
-                <b>+{Math.round(item.detour_breakdown.extra_transport_minutes)} min</b>
-                <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        </details>
-      )}
-
-      {compared.length > 0 && (
-        <details className="result-disclosure considered-disclosure">
-          <summary>
-            <span>
-              Also compared <small>{compared.length}</small>
-            </span>
-            <ChevronDown size={18} aria-hidden="true" />
-          </summary>
-          {/* Buttons, not text. Last round these were inert and the marker
-              highlight was a pointer-only garnish; now a row promotes a routed
-              candidate into the plan, so it has to be reachable by keyboard
-              too. */}
-          <div className="considered-list" onMouseLeave={() => onComparedHover?.(null)}>
-            {compared.map(([key, item]) => (
-              <button
-                type="button"
-                key={key}
-                onClick={() => onSelect(key)}
-                onMouseEnter={() => onComparedHover?.(key)}
-                onFocus={() => onComparedHover?.(key)}
-                onBlur={() => onComparedHover?.(null)}
-              >
-                <span>
-                  <strong>{item.stops.map((stop) => stop.display_name).join(" then ")}</strong>
-                  <small>{comparedDetail(item, recommendation)}</small>
-                </span>
-                <b>+{Math.round(item.detour_breakdown.extra_transport_minutes)} min</b>
-                <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-          <p className="precision-note">
-            <Clock3 size={13} aria-hidden="true" />
-            {comparedSummary(compared, recommendation, otherOptions)}
-          </p>
-        </details>
-      )}
     </section>
   );
+}
+
+function sentenceCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+/* "EXACT MATCH" above the stop name raised the question of what had been
+ * matched, and nothing answered it. The label stays; tapping it says what it
+ * means, in the terms the ranking used. */
+function qualityExplanation(item: Recommendation, routed: number) {
+  const scope = routed > 1 ? `the ${routed} options we routed` : "the options we routed";
+  switch (item.match_classification) {
+    case "best_available":
+      return `Nothing fitted every preference, so this is the closest of ${scope}.`;
+    case "closest_exact":
+      return "It matches what you asked for, and is just above the detour you prefer.";
+    case "exceeds_limit":
+      return "It is over the limit you set. Nothing came in under it.";
+    case "easier_alternative":
+      return "It uses an alternative you allowed, which made the trip easier.";
+    case "partial_option":
+      return "It covers only part of your request.";
+    default:
+      return `It has the best mix of added time, walking and changes of ${scope}, weighed with how sure we are of each place.`;
+  }
 }
 
 function shortDwellLabel(label: string) {
@@ -437,17 +316,7 @@ function relationshipCopy(item: Recommendation) {
     return `${relationship} It exceeds the limit you set.`;
   if (item.match_classification === "easier_alternative")
     return `${relationship} It uses an alternative you allowed.`;
-  if (item.match_classification === "partial_option")
-    return `${relationship} It fits one useful part of your request.`;
   return relationship;
-}
-
-function alternativeLabel(key: string, item: Recommendation) {
-  if (item.match_classification === "partial_option") return "One errand only";
-  if (item.match_classification === "easier_alternative") return "Easier option";
-  if (key === "least_walking") return "Less walking";
-  if (key === "fastest") return "Less extra travel";
-  return item.quality_label;
 }
 
 function navigate(stop: Stop) {

@@ -22,6 +22,8 @@ export type Stop = {
   location_quality: number;
   navigation_ready: boolean;
   arrival_time?: string | null;
+  /** Planned allowance for the errands at this stop, not an average. */
+  dwell_minutes?: number;
 };
 
 export type Recommendation = {
@@ -73,6 +75,9 @@ export type Leg = {
   departure_time?: string | null;
   arrival_time?: string | null;
   segment_index: number | null;
+  /** The leg's own path, so each ride can be drawn in its line's colour.
+   *  Absent from older responses and from the stubbed suites. */
+  geometry?: Array<{ latitude: number; longitude: number }>;
 };
 
 export type Result = {
@@ -83,6 +88,9 @@ export type Result = {
     walking_distance_m: number;
     transfers: number;
     geometry: Array<{ latitude: number; longitude: number }>;
+    legs?: Leg[];
+    departure_time?: string | null;
+    arrival_time?: string | null;
   };
   recommendations: Record<string, Recommendation>;
   outcome: string;

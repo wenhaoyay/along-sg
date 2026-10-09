@@ -3,8 +3,8 @@
   --ink-soft: #34443e;
   --muted: #68766f;
   --faint: #8d9893;
-  --green: #087a5f;
-  --green-hover: #06664f;
+  --green: #0f5b4f;
+  --green-hover: #0b493f;
   --mint: #e8f5f0;
   --mint-strong: #cde9df;
   --surface: #fff;
@@ -47,10 +47,10 @@
 
   /* Surfaces and grounds. Every value the dark palette needs to swap lives
      here; nothing below this block hardcodes a background again. */
-  --page-bg: #dfe7e3;
-  --map-bg: #e4ebe7;
-  --bar-fade-1: rgba(240, 245, 242, 0.94);
-  --bar-fade-2: rgba(240, 245, 242, 0.58);
+  --page-bg: #eceeed;
+  --map-bg: #f2f2f2;
+  --bar-fade-1: rgba(242, 242, 242, 0.94);
+  --bar-fade-2: rgba(242, 242, 242, 0.58);
   --elevated: #fff;
   --glass: rgba(255, 255, 255, 0.86);
   --glass-strong: rgba(255, 255, 255, 0.96);
@@ -65,7 +65,7 @@
   --glyph-bg-alt: #e8ecea;
   --placeholder: #8d9994;
   --handle: #c9d0cd;
-  --focus-ring: rgba(8, 122, 95, 0.28);
+  --focus-ring: rgba(15, 91, 79, 0.3);
   --map-baseline: #687b74;
   --marker-fg: #fff;
   --marker-bg: #34443e;
@@ -79,6 +79,13 @@
      readable variant is mixed toward the ground rather than hand-picked per
      line - six hardcoded text colours would drift the moment a line is added. */
   --service-mix: #06120e;
+  --logo-stop: #f2b33d;
+  /* The route sits on a casing in the page's own ground, which is what lifts
+     a purple NE leg off a basemap that already draws the NE line. */
+  --route-casing: #ffffff;
+  --route-direct: #5b6661;
+  --route-walk: #3b4743;
+  --route-bus: var(--green);
 }
 
 /* Dark mode. `data-theme` is stamped on <html> before first paint by the
@@ -95,8 +102,8 @@
   --ink-soft: #c3d0cb;
   --muted: #93a29c;
   --faint: #75837d;
-  --green: #3ec49b;
-  --green-hover: #58d5ae;
+  --green: #7fd3bf;
+  --green-hover: #9fe0d0;
   --mint: #16302a;
   --mint-strong: #1d4038;
   --surface: #131a18;
@@ -132,7 +139,7 @@
   --glyph-bg-alt: #222d2a;
   --placeholder: #7b8a84;
   --handle: #3a4844;
-  --focus-ring: rgba(62, 196, 155, 0.45);
+  --focus-ring: rgba(127, 211, 191, 0.45);
   --map-baseline: #8b9a94;
   --marker-fg: #0c1211;
   --marker-bg: #cdd9d4;
@@ -145,6 +152,11 @@
      dark by OneMap, so inverting it now would undo the thing that fixed it. */
   --tile-filter: none;
   --service-mix: #eaf3ef;
+  --logo-stop: #f2b33d;
+  --route-casing: #0c1211;
+  --route-direct: #a3b1ab;
+  --route-walk: #d5e0db;
+  --route-bus: var(--green);
 }
 
 .leaflet-tile-pane {
@@ -153,7 +165,7 @@
 /* Paints over OneMap's printed inset box at the overview zooms (SpatialMap).
    The two values are the basemap's own sea, sampled from its tiles. */
 .inset-mask {
-  fill: #6da8e4;
+  fill: #d1d1d1;
 }
 :root[data-theme="dark"] .inset-mask {
   fill: #003753;
@@ -266,28 +278,33 @@ summary:focus-visible {
   font-size: 19px;
   letter-spacing: -0.03em;
 }
-.logo > span {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  color: white;
-  background: var(--green);
-  border-radius: var(--r-md);
-  box-shadow: 0 7px 18px rgba(8, 122, 95, 0.24);
-  font-weight: 800;
-}
-.beta-label {
-  padding: 6px 9px;
-  color: var(--green);
-  background: var(--glass);
-  border: 1px solid rgba(8, 122, 95, 0.1);
-  border-radius: var(--r-pill);
-  backdrop-filter: blur(10px);
-  font-size: var(--t-meta);
+.logo strong {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 21px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.logo-mark {
+  flex: 0 0 auto;
+  border-radius: 10px;
+  box-shadow: var(--e-2);
+}
+.logo-ground {
+  fill: var(--ink);
+}
+.logo-route {
+  fill: none;
+  stroke: var(--page-bg);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.logo-end {
+  fill: var(--page-bg);
+}
+.logo-stop {
+  fill: var(--logo-stop);
 }
 .theme-toggle {
   color: var(--ink-soft);
@@ -342,22 +359,24 @@ summary:focus-visible {
 .planner-intro > span,
 .field-heading label,
 .need-control > span {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 650;
 }
 .planner-intro h1 {
-  margin: 4px 0 0;
-  font-size: 29px;
-  line-height: 1.08;
-  letter-spacing: -0.045em;
+  margin: 0;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 31px;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
 }
 .planner-intro p {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 13px;
+  margin: 10px 0 0;
+  max-width: 30em;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.5;
 }
 
 .journey-fields {
@@ -371,19 +390,6 @@ summary:focus-visible {
 }
 .planner-controls:disabled {
   opacity: 0.7;
-}
-.intro-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.intro-eyebrow i {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 0 4px var(--mint);
 }
 .planner-intro h1 em {
   color: var(--green);
@@ -481,7 +487,7 @@ summary:focus-visible {
   top: 72px;
   left: 23px;
   height: 50px;
-  border-left: 1.5px dashed rgba(8, 122, 95, 0.28);
+  border-left: 1.5px dashed color-mix(in srgb, var(--green) 28%, transparent);
 }
 .location-control {
   position: relative;
@@ -522,8 +528,8 @@ summary:focus-visible {
 }
 .location-input-wrap:focus-within {
   background: var(--elevated);
-  border-color: rgba(8, 122, 95, 0.55);
-  box-shadow: 0 0 0 4px rgba(8, 122, 95, 0.09);
+  border-color: color-mix(in srgb, var(--green) 55%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 9%, transparent);
 }
 .location-glyph {
   z-index: 1;
@@ -685,15 +691,16 @@ summary:focus-visible {
     box-shadow 0.18s ease;
 }
 .need-input-wrap:focus-within {
-  border-color: rgba(8, 122, 95, 0.55);
-  box-shadow: 0 0 0 4px rgba(8, 122, 95, 0.09);
+  border-color: color-mix(in srgb, var(--green) 55%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 9%, transparent);
 }
 .need-input-wrap textarea {
   width: 100%;
   min-height: 52px;
-  max-height: 90px;
+  max-height: 120px;
   padding: 15px 0 12px;
-  resize: vertical;
+  resize: none;
+  overflow-y: auto;
   background: transparent;
   border: 0;
   outline: 0;
@@ -702,8 +709,18 @@ summary:focus-visible {
 .quick-needs {
   margin-top: 10px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, #000 88%, transparent);
+}
+.quick-needs::-webkit-scrollbar {
+  display: none;
+}
+.quick-needs button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .quick-needs button,
 .popular button {
@@ -810,7 +827,7 @@ summary:focus-visible {
   background: var(--green);
   border: 0;
   border-radius: var(--r-md);
-  box-shadow: 0 10px 24px rgba(8, 122, 95, 0.2);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--green) 20%, transparent);
   font-weight: 750;
   transition:
     transform 0.16s ease,
@@ -819,11 +836,11 @@ summary:focus-visible {
 }
 .find-button:hover:not(:disabled) {
   background: var(--green-hover);
-  box-shadow: 0 13px 28px rgba(8, 122, 95, 0.24);
+  box-shadow: 0 13px 28px color-mix(in srgb, var(--green) 24%, transparent);
   transform: translateY(-1px);
 }
 .find-button:active:not(:disabled) {
-  box-shadow: 0 5px 14px rgba(8, 122, 95, 0.17);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--green) 17%, transparent);
   transform: translateY(1px);
 }
 .find-button:disabled {
@@ -904,8 +921,8 @@ summary:focus-visible {
 }
 .discovery-search:focus-within {
   background: var(--elevated);
-  border-color: rgba(8, 122, 95, 0.5);
-  box-shadow: 0 0 0 4px rgba(8, 122, 95, 0.08);
+  border-color: color-mix(in srgb, var(--green) 50%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 8%, transparent);
 }
 .discovery-search input {
   width: 100%;
@@ -923,8 +940,6 @@ summary:focus-visible {
   color: var(--muted);
   font-size: var(--t-meta);
   font-weight: 750;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
 }
 .popular > div {
   margin-top: 8px;
@@ -999,8 +1014,6 @@ summary:focus-visible {
   color: var(--faint) !important;
   font-size: var(--t-micro) !important;
   font-weight: 750;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 .empty-search {
   margin: 12px 3px;
@@ -1025,7 +1038,6 @@ summary:focus-visible {
 .selected-needs article > div:first-child span {
   color: var(--muted);
   font-size: var(--t-micro);
-  text-transform: uppercase;
 }
 .selected-needs article > div:first-child strong {
   margin-top: 1px;
@@ -1078,7 +1090,7 @@ summary:focus-visible {
   }
 }
 .edit-journey {
-  margin: -5px 0 18px;
+  margin: -5px 0 14px;
   padding: 4px 0;
   display: inline-flex;
   align-items: center;
@@ -1089,9 +1101,6 @@ summary:focus-visible {
   font-size: 12px;
   font-weight: 700;
 }
-.edit-journey svg {
-  transform: rotate(180deg);
-}
 .result-context {
   margin: 0 0 14px;
   padding: 10px 11px;
@@ -1100,21 +1109,49 @@ summary:focus-visible {
   border-radius: var(--r-sm);
   font-size: 11px;
 }
+.quality-note summary {
+  list-style: none;
+  cursor: pointer;
+}
+.quality-note summary::-webkit-details-marker {
+  display: none;
+}
 .quality-label {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-height: 28px;
   color: var(--green);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.quality-why {
+  margin-left: 2px;
+  padding: 1px 7px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: var(--t-micro);
+  font-weight: 600;
+}
+.quality-note[open] .quality-why {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+.quality-note p {
+  margin: 4px 0 6px;
+  max-width: 34em;
+  color: var(--ink-soft);
+  font-size: var(--t-small);
+  line-height: 1.5;
 }
 .result-heading h1 {
-  margin: 7px 0 0;
-  font-size: 28px;
-  line-height: 1.06;
-  letter-spacing: -0.045em;
+  margin: 4px 0 0;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
 }
 .result-heading > p {
   margin: 5px 0 0;
@@ -1129,9 +1166,12 @@ summary:focus-visible {
   gap: 16px;
 }
 .result-impact > strong {
-  font-size: 39px;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  font-size: 44px;
+  font-weight: 700;
   line-height: 0.95;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
 }
 .result-impact > strong small {
   font-size: 14px;
@@ -1145,10 +1185,6 @@ summary:focus-visible {
   font-style: normal;
   font-weight: 650;
   letter-spacing: 0.02em;
-}
-.alternative-tradeoff {
-  color: var(--ink-soft) !important;
-  white-space: normal !important;
 }
 .result-impact > div {
   padding-bottom: 1px;
@@ -1165,17 +1201,6 @@ summary:focus-visible {
 .result-impact > div svg {
   color: var(--green);
 }
-.stop-summary {
-  margin-top: 19px;
-  display: grid;
-  gap: 10px;
-}
-.stop-summary-row {
-  display: grid;
-  grid-template-columns: 31px minmax(0, 1fr);
-  align-items: center;
-  gap: 9px;
-}
 .stop-number {
   width: 29px;
   height: 29px;
@@ -1187,33 +1212,20 @@ summary:focus-visible {
   font-size: 11px;
   font-weight: 800;
 }
-.stop-summary-row strong {
-  display: block;
-  font-size: 11px;
-}
-.stop-summary-row p {
-  margin: 1px 0 0;
-  overflow: hidden;
-  color: var(--ink-soft);
-  font-size: 13px;
-  font-weight: 650;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .navigate-button {
   width: 100%;
   min-height: 52px;
   margin-top: 20px;
-  padding: 0 15px;
-  display: grid;
-  grid-template-columns: 20px 1fr 20px;
+  padding: 0 18px;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   color: white;
   background: var(--green);
   border: 0;
   border-radius: var(--r-md);
-  box-shadow: 0 10px 24px rgba(8, 122, 95, 0.21);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--green) 21%, transparent);
   font-weight: 750;
   transition:
     background 0.16s ease,
@@ -1288,34 +1300,6 @@ summary:focus-visible {
   border-top: 1px solid var(--line);
   font-weight: 750;
 }
-.journey-comparison {
-  margin-top: 12px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 9px;
-}
-.journey-comparison > svg {
-  color: var(--faint);
-}
-.journey-comparison div > span,
-.journey-comparison strong,
-.journey-comparison small {
-  display: block;
-}
-.journey-comparison div > span {
-  color: var(--muted);
-  font-size: var(--t-micro);
-  text-transform: uppercase;
-}
-.journey-comparison strong {
-  margin-top: 2px;
-  font-size: 18px;
-}
-.journey-comparison small {
-  color: var(--muted);
-  font-size: var(--t-micro);
-}
 .precision-note {
   margin: 11px 0 0;
   display: flex;
@@ -1328,157 +1312,10 @@ summary:focus-visible {
   flex: 0 0 auto;
   margin-top: 1px;
 }
-.alternative-list {
-  padding-bottom: 5px;
-  display: grid;
-  gap: 5px;
-}
-.alternative-list button {
-  width: 100%;
-  min-height: 56px;
-  padding: 8px 9px 8px 11px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 17px;
-  align-items: center;
-  gap: 7px;
-  background: var(--surface-soft);
-  border: 0;
-  border-radius: var(--r-md);
-  text-align: left;
-  transition: background 0.16s ease;
-}
-.alternative-list button:hover {
-  background: var(--mint);
-}
-.alternative-list button strong,
-.alternative-list button small {
-  display: block;
-}
-.alternative-list button strong {
-  font-size: 12px;
-}
-.alternative-list button small {
-  margin-top: 2px;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: var(--t-meta);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.alternative-list button b {
-  color: var(--green);
-  font-size: 11px;
-  white-space: nowrap;
-}
-/* Quieter than .alternative-list - these were routed and rejected rather than
- * put forward - but pressable, because picking one is now the point. */
-.considered-list {
-  padding-bottom: 5px;
-  display: grid;
-  gap: 3px;
-}
-.considered-list button {
-  width: 100%;
-  min-height: 48px;
-  padding: 7px 9px 7px 10px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 17px;
-  align-items: center;
-  gap: 7px;
-  background: transparent;
-  border: 1px dashed var(--line);
-  border-radius: var(--r-sm);
-  text-align: left;
-  transition:
-    background 0.16s ease,
-    border-color 0.16s ease;
-}
-.considered-list button:hover,
-.considered-list button:focus-visible {
-  background: var(--surface-soft);
-  border-style: solid;
-  border-color: var(--mint-strong);
-}
-.considered-list strong,
-.considered-list small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.considered-list strong {
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 650;
-}
-.considered-list small {
-  margin-top: 1px;
-  color: var(--muted);
-  font-size: var(--t-meta);
-}
-.considered-list b {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.considered-list svg {
-  color: var(--muted);
-}
-
-/* The weighting control. Segmented rather than a slider: the four options are
- * exactly the figures the optimiser computes, and a continuous slider would
- * imply a precision the model does not have - and imply it is re-searching
- * when it is reordering what was already routed. */
-.rank-control {
-  margin: 4px 0 2px;
-  padding: 11px 0 13px;
-  display: grid;
-  gap: 8px;
-  border-top: 1px solid var(--line);
-}
-.rank-control > span {
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 700;
-}
-.rank-control > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.rank-control button {
-  min-height: 36px;
-  padding: 7px 11px;
-  color: var(--ink-soft);
-  background: var(--surface-soft);
-  border: 1px solid transparent;
-  border-radius: var(--r-pill);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 650;
-  transition:
-    background 0.16s ease,
-    color 0.16s ease;
-}
-.rank-control button:hover {
-  border-color: var(--mint-strong);
-}
-.rank-control button[aria-pressed="true"] {
-  color: white;
-  background: var(--green);
-}
-.rank-control > small {
-  color: var(--muted);
-  font-size: var(--t-meta);
-  line-height: 1.5;
-}
 .empty-result > span {
   color: var(--green);
   font-size: var(--t-meta);
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .empty-result h1 {
   margin: 6px 0 0;
@@ -1511,20 +1348,35 @@ summary:focus-visible {
   gap: 6px;
 }
 .map-key i {
-  width: 22px;
-  border-top: 3px solid var(--green);
+  width: 24px;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, #9900aa 0 50%, #d42e12 50% 100%);
 }
 .map-key i.baseline {
-  border-top-color: var(--map-baseline);
-  border-top-style: dashed;
-  opacity: 0.68;
+  height: 0;
+  background: none;
+  border-top: 3px dotted var(--route-direct);
+  border-radius: 0;
 }
 .map-key i.considered {
-  width: 9px;
-  height: 9px;
-  background: var(--marker-considered);
-  border: 2px solid var(--marker-considered-ring);
-  border-radius: 50%;
+  width: auto;
+  height: auto;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ink-soft);
+  background: var(--elevated);
+  border: 1px solid var(--line);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 15px;
+}
+.map-preview-note {
+  margin: 0;
+  max-width: min(520px, calc(100vw - 480px));
+  color: var(--ink-soft);
 }
 .along-marker {
   display: grid;
@@ -1571,7 +1423,7 @@ summary:focus-visible {
 .along-marker.stop span {
   background: var(--green);
   box-shadow:
-    0 0 0 5px rgba(8, 122, 95, 0.14),
+    0 0 0 5px color-mix(in srgb, var(--green) 14%, transparent),
     0 6px 17px rgba(21, 44, 36, 0.3);
   transform: translate(var(--fan-x, 0px), var(--fan-y, 0px)) scale(1.13);
 }
@@ -1584,21 +1436,37 @@ summary:focus-visible {
  * The whole point of #9 was that the map showed one line and asked to be
  * trusted; these are what it was trusted about. */
 .along-marker.considered span {
-  width: 15px;
-  height: 15px;
-  border-width: 2px;
-  background: var(--marker-considered);
-  border-color: var(--marker-considered-ring);
+  width: auto;
+  min-width: 30px;
+  height: 22px;
+  padding: 0 6px;
+  color: var(--ink-soft);
+  background: var(--elevated);
+  border: 1.5px solid var(--marker-considered);
+  border-radius: var(--r-pill);
   box-shadow: var(--e-1);
+  font-size: 11px;
+  font-weight: 800;
+  justify-self: center;
+}
+.along-marker.considered.secondary span {
+  min-width: 12px;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+}
+.along-marker.preview span {
+  opacity: 0.55;
 }
 /* Ringed rather than filled: a solid green disc reads as another numbered stop,
  * and a compared place is precisely not one. */
 .along-marker.considered.highlighted span {
-  background: var(--marker-ring);
-  border-color: var(--green);
-  border-width: 3px;
+  color: var(--ink);
+  background: var(--elevated);
+  border-color: var(--ink);
+  border-width: 2px;
   box-shadow:
-    0 0 0 4px rgba(8, 122, 95, 0.16),
+    0 0 0 4px color-mix(in srgb, var(--green) 16%, transparent),
     0 4px 12px rgba(21, 44, 36, 0.28);
   transform: translate(var(--fan-x, 0px), var(--fan-y, 0px)) scale(1.4);
 }
@@ -1626,30 +1494,23 @@ summary:focus-visible {
   background: var(--glass) !important;
   font-size: var(--t-micro) !important;
 }
-
-.trip-comparison {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 7px;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
 .departure-controls {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 10px;
   margin: 12px 0;
+}
+.departure-mode {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 0;
 }
 .departure-controls label {
   display: grid;
   gap: 5px;
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--ink-soft);
+  font-size: 12px;
   min-width: 0;
   flex: 1;
 }
-.departure-controls select,
 .departure-controls input {
   width: 100%;
   min-height: 44px;
@@ -1765,8 +1626,6 @@ summary:focus-visible {
   color: var(--muted);
   font-size: var(--t-micro);
   font-style: normal;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 .next-buses em.sample {
   color: var(--warning);
@@ -1788,17 +1647,6 @@ summary:focus-visible {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
-}
-.journey-timeline .stop-summary-row {
-  grid-template-columns: 44px minmax(0, 1fr);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  padding: 8px;
-  transition: background 0.18s;
-}
-.journey-timeline .selected-stop-card {
-  border-color: var(--green);
-  background: var(--wash-strong);
 }
 button.stop-number {
   border: 0;
@@ -1856,8 +1704,6 @@ button.stop-number {
   color: var(--green);
   font-size: 11px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 .privacy-page h1 {
   margin: 5px 0 28px;
@@ -1882,7 +1728,7 @@ button.stop-number {
   color: var(--muted);
 }
 
-@media (max-width: 1050px) and (min-width: 821px) {
+@media (max-width: 1050px) and (min-width: 768px) {
   .planner {
     top: 78px;
     left: 18px;
@@ -1898,7 +1744,7 @@ button.stop-number {
   }
 }
 
-@media (max-width: 820px) {
+@media (max-width: 767px) {
   .app-bar {
     height: 60px;
     padding: 10px 14px;
@@ -1921,22 +1767,28 @@ button.stop-number {
     padding: 0;
     justify-content: center;
   }
+  .app-shell {
+    --sheet-h: 58dvh;
+  }
+  .app-shell.sheet-half {
+    --sheet-h: 56dvh;
+  }
+  .app-shell.sheet-peek {
+    --sheet-h: 172px;
+  }
   .planner {
     top: auto;
     right: 0;
     bottom: 0;
     left: 0;
     width: 100%;
-    max-height: 58dvh;
+    max-height: var(--sheet-h);
     overflow-x: hidden;
     overflow-y: auto;
     border-width: 1px 0 0;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
     box-shadow: 0 -14px 45px rgba(23, 48, 39, 0.18);
     transition: max-height 0.24s ease;
-  }
-  .planner.result-mode {
-    max-height: 55dvh;
   }
   .planner > form,
   .recommendation {
@@ -2028,11 +1880,11 @@ button.stop-number {
   }
   .leaflet-control-zoom {
     margin-right: 12px !important;
-    margin-bottom: calc(58dvh + 12px) !important;
+    margin-bottom: calc(var(--sheet-h) + 12px) !important;
   }
   .leaflet-control-attribution {
     max-width: 72vw;
-    margin-bottom: calc(58dvh + 2px) !important;
+    margin-bottom: var(--sheet-h) !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2040,11 +1892,8 @@ button.stop-number {
 }
 
 @media (max-width: 430px) {
-  .planner {
-    max-height: 60dvh;
-  }
-  .planner.result-mode {
-    max-height: 57dvh;
+  .app-shell.input-state {
+    --sheet-h: 60dvh;
   }
   .planner > form,
   .recommendation {
@@ -2056,12 +1905,6 @@ button.stop-number {
   }
   .result-impact > div {
     font-size: var(--t-meta);
-  }
-  .leaflet-control-zoom {
-    margin-bottom: calc(60dvh + 10px) !important;
-  }
-  .leaflet-control-attribution {
-    margin-bottom: calc(60dvh + 2px) !important;
   }
 }
 
@@ -2075,7 +1918,7 @@ button.stop-number {
     transition-duration: 0.01ms !important;
   }
 }
-@media (max-width: 820px) {
+@media (max-width: 767px) {
   .sheet-controls {
     position: sticky;
     top: 0;
@@ -2100,17 +1943,8 @@ button.stop-number {
     background: var(--green);
     color: white;
   }
-  .planner.result-mode.sheet-full {
-    height: 85dvh;
-    max-height: 85dvh;
-  }
-  .planner.result-mode.sheet-half {
-    height: 55dvh;
-    max-height: 55dvh;
-  }
-  .planner.result-mode.sheet-peek {
-    height: auto;
-    max-height: 190px;
+  .planner.result-mode {
+    height: var(--sheet-h);
   }
   .sheet-peek .recommendation {
     display: none;
@@ -2163,4 +1997,567 @@ button.stop-number {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* ---- Design review (0.10) ------------------------------------------------
+   The result is built around one picture - the detour diagram - and one
+   list - the timeline. Times and figures use tabular numerals throughout, so
+   a column of clock times lines up digit for digit. */
+
+.timeline-clock,
+.detour-figure,
+.result-impact,
+.next-buses,
+.along-marker span {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Examples: one tap to a real plan. */
+.examples {
+  margin: 18px 0 20px;
+}
+.examples > span {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.examples > div {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+.examples button {
+  width: 100%;
+  padding: 9px 12px;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  background: var(--surface-soft);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+.examples button:hover,
+.examples button:focus-visible {
+  background: var(--elevated);
+  border-color: color-mix(in srgb, var(--green) 45%, transparent);
+}
+.examples strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.examples button > span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The route on the map. Each ride is drawn in its line's colour (set by
+   Leaflet from lineColors.ts) over a casing in the ground colour; walks are
+   dots; the direct trip is a faint dotted ghost to compare against. */
+.route-casing {
+  stroke: var(--route-casing);
+  stroke-opacity: 0.96;
+}
+.route-ride.route-bus {
+  stroke: var(--route-bus);
+}
+.route-walk {
+  stroke: var(--route-walk);
+}
+.route-direct {
+  stroke: var(--route-direct);
+  stroke-opacity: 0.8;
+}
+.route-preview {
+  stroke: var(--ink-soft);
+  stroke-opacity: 0.45;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .route-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: route-draw 0.55s ease-out forwards;
+    animation-delay: var(--draw-delay, 0ms);
+  }
+  .route-fade {
+    opacity: 0;
+    animation: route-fade 0.35s ease-out forwards;
+    animation-delay: var(--draw-delay, 0ms);
+  }
+}
+@keyframes route-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes route-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* The detour diagram. */
+.detour {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.detour-head {
+  display: grid;
+  gap: 8px;
+}
+.detour-head h2,
+.section-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 750;
+}
+.detour-sort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.detour-sort button {
+  min-height: 30px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 650;
+}
+.detour-sort button:hover {
+  border-color: var(--line);
+}
+.detour-sort button[aria-pressed="true"] {
+  color: var(--elevated);
+  background: var(--ink);
+}
+.detour-rows {
+  position: relative;
+  margin-top: 10px;
+  display: grid;
+  gap: 2px;
+}
+.detour-row {
+  width: 100%;
+  padding: 7px 9px 9px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 10px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font: inherit;
+  text-align: left;
+}
+button.detour-row {
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+button.detour-row:hover {
+  background: var(--surface-soft);
+}
+.detour-row.selected {
+  background: var(--wash-strong);
+  border-color: color-mix(in srgb, var(--green) 30%, transparent);
+}
+.detour-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.detour-trade em {
+  margin-right: 6px;
+  color: var(--warning);
+  font-size: var(--t-micro);
+  font-style: normal;
+  font-weight: 700;
+}
+.detour-row.direct .detour-name,
+.detour-row.direct .detour-figure {
+  color: var(--muted);
+}
+.detour-figure {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.detour-row.selected .detour-figure {
+  color: var(--ink);
+}
+.detour-track {
+  position: relative;
+  grid-column: 1 / -1;
+  height: 12px;
+}
+/* Where the direct trip arrives, on every row: how far a bar runs past this
+   line is the added time its figure quotes. */
+.detour-track::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -5px;
+  bottom: -5px;
+  left: var(--direct-at);
+  border-left: 1.5px dashed var(--ink-soft);
+  opacity: 0.75;
+}
+.piece {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: #fff;
+  border-radius: 2px;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.piece.ride {
+  background: var(--piece-color, var(--route-bus));
+  box-shadow: inset -1px 0 0 var(--elevated);
+}
+.piece.walk {
+  top: 4px;
+  bottom: 4px;
+  background: repeating-linear-gradient(90deg, var(--route-walk) 0 2px, transparent 2px 5px);
+  opacity: 0.75;
+}
+.piece.wait {
+  top: 5px;
+  bottom: 5px;
+  background: var(--line);
+}
+.piece.stop {
+  background: repeating-linear-gradient(135deg, var(--ink-soft) 0 1.5px, transparent 1.5px 4.5px);
+  box-shadow: inset 0 0 0 1px var(--ink-soft);
+}
+.detour-row.direct .piece {
+  opacity: 0.45;
+}
+.detour-trade {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.detour-foot {
+  margin-top: 8px;
+}
+.detour-legend {
+  margin: 0;
+  padding: 0 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  list-style: none;
+  color: var(--muted);
+  font-size: 11px;
+}
+.detour-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.detour-legend i {
+  width: 14px;
+  height: 8px;
+  border-radius: 2px;
+}
+.detour-legend i.ride {
+  background: linear-gradient(90deg, #9900aa 0 50%, #d42e12 50% 100%);
+}
+.detour-legend i.walk {
+  height: 4px;
+  background: repeating-linear-gradient(90deg, var(--route-walk) 0 2px, transparent 2px 5px);
+}
+.detour-legend i.wait {
+  height: 4px;
+  background: var(--line);
+}
+.detour-legend i.stop {
+  background: repeating-linear-gradient(135deg, var(--ink-soft) 0 1.5px, transparent 1.5px 4.5px);
+  box-shadow: inset 0 0 0 1px var(--ink-soft);
+}
+.detour-legend i.direct {
+  width: 0;
+  height: 12px;
+  border-left: 1.5px dashed var(--ink-soft);
+  border-radius: 0;
+}
+.detour-more {
+  margin-top: 6px;
+  padding: 6px 2px;
+  color: var(--green);
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* The timeline: clock, rail, step. */
+.section-title {
+  margin: 22px 0 8px;
+}
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.timeline-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 50px 16px minmax(0, 1fr);
+  column-gap: 9px;
+  align-items: start;
+}
+.timeline-row.ride-leg {
+  margin: 0;
+  padding: 0;
+  border-left: 0;
+}
+.timeline-row > div,
+.timeline-row > p {
+  min-width: 0;
+  margin: 0;
+  padding: 8px 0;
+}
+.timeline-clock {
+  padding-top: 9px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  text-align: right;
+  white-space: nowrap;
+}
+.timeline-rail {
+  position: relative;
+  align-self: stretch;
+}
+.timeline-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background: var(--line);
+  transform: translateX(-50%);
+}
+.timeline-row.ride .timeline-rail::before {
+  width: 5px;
+  background: var(--service-color, var(--route-bus));
+  border-radius: 3px;
+}
+.timeline-row.walk .timeline-rail::before {
+  background: repeating-linear-gradient(180deg, var(--route-walk) 0 3px, transparent 3px 7px);
+  opacity: 0.7;
+}
+.timeline-row.endpoint.origin .timeline-rail::before {
+  top: 18px;
+}
+.timeline-row.endpoint.destination .timeline-rail::before {
+  bottom: calc(100% - 18px);
+}
+.timeline-rail b {
+  position: absolute;
+  z-index: 1;
+  top: 7px;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  color: var(--marker-fg);
+  background: var(--marker-bg);
+  border: 2px solid var(--elevated);
+  border-radius: 50%;
+  font-size: 10.5px;
+  font-weight: 800;
+  transform: translateX(-50%);
+}
+.timeline-row.destination .timeline-rail b {
+  background: var(--marker-dest);
+  border-radius: var(--r-xs);
+}
+p.timeline-endpoint {
+  margin: 0;
+  padding: 8px 0 10px;
+  display: grid;
+  gap: 1px;
+  border-left: 0;
+}
+p.timeline-endpoint strong {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.timeline-meta {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.timeline-row.walk p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.timeline-row.ride p {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 7px;
+  font-size: 13px;
+}
+.timeline-row.ride p + p {
+  margin-top: 3px;
+}
+.timeline-route {
+  color: var(--ink);
+  font-weight: 600;
+}
+.timeline-change {
+  color: var(--ink-soft) !important;
+  font-size: 11.5px !important;
+  font-weight: 700;
+}
+.timeline-row.stop > div {
+  margin: 4px 0;
+  padding: 9px 11px 11px 8px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  column-gap: 8px;
+  background: var(--surface-soft);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+}
+.timeline-row.stop.selected-stop-card > div {
+  border-color: var(--green);
+  background: var(--wash-strong);
+}
+.timeline-row.stop .stop-number {
+  grid-row: span 3;
+  align-self: start;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  margin: 2px 0 0 4px;
+  border-radius: var(--r-sm);
+}
+.timeline-stop-name {
+  margin: 0;
+  display: grid;
+  gap: 1px;
+}
+.timeline-stop-name strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+.errand-lines {
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  list-style: none;
+}
+.errand-lines li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: 12.5px;
+}
+.errand-name {
+  min-width: 84px;
+  color: var(--muted);
+}
+.errand-shop {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+  font-weight: 650;
+}
+.errand-shop svg {
+  color: var(--muted);
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  margin-left: 2px;
+  display: inline-block;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+}
+.status-dot.open {
+  background: #1f9d55;
+  border-color: #1f9d55;
+}
+.status-dot.closed,
+.status-dot.closing_soon {
+  background: var(--warning);
+  border-color: var(--warning);
+}
+.timeline-row.stop .hours-status {
+  grid-column: 2;
+  margin-top: 7px;
+}
+.hours-mixed {
+  color: var(--muted);
+}
+
+@media (max-width: 1050px) and (min-width: 768px) {
+  .map-preview-note {
+    max-width: calc(100vw - 440px);
+  }
+}
+@media (max-width: 767px) {
+  .examples > div {
+    margin-right: -19px;
+    padding-right: 19px;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .examples > div::-webkit-scrollbar {
+    display: none;
+  }
+  .examples button {
+    flex: 0 0 auto;
+    width: 232px;
+  }
+  .map-preview-note {
+    display: none;
+  }
+  .detour-sort {
+    width: 100%;
+  }
 }

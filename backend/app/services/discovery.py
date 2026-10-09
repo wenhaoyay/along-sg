@@ -208,10 +208,9 @@ class LocationResolver:
                 address=item["address"], subtitle=item["transport_node_name"],
             ) for item in local]
 
-        try:
-            matches = await self.provider.geocode(query, limit=limit)
-        except ProviderError:
-            matches = []
+        # With no local match, an upstream failure must retain its provider
+        # status instead of incorrectly becoming an unknown-location 422.
+        matches = await self.provider.geocode(query, limit=limit)
         return [ResolvedLocation(
             internal_id=f"onemap-{index}", display_name=match.label, coordinate=match.coordinate,
             entity_type=match.entity_type, source=DiscoverySource.ONEMAP,
@@ -222,9 +221,11 @@ class LocationResolver:
     async def _resolve_postal(self, code: str, limit: int) -> list[ResolvedLocation]:
         """A six-digit postal code: OneMap's geocoder knows every one, so a live
         answer wins; offline, the catalog's own addresses stand in."""
+        provider_error: ProviderError | None = None
         try:
             matches = await self.provider.geocode(code, limit=limit)
-        except ProviderError:
+        except ProviderError as error:
+            provider_error = error
             matches = []
         if matches:
             return [ResolvedLocation(
@@ -235,6 +236,8 @@ class LocationResolver:
             ) for index, match in enumerate(matches)]
         found = self.repository.find_postal_code(code)
         if not found:
+            if provider_error is not None:
+                raise provider_error
             return []
         return [ResolvedLocation(
             internal_id=f"postal-{code}", display_name=found["name"],
