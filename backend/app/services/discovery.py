@@ -19,7 +19,9 @@ from app.discovery_models import (
 )
 from app.domain import Coordinate
 from app.poi_taxonomy import normalize_text
-from app.providers.base import MapProvider, ProviderError
+from app.providers.base import (
+    LocationAmbiguousError, LocationNotFoundError, MapProvider, ProviderError,
+)
 from app.providers.place_search import LivePlaceSearchError, LivePlaceSearchProvider
 from app.providers.semantic_expansion import SemanticExpansionProvider
 from app.providers.web_search import WebCandidate, WebDiscoveryError, WebDiscoveryProvider
@@ -148,6 +150,9 @@ class LocationResolver:
         )
 
     async def resolve(self, query: str, limit: int = 6) -> list[ResolvedLocation]:
+        postal = re.fullmatch(r"\s*(?:singapore\s*|s\(?)?(\d{6})\)?\s*", query, re.IGNORECASE)
+        if postal:
+            return await self._resolve_postal(postal.group(1), limit)
         keys = _station_alias_keys(query)
         exact: dict[str, tuple[dict, str]] = {}
         for key in keys:
@@ -214,12 +219,57 @@ class LocationResolver:
             address=match.address,
         ) for index, match in enumerate(matches)]
 
+    async def _resolve_postal(self, code: str, limit: int) -> list[ResolvedLocation]:
+        """A six-digit postal code: OneMap's geocoder knows every one, so a live
+        answer wins; offline, the catalog's own addresses stand in."""
+        try:
+            matches = await self.provider.geocode(code, limit=limit)
+        except ProviderError:
+            matches = []
+        if matches:
+            return [ResolvedLocation(
+                internal_id=f"onemap-{index}", display_name=match.label, coordinate=match.coordinate,
+                entity_type=match.entity_type, source=DiscoverySource.ONEMAP,
+                confidence=DiscoveryConfidence.EXACT if len(matches) == 1 else DiscoveryConfidence.AMBIGUOUS,
+                address=match.address,
+            ) for index, match in enumerate(matches)]
+        found = self.repository.find_postal_code(code)
+        if not found:
+            return []
+        return [ResolvedLocation(
+            internal_id=f"postal-{code}", display_name=found["name"],
+            coordinate=Coordinate(found["latitude"], found["longitude"]),
+            entity_type="postal_code", source=DiscoverySource.LOCAL_CATALOG,
+            confidence=DiscoveryConfidence.LIKELY if found["approximate"] else DiscoveryConfidence.EXACT,
+            address=found["address"], subtitle=f"Postal code {code}",
+        )]
+
+    def suggest(self, query: str, limit: int = 3) -> tuple[str, ...]:
+        """Station names close to a query that matched nothing, for "did you mean"."""
+        compact = compact_text(query)
+        if len(compact) < 3:
+            return ()
+        scored = sorted(
+            (
+                (max(difflib.SequenceMatcher(None, compact, compact_text(alias)).ratio() for alias in station["aliases"]),
+                 station["canonical_name"])
+                for station in self.stations
+            ),
+            reverse=True,
+        )
+        return tuple(dict.fromkeys(name for score, name in scored if score >= 0.6))[:limit]
+
     async def require_confident(self, query: str) -> ResolvedLocation:
         results = await self.resolve(query, 6)
         if not results:
-            raise ProviderError(f"No confident Singapore location found for '{query}'")
+            suggestions = self.suggest(query)
+            hint = f" Did you mean {' or '.join(suggestions)}?" if suggestions else " Try a station, mall or postal code."
+            raise LocationNotFoundError(f"No Singapore location found for '{query}'.{hint}", suggestions)
         if results[0].confidence in {DiscoveryConfidence.AMBIGUOUS, DiscoveryConfidence.UNRESOLVED}:
-            raise ProviderError(f"Location '{query}' is ambiguous; please select a suggestion")
+            raise LocationAmbiguousError(
+                f"'{query}' matches more than one place; please pick a suggestion.",
+                tuple(item.display_name for item in results[:3]),
+            )
         return results[0]
 
 

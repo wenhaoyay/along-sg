@@ -51,12 +51,37 @@ CATEGORY_PHRASES = {
     "phone cable": "electronics",
     "pick up parcel": "parcel",
     "collect parcel": "parcel",
+    "post a parcel": "parcel",
+    "post parcel": "parcel",
+    "send a parcel": "parcel",
+    "panadol": "pharmacy",
+    "paracetamol": "pharmacy",
+    "medicine": "pharmacy",
+    "plasters": "pharmacy",
+    "vitamins": "pharmacy",
+    "sunscreen": "pharmacy",
+    "milk": "groceries",
+    "eggs": "groceries",
+    "bread": "groceries",
+    "fruits": "groceries",
+    "vegetables": "groceries",
+    "atm": "banking",
+    "birthday cake": "bakeries",
+    "cake": "bakeries",
+    "cat food": "pet_supplies",
+    "dog food": "pet_supplies",
+    "pet food": "pet_supplies",
+    "passport photo": "printing",
+    "photocopy": "printing",
 }
 
+# A brand's errand is the first of its categories here. Burgers sit ahead of
+# coffee because McDonald's also lists coffee (McCafe) and was read as a
+# coffee errand.
 CATEGORY_PRIORITY = (
-    "fried_chicken", "bubble_tea", "coffee", "groceries", "pharmacy",
+    "fried_chicken", "burgers", "bubble_tea", "coffee", "groceries", "pharmacy",
     "convenience", "banking", "electronics", "parcel", "fast_food",
-    "japanese_food", "korean_food", "burgers", "bakeries", "dessert",
+    "japanese_food", "korean_food", "bakeries", "dessert",
     "restaurants", "stationery", "hardware", "florists", "pet_supplies",
     "clothing", "household", "printing", "haircuts", "optical", "repairs",
 )
@@ -132,7 +157,7 @@ class DeterministicIntentParser:
             return self._clarification(text, conflict, started, diagnostics)
 
         entities = self._entities(normalized)
-        unknown_brand = self._unknown_explicit_brand(normalized, entities)
+        unknown_brand = self._unknown_explicit_brand(text, entities)
         if unknown_brand:
             diagnostics.unresolved_brands.append(unknown_brand)
             return self._unresolved(text, [unknown_brand], started, diagnostics)
@@ -183,6 +208,10 @@ class DeterministicIntentParser:
             diagnostics=diagnostics,
         )
 
+    def understands(self, text: str) -> bool:
+        """Whether a single clause names a known category or brand."""
+        return bool(self._entities(normalize_text(text)))
+
     def _entities(self, normalized: str) -> list[_Entity]:
         entities: list[_Entity] = []
         for brand in self.repository.brand_catalog():
@@ -205,11 +234,17 @@ class DeterministicIntentParser:
             if category:
                 entities.append(_Entity(category, phrase, brand["canonical_name"], position))
 
+        claimed: list[tuple[int, int]] = []
         for phrase, category in sorted(CATEGORY_PHRASES.items(), key=lambda item: -len(item[0])):
             normalized_phrase = normalize_text(phrase)
             match = re.search(rf"\b{re.escape(normalized_phrase)}\b", normalized)
             if not match:
                 continue
+            # Inside a longer phrase already matched ("food" in "cat food") the
+            # shorter one is not a second errand. Phrases go longest first.
+            if any(start <= match.start() and match.end() <= end for start, end in claimed):
+                continue
+            claimed.append((match.start(), match.end()))
             existing = next((entity for entity in entities if entity.category == category), None)
             if existing:
                 if match.start() < existing.position:
@@ -235,14 +270,18 @@ class DeterministicIntentParser:
         return None
 
     @staticmethod
-    def _unknown_explicit_brand(normalized: str, entities: list[_Entity]) -> str | None:
+    def _unknown_explicit_brand(text: str, entities: list[_Entity]) -> str | None:
         patterns = (
             r"must be ([a-z0-9 ]+?)(?: specifically| and| plus| but|$)",
             r"need ([a-z0-9 ]+?) specifically(?: and| plus| but|$)",
             r"prefer ([a-z0-9 ]+?)(?: but| and| plus|$)",
         )
+        # Clause by clause: normalising strips the commas, and "prefer
+        # FairPrice, don't want to walk much" then named a brand called
+        # "fairprice don t want to walk much".
+        clauses = [normalize_text(clause) for clause in re.split(r"[,;.!?]", text)]
         for pattern in patterns:
-            match = re.search(pattern, normalized)
+            match = next((found for clause in clauses if (found := re.search(pattern, clause))), None)
             if match:
                 value = match.group(1).strip()
                 recognized = any(
@@ -301,7 +340,11 @@ class DeterministicIntentParser:
                 or re.search(r"\bunder\s+\d+(?:\.\d+)?\s*(?:min|minute)s?\s+max\b", window)
             ) and not any(term in window for term in ("try", "prefer", "ideally"))
         walking = WalkingTolerance.STANDARD
-        if any(term in normalized for term in ("minimal walking", "minimise walking", "minimize walking", "less walking", "as little walking")):
+        if any(term in normalized for term in (
+            "minimal walking", "minimise walking", "minimize walking", "less walking", "as little walking",
+            "dont want to walk", "don t want to walk", "do not want to walk", "not much walking",
+            "not too much walking", "little walking", "hate walking", "dont like walking", "don t like walking",
+        )):
             walking = WalkingTolerance.MINIMAL
         elif any(term in normalized for term in ("dont mind walking", "don t mind walking")):
             walking = WalkingTolerance.HIGH

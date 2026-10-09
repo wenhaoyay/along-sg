@@ -279,7 +279,7 @@ test("partial requests require consent and mobile sheets resize", async ({ page,
   await page.getByRole("button", { name: "Continue with matched errands" }).click();
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
   expect(calls).toBe(1);
-  await expect(page.getByText(/min added in total/)).toBeVisible();
+  await expect(page.locator(".impact-caption")).toContainText(/min extra travel/);
   await expect(page.getByText(/Hours not confirmed/).first()).toBeVisible();
   if (isMobile) {
     await page.getByRole("button", { name: "Map", exact: true }).click();
@@ -813,7 +813,9 @@ test("a mixed hours stop names each shop", async ({ page }) => {
   await expect(page.locator(".hours-status").last()).toContainText("KOI Thé:");
 });
 
-test("the headline is extra travel and the total is stated separately", async ({ page }) => {
+test("the headline is the time added, with travel and dwell broken out beneath", async ({
+  page,
+}) => {
   await commonRoutes(page);
   await page.route("**/api/intent/parse", (route) =>
     route.fulfill({
@@ -837,12 +839,14 @@ test("the headline is extra travel and the total is stated separately", async ({
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
 
-  // extra_transport_minutes is 8 and dwell 23, so the headline reads 8 and the
-  // dwell is disclosed rather than folded into it.
+  // The headline is what the traveller lives with - the time added
+  // (incremental_detour_minutes, 8 in this fixture) and, when known, the
+  // arrival. Extra travel and dwell are broken out beneath it, because extra
+  // travel is what differs between options.
   await expect(page.locator(".result-impact > strong")).toContainText("+8");
-  await expect(page.locator(".result-impact > strong")).toContainText("extra travel");
+  await expect(page.locator(".result-impact > strong")).toContainText("later than going direct");
+  await expect(page.locator(".impact-caption")).toContainText("8 min extra travel");
   await expect(page.locator(".impact-caption")).toContainText("~23 min at your stops");
-  await expect(page.locator(".impact-caption")).toContainText("added in total");
 });
 
 test("the theme button cycles auto, light and dark, and the choice survives a reload", async ({

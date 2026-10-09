@@ -89,6 +89,7 @@ class Settings:
     route_cache_departure_bucket_minutes: int = 1
     routing_concurrency: int = 4
     llm_intent_enabled: bool = False
+    expose_diagnostics: bool = True
     openai_api_key: str | None = None
     openai_intent_model: str = "gpt-4.1-mini"
     openai_base_url: str = "https://api.openai.com/v1"
@@ -202,6 +203,7 @@ class Settings:
             ),
             routing_concurrency=int(os.getenv("OPTIMIZER_ROUTING_CONCURRENCY", "4")),
             llm_intent_enabled=_bool_env("LLM_INTENT_ENABLED", False),
+            expose_diagnostics=_bool_env("EXPOSE_DIAGNOSTICS", False),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             openai_intent_model=os.getenv("OPENAI_INTENT_MODEL", "gpt-4.1-mini"),
             openai_base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/"),

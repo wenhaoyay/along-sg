@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sqlite3
 from datetime import datetime
 from math import cos, radians, sqrt
@@ -416,6 +417,33 @@ class HubRepository:
         } for row in rows)
         combined = [*category_matches, *place_matches]
         return tuple(combined[:max(1, min(limit, 50))])
+
+    def find_postal_code(self, code: str) -> dict[str, Any] | None:
+        """A Singapore postal code, from the addresses the catalog holds.
+
+        An exact address match is the building itself. Otherwise the code's
+        first two digits are its postal sector, and the middle of the places
+        held in that sector is a fair approximation - marked as one, because
+        it is a sector, not the building.
+        """
+        if not re.fullmatch(r"\d{6}", code):
+            return None
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT name, latitude, longitude, address FROM hubs WHERE address LIKE ? LIMIT 1",
+                (f"%Singapore {code}",),
+            ).fetchone()
+            if row:
+                return {"name": row[3] or row[0], "latitude": row[1], "longitude": row[2],
+                        "address": row[3], "approximate": False}
+            sector = connection.execute(
+                "SELECT AVG(latitude), AVG(longitude), COUNT(*) FROM hubs WHERE address LIKE ?",
+                (f"%Singapore {code[:2]}____",),
+            ).fetchone()
+        if not sector or not sector[2]:
+            return None
+        return {"name": f"Singapore {code}", "latitude": sector[0], "longitude": sector[1],
+                "address": f"Postal sector {code[:2]} (approximate)", "approximate": True}
 
     def search_hubs(self, query: str, limit: int = 6) -> tuple[dict[str, Any], ...]:
         needle = normalize_text(query)
