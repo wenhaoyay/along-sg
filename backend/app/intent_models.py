@@ -59,6 +59,18 @@ class IntentErrand(BaseModel):
     discovery_concept: str | None = Field(default=None, min_length=1, max_length=80)
     open_need: OpenNeed | None = None
     discovery_category: str | None = Field(default=None, min_length=2, max_length=64)
+    # Brands the person ruled out ("fast food but not McDonald's"). Their
+    # stores never count towards this errand, or any other in the trip.
+    excluded_brands: list[str] = Field(default_factory=list, max_length=5)
+    # Any one of these is preferred ("Starbucks or Toast Box"). The errand is
+    # still planned for its category; this keeps the "or" for ranking later.
+    brand_options: list[str] = Field(default_factory=list, max_length=4)
+    # How, not what: "takeaway" for "tapau" / "da bao" on a food errand.
+    modifiers: list[str] = Field(default_factory=list, max_length=4)
+    # The narrower thing asked for when the catalog only has a broader
+    # category ("post office" is planned as parcel, "ATM" as banking), so a
+    # dedicated category can take it over later.
+    requested_concept: str | None = Field(default=None, min_length=2, max_length=64)
 
     @model_validator(mode="after")
     def hard_brand_cannot_allow_substitution(self) -> "IntentErrand":
@@ -66,6 +78,12 @@ class IntentErrand(BaseModel):
             raise ValueError("An exact required brand cannot allow substitutes")
         if self.exact_brand and self.preferred_brand:
             raise ValueError("Use either exact_brand or preferred_brand, not both")
+        excluded = {brand.casefold() for brand in self.excluded_brands}
+        if any(
+            brand and brand.casefold() in excluded
+            for brand in (self.exact_brand, self.preferred_brand)
+        ):
+            raise ValueError("A brand cannot be both asked for and excluded")
         if self.exact_place and (self.exact_brand or self.preferred_brand):
             raise ValueError("Use either exact_place or a brand preference")
         if self.category.startswith("open_") and self.open_need is None:

@@ -486,8 +486,35 @@ class IntentParserService:
             canonical = canonical.model_copy(update={"parse_method": intent.parse_method})
         return canonical, unresolved
 
+    def _valid_categories(self) -> set[str]:
+        # The leaf categories plus the middle ones a brand or the catalog
+        # serves: fast_food has its own outlets (and fried_chicken under it),
+        # and the parser reads "fast food", "food" and McDonald's as it, so
+        # leaving it out made every such parse a 422 at optimisation. Only
+        # the top-level groups ("food_drink", "retail") stay too broad.
+        valid = set(self.repository.category_catalog())
+        valid.update(
+            entry["slug"] for entry in self.repository.category_catalog_entries()
+            if entry["parent_slug"]
+        )
+        valid.update(
+            category for brand in self.repository.brand_catalog() for category in brand["categories"]
+        )
+        return valid
+
+    def _canonical_brand_list(self, values: list[str]) -> list[str]:
+        result: list[str] = []
+        for value in values:
+            brand = self.repository.resolve_brand(value)
+            # An unknown name is kept as written: excluding or preferring a
+            # brand the catalog lacks is harmless, dropping the words is not.
+            name = brand["canonical_name"] if brand else value
+            if name not in result:
+                result.append(name)
+        return result
+
     def _canonicalize(self, intent: IntentV1) -> tuple[IntentV1 | None, list[str]]:
-        valid_categories = set(self.repository.category_catalog())
+        valid_categories = self._valid_categories()
         unresolved: list[str] = []
         required: list[IntentErrand] = []
         optional: list[IntentErrand] = []
@@ -515,17 +542,27 @@ class IntentParserService:
                 if brand and category not in brand["categories"]:
                     unresolved.append(f"{brand['canonical_name']} as {category}")
                     continue
-                target.append(IntentErrand(
-                    category=category,
-                    required=item.required,
-                    exact_brand=exact["canonical_name"] if exact else None,
-                    preferred_brand=preferred["canonical_name"] if preferred else None,
-                    exact_place=place["display_name"] if place else None,
-                    substitutes_allowed=item.substitutes_allowed,
-                    discovery_concept=item.discovery_concept,
-                    open_need=item.open_need,
-                    discovery_category=item.discovery_category,
-                ))
+                try:
+                    errand = IntentErrand(
+                        category=category,
+                        required=item.required,
+                        exact_brand=exact["canonical_name"] if exact else None,
+                        preferred_brand=preferred["canonical_name"] if preferred else None,
+                        exact_place=place["display_name"] if place else None,
+                        substitutes_allowed=item.substitutes_allowed,
+                        discovery_concept=item.discovery_concept,
+                        open_need=item.open_need,
+                        discovery_category=item.discovery_category,
+                        excluded_brands=self._canonical_brand_list(item.excluded_brands),
+                        brand_options=self._canonical_brand_list(item.brand_options),
+                        modifiers=list(item.modifiers),
+                        requested_concept=item.requested_concept,
+                    )
+                except ValidationError:
+                    # Two spellings of one brand, asked for and excluded.
+                    unresolved.append(f"{brand['canonical_name']} both wanted and excluded" if brand else item.category)
+                    continue
+                target.append(errand)
         if unresolved:
             return None, unresolved
         return intent.model_copy(update={

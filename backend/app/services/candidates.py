@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import product, permutations
 
 from app.db import HubRepository
@@ -301,6 +301,44 @@ def staged_candidate_pipeline(
         approximate_detour_candidate_count=len(pruned),
         baseline_geometry_point_count=len(geometry),
     )
+
+
+def exclude_brand_stores(hubs: list[Hub], excluded_brands: frozenset[str]) -> list[Hub]:
+    """The hubs without the stores of brands the person ruled out.
+
+    A hub's categories come from its stores, so a mall whose only fast food
+    is a McDonald's stops qualifying for fast food once McDonald's is
+    excluded, and a hub with nothing else left is dropped.
+    """
+    if not excluded_brands:
+        return hubs
+    kept: list[Hub] = []
+    for hub in hubs:
+        stores = tuple(store for store in hub.stores if store.canonical_brand not in excluded_brands)
+        if len(stores) == len(hub.stores):
+            kept.append(hub)
+        elif stores:
+            kept.append(replace(hub, stores=stores))
+    return kept
+
+
+class BrandExcludingRepository:
+    """A repository view whose hub lookups leave out excluded brands' stores.
+
+    Wrapped around the optimizer's repository for one request, so candidate
+    generation, its fallbacks and its near misses all see the same filtered
+    hubs without each taking a new argument.
+    """
+
+    def __init__(self, repository: HubRepository, excluded_brands: frozenset[str]):
+        self._repository = repository
+        self.excluded_brands = excluded_brands
+
+    def find_for_categories(self, categories: tuple[str, ...]) -> list[Hub]:
+        return exclude_brand_stores(self._repository.find_for_categories(categories), self.excluded_brands)
+
+    def __getattr__(self, name: str):
+        return getattr(self._repository, name)
 
 
 def option_satisfies_exact_brands(
