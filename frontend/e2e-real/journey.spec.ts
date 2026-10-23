@@ -32,7 +32,9 @@ test("a typed request is planned end to end on the real network", async ({ page 
   // The route rides the North East Line out of Punggol - a real line, not
   // one picked by hashing the trip distance.
   await expect(planner.getByText("NE line").first()).toBeVisible();
-  await expect(planner.locator(".impact-caption")).toContainText(/min extra travel/);
+  await expect(planner.locator(".impact-caption")).toContainText(
+    /later than going direct, including about \d+ min in shops/,
+  );
 });
 
 test("a place that does not exist is the user's to fix, with a hint", async ({ page }) => {
@@ -104,7 +106,7 @@ test("the timeline's clock times run in order and end at the headline arrival", 
 }) => {
   await page.getByRole("button", { name: /Punggol.*Orchard/ }).click();
   const planner = page.locator("#planner");
-  const headline = planner.locator(".result-impact em");
+  const headline = planner.locator(".result-arrival");
   await expect(headline).toHaveText(/^arrive \d/, { timeout: 30_000 });
   const clocks = (await planner.locator(".timeline-clock").allTextContents()).filter(Boolean);
   const minutes = clocks.map((clock) => {
@@ -113,5 +115,5 @@ test("the timeline's clock times run in order and end at the headline arrival", 
   });
   for (let index = 1; index < minutes.length; index += 1)
     expect(minutes[index]).toBeGreaterThanOrEqual(minutes[index - 1]);
-  expect(`arrive ${clocks[clocks.length - 1]}`).toBe(await headline.textContent());
+  expect(`arrive ${clocks[clocks.length - 1]}`).toBe((await headline.textContent())?.trim());
 });

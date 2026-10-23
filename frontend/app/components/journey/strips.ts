@@ -8,8 +8,9 @@ import { serviceName } from "./RideLegs";
  *
  * This is the comparison the app makes, drawn instead of described. The direct
  * trip is one bar; every option is another on the same scale, and how far it
- * runs past the direct trip's end is the added time the headline quotes - so
- * the reader can see why +2 min of travel still means +32 min later. */
+ * runs past the direct trip's end is how much later you arrive - travel plus
+ * time in shops - so the reader can see why +2 min of travel still means
+ * arriving 32 min later. */
 
 export type PieceKind = "ride" | "walk" | "wait" | "stop";
 
@@ -51,7 +52,7 @@ function legTitle(leg: Leg) {
 export function stripFromLegs(
   legs: Leg[],
   departure: string | null | undefined,
-  dwellPerStop: number,
+  dwellAtStop: (segment: number) => number,
 ): Strip {
   const pieces: Piece[] = [];
   const timed = Boolean(departure) && legs.every((leg) => leg.departure_time && leg.arrival_time);
@@ -63,10 +64,16 @@ export function stripFromLegs(
     let start: number;
     let end: number;
     if (timed) {
-      start = minutesBetween(departure, leg.departure_time) ?? cursor;
-      end = minutesBetween(departure, leg.arrival_time) ?? start + leg.duration_minutes;
+      // Clamped to the cursor: a leg the router times as starting before the
+      // last one ended would otherwise draw over it, or off the left edge.
+      start = Math.max(cursor, minutesBetween(departure, leg.departure_time) ?? cursor);
+      end = Math.max(
+        start,
+        minutesBetween(departure, leg.arrival_time) ?? start + leg.duration_minutes,
+      );
     } else {
-      start = cursor + (boundary ? dwellPerStop : 0);
+      // The stop's own allowance, the same figure the timeline shows.
+      start = cursor + (boundary && previous ? dwellAtStop(previous.segment_index ?? 0) : 0);
       end = start + leg.duration_minutes;
     }
     if (start - cursor >= MIN_PIECE) {
@@ -86,11 +93,12 @@ export function stripFromLegs(
 }
 
 export function recommendationStrip(item: Recommendation): Strip {
-  const dwellPerStop = item.stops.length
-    ? item.detour_breakdown.dwell_minutes / item.stops.length
-    : 0;
+  const evenSplit = item.stops.length ? item.detour_breakdown.dwell_minutes / item.stops.length : 0;
+  // Segment n ends at stop n. Older responses carry no per-stop allowance;
+  // only then is the total split evenly.
+  const dwellAtStop = (segment: number) => item.stops[segment]?.dwell_minutes ?? evenSplit;
   if (item.legs?.length) {
-    const strip = stripFromLegs(item.legs, item.departure_time, dwellPerStop);
+    const strip = stripFromLegs(item.legs, item.departure_time, dwellAtStop);
     // A journey ending in a stop's dwell has no leg after it to close the gap.
     const total = Math.max(strip.total, item.total_duration_minutes);
     return { pieces: strip.pieces, total };
@@ -108,7 +116,7 @@ export function recommendationStrip(item: Recommendation): Strip {
 export function directStrip(result: Result): Strip {
   const legs = result.baseline.legs ?? [];
   if (legs.length) {
-    const strip = stripFromLegs(legs, result.baseline.departure_time, 0);
+    const strip = stripFromLegs(legs, result.baseline.departure_time, () => 0);
     return { pieces: strip.pieces, total: Math.max(strip.total, result.baseline.duration_minutes) };
   }
   const total = result.baseline.duration_minutes;

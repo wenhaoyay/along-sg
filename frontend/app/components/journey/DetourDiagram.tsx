@@ -4,17 +4,10 @@ import { useState } from "react";
 import { clockTime } from "./format";
 import { RANK_LABELS, type RankKey, tradeoffCopy } from "./ranking";
 import { directStrip, recommendationStrip, type Strip } from "./strips";
+import { laterMinutes, optionTag, signed, travelMinutes } from "./figures";
 import { type Recommendation, type Result } from "./types";
 
 const VISIBLE_ROWS = 4;
-
-/* What makes an option a different kind of answer, said on its row. Without
- * it a +22 beside a +32 looked strictly better, when it was a 7-Eleven
- * standing in for the supermarket you asked for. */
-const OPTION_TAG: Record<string, string> = {
-  partial_option: "one errand only",
-  easier_alternative: "easier alternative",
-};
 
 type Props = {
   result: Result;
@@ -51,7 +44,9 @@ export function DetourDiagram({
     const chosen = strips.find(([key]) => key === selectedKey);
     if (chosen) visible.push(chosen);
   }
-  const scale = Math.max(direct.total, ...visible.map(([, , strip]) => strip.total)) * 1.02;
+  // One scale for every row, shown or not, so "Show all" never changes the
+  // length of a bar you were already reading.
+  const scale = Math.max(direct.total, ...strips.map(([, , strip]) => strip.total)) * 1.02;
   const directAt = (direct.total / scale) * 100;
 
   return (
@@ -88,17 +83,18 @@ export function DetourDiagram({
           <Track strip={direct} scale={scale} />
         </div>
         {visible.map(([key, item, strip]) => {
-          const added = Math.round(item.incremental_detour_minutes);
+          const travel = signed(travelMinutes(item));
+          const later = Math.round(laterMinutes(item));
           const name = item.stops.map((stop) => stop.display_name).join(" then ");
           const trade = key === selectedKey ? null : tradeoffCopy(item, selected);
-          const tag = OPTION_TAG[item.match_classification];
+          const tag = optionTag(item);
           return (
             <button
               type="button"
               key={key}
               className={`detour-row option${key === selectedKey ? " selected" : ""}`}
               aria-pressed={key === selectedKey}
-              aria-label={`${name}: ${added} min later than going direct${
+              aria-label={`${name}${tag ? ` (${tag})` : ""}: ${travel} min extra travel, ${later} min later than going direct${
                 item.arrival_time ? `, arrive ${clockTime(item.arrival_time)}` : ""
               }${trade ? `. ${trade}` : ""}`}
               onClick={() => onSelect(key)}
@@ -108,7 +104,7 @@ export function DetourDiagram({
             >
               <span className="detour-name">{name}</span>
               <span className="detour-figure">
-                +{added} min
+                {travel} min
                 {item.arrival_time ? ` · ${clockTime(item.arrival_time)}` : ""}
               </span>
               <Track strip={strip} scale={scale} />

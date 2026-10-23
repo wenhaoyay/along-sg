@@ -77,7 +77,7 @@ export function rankRoutedOptions(
 
 export function rankNote(rank: RankKey, count: number) {
   if (rank === "recommended")
-    return `Our ranking across ${count} routed options: added time, walking and transfers, and how confidently we know each place.`;
+    return `Our ranking across ${count} routed options: extra travel, walking and changes, and how confidently we know each place.`;
   return `Reordering the same ${count} routed options by one measure. The search itself used our own ranking.`;
 }
 
@@ -180,7 +180,7 @@ export function tradeoffCopy(item: Recommendation, selected: Recommendation): st
   }
   if (transfers !== 0) {
     (transfers < 0 ? gains : costs).push(
-      `${Math.abs(transfers)} ${transfers < 0 ? "fewer" : "more"} transfer${Math.abs(transfers) === 1 ? "" : "s"}`,
+      `${Math.abs(transfers)} ${transfers < 0 ? "fewer" : "more"} change${Math.abs(transfers) === 1 ? "" : "s"}`,
     );
   }
 

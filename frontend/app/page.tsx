@@ -31,6 +31,7 @@ import { SpatialMap } from "./components/SpatialMap";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { LogoMark } from "./components/Logo";
 import { EXAMPLES, placeName, type Example } from "./examples";
+import { laterMinutes, signed, travelMinutes } from "./components/journey/figures";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 /* The planner's preference and the result's sort are one idea, so they share
@@ -492,8 +493,8 @@ export default function Home() {
             <div className="sheet-peek">
               <strong>{selected.stops[0]?.display_name ?? "Your journey"}</strong>
               <span>
-                +{Math.round(selected.detour_breakdown.extra_transport_minutes)} min extra travel
-                &middot; +{Math.round(selected.incremental_detour_minutes)} min in total
+                {signed(travelMinutes(selected))} min extra travel &middot; arrive{" "}
+                {Math.round(laterMinutes(selected))} min later than direct
               </span>
             </div>
           </>

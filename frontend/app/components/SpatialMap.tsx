@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { lineColor } from "../lineColors";
 import type { Coordinate, ResolvedLocation } from "./LocationField";
 import type { Leg } from "./journey/types";
+import { signed } from "./journey/figures";
 
 type Stop = { display_name: string; coordinate: Coordinate };
 
@@ -344,15 +345,15 @@ export function SpatialMap({
       // cover the stop that won. Each carries its extra travel, so the map
       // states the comparison rather than scattering anonymous dots.
       consideredRef.current = considered.map((option) => {
-        const minutes = Math.round(option.extra_transport_minutes);
+        const minutes = signed(option.extra_transport_minutes);
         const label = option.secondary
           ? option.display_name
-          : `${option.display_name} · +${minutes} min travel · tap to pick`;
+          : `${option.display_name} · ${minutes} min travel · tap to pick`;
         const item = marker(
           option.coordinate,
           option.secondary ? "considered secondary" : "considered",
           label,
-          option.secondary ? "" : `+${minutes}`,
+          option.secondary ? "" : minutes,
         );
         const element = item.getElement();
         if (element) {

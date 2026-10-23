@@ -1201,6 +1201,12 @@ summary:focus-visible {
 .result-impact > div svg {
   color: var(--green);
 }
+/* The arrival is the one fact beside the headline a traveller plans around. */
+.result-impact > div .result-arrival {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
 .stop-number {
   width: 29px;
   height: 29px;
@@ -1234,6 +1240,27 @@ summary:focus-visible {
 .navigate-button:hover {
   background: var(--green-hover);
   transform: translateY(-1px);
+}
+/* One link per leg. The first is the act; the rest follow it quietly. */
+.handoff {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+.handoff .navigate-button {
+  margin-top: 0;
+  text-decoration: none;
+}
+.handoff .navigate-button.secondary {
+  min-height: 44px;
+  color: var(--green);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
+  box-shadow: none;
+}
+.handoff .navigate-button.secondary:hover {
+  color: white;
+  background: var(--green-hover);
 }
 .why-brief {
   margin: 16px 1px 0;

@@ -48,6 +48,6 @@ export function isRoundTrip(result: Result) {
 }
 
 export function transferCopy(value: number) {
-  if (!value) return "No extra transfers";
-  return `+${value} extra transfer${value === 1 ? "" : "s"}`;
+  if (!value) return "No extra changes";
+  return `+${value} extra change${value === 1 ? "" : "s"}`;
 }

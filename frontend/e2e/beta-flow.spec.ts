@@ -76,7 +76,8 @@ const recommendation = {
   total_duration_minutes: 37,
   total_walking_distance_m: 510,
   total_transfers: 0,
-  incremental_detour_minutes: 8,
+  incremental_detour_minutes: 31,
+  incremental_travel_minutes: 8,
   incremental_walking_distance_m: 180,
   incremental_transfers: 0,
   stop_relationship: "same_mall",
@@ -279,7 +280,9 @@ test("partial requests require consent and mobile sheets resize", async ({ page,
   await page.getByRole("button", { name: "Continue with matched errands" }).click();
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
   expect(calls).toBe(1);
-  await expect(page.locator(".impact-caption")).toContainText(/min extra travel/);
+  await expect(page.locator(".impact-caption")).toContainText(
+    /later than going direct, including about \d+ min in shops/,
+  );
   await expect(page.getByText(/hours not confirmed/i).first()).toBeVisible();
   if (isMobile) {
     await page.getByRole("button", { name: "Map", exact: true }).click();
@@ -463,11 +466,16 @@ test("resolved journey produces a hub-first map recommendation", async ({ page }
   await expect(errands.nth(0)).toContainText("Fried chicken");
   await expect(errands.nth(0)).toContainText("KFC");
   await expect(errands.nth(1)).toContainText("KOI Thé");
-  await expect(page.getByRole("button", { name: "Open in Google Maps" })).toBeVisible();
+  // Handed over one leg at a time: Google Maps takes no stop on a transit route.
+  await expect(page.getByRole("link", { name: /^Directions to / })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Then on to / })).toHaveAttribute(
+    "href",
+    /google\.com\/maps\/dir\/\?api=1&origin=.*travelmode=transit/,
+  );
   // The headline now carries an "extra travel" label of its own, so assert on
   // the breakdown itself rather than on a phrase that appears in both places.
   await expect(page.locator(".breakdown-list")).not.toBeVisible();
-  await page.getByText("How the +8 min adds up").click();
+  await page.getByText("How the 31 minutes add up").click();
   await expect(page.locator(".breakdown-list")).toBeVisible();
   await expect(page.locator(".breakdown-list")).toContainText("Extra travel");
   await expect(page.getByText("Other options")).toHaveCount(0);
@@ -620,7 +628,10 @@ test("non-errands are explained and the structured catalog is live", async ({ pa
 
 test("privacy notice remains available without an account", async ({ page }) => {
   await page.goto("/privacy");
-  await expect(page.getByRole("heading", { name: "What the beta uses and keeps" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Privacy and data sources" })).toBeVisible();
+  // It must not describe tracking the app does not do.
+  await expect(page.getByText(/no analytics, no tracking identifier/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "© OpenStreetMap contributors" })).toBeVisible();
 });
 
 test("discovery shows a dish concept and evidenced place", async ({ page }) => {
@@ -824,7 +835,7 @@ test("a mixed hours stop names the shop that is not confirmed", async ({ page })
   await expect(page.locator(".errand-lines .status-dot.open")).toHaveCount(1);
 });
 
-test("the headline is the time added, with travel and dwell broken out beneath", async ({
+test("the headline is extra travel, with the time in shops and the arrival beside it", async ({
   page,
 }) => {
   await commonRoutes(page);
@@ -850,14 +861,15 @@ test("the headline is the time added, with travel and dwell broken out beneath",
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
 
-  // The headline is what the traveller lives with - the time added
-  // (incremental_detour_minutes, 8 in this fixture) and, when known, the
-  // arrival. Extra travel and dwell are broken out beneath it, because extra
-  // travel is what differs between options.
+  // Extra travel leads, because it is what differs between options; how much
+  // later you arrive, and the time in shops that makes up the rest, sit right
+  // beside it. One set of figures: 8 travel + 23 in shops = 31 later.
   await expect(page.locator(".result-impact > strong")).toContainText("+8");
-  await expect(page.locator(".result-impact > strong")).toContainText("later than going direct");
-  await expect(page.locator(".impact-caption")).toContainText("8 min extra travel");
-  await expect(page.locator(".impact-caption")).toContainText("~23 min at your stops");
+  await expect(page.locator(".result-impact > strong")).toContainText("extra travel");
+  await expect(page.locator(".impact-caption")).toContainText("31 min later than going direct");
+  await expect(page.locator(".impact-caption")).toContainText("including about 23 min in shops");
+  await page.getByText("How the 31 minutes add up").click();
+  await expect(page.locator(".breakdown-list .total")).toContainText("+31 min");
 });
 
 test("the theme button cycles auto, light and dark, and the choice survives a reload", async ({
@@ -1212,14 +1224,14 @@ test("an alternative that differs only in dwell does not claim less travel", asy
   const dwellOnly = {
     ...result,
     recommendations: {
-      // 8 min of extra travel plus 23 min of dwell. The shared fixture carries
-      // 8 in `incremental_detour_minutes` too, which cannot be right and is
-      // what let this pass either way; stated consistently here.
-      best_overall: { ...recommendation, incremental_detour_minutes: 31 },
-      easier_alternative: {
+      // 8 min of extra travel plus 23 min of dwell.
+      best_overall: recommendation,
+      substitute: {
         ...walkingAlternative,
-        quality_label: "Easier option",
-        match_classification: "easier_alternative",
+        quality_label: "Substitute",
+        match_classification: "substitute",
+        substituted_categories: [{ requested: "bubble_tea", substitute: "coffee" }],
+        incremental_travel_minutes: 8,
         // Identical travel, one fewer shop to stand in: 8 + 8 rather than
         // 8 + 23. The only honest thing to say about it is nothing.
         detour_breakdown: { ...recommendation.detour_breakdown, dwell_minutes: 8 },
@@ -1256,7 +1268,7 @@ test("an alternative that differs only in dwell does not claim less travel", asy
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
   const row = page.locator(".detour-row.option").filter({ hasText: "Hillion Mall" });
-  await expect(row).toContainText("easier alternative");
+  await expect(row).toContainText("substitute: coffee");
   expect((await row.allTextContents()).join(" ")).not.toMatch(/less travel/i);
 });
 
