@@ -1157,9 +1157,9 @@ test("a compared place can be picked off the map", async ({ page }) => {
   await expect(planName(page)).toContainText("Lot One");
   // Whichever dot this is, the plan must become the place it names.
   const dot = page.locator(".along-marker.considered").first();
-  const label = (await dot.getAttribute("aria-label")) ?? "";
+  const place = (await dot.getAttribute("data-place")) ?? "";
   await dot.click({ force: true });
-  await expect(planName(page)).toContainText(label.replace(/^Pick /, ""));
+  await expect(planName(page)).toContainText(place);
 });
 
 test("a compared row promotes its option, and states what it costs", async ({ page }) => {
