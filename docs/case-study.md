@@ -14,10 +14,15 @@ Treat it as a routing problem with a baseline, not a search problem:
 
 - **The direct trip is the yardstick.** Every option is priced as *added* minutes, walking
   and train changes relative to going direct, because that's the cost the traveller feels.
-- **The headline is the time you lose.** An earlier version led with "+6 min extra travel"
-  and put the 30 minutes in shops in small print. Now the headline is the total added time and
-  the arrival, with travel and time at the stops broken out underneath. Extra travel stays
-  visible there because it's what differs between options.
+- **Two figures, both in plain sight.** This one took three tries.
+  - *First try:* the headline was "+6 min extra travel", with the 30 minutes in shops in
+    small print. That hid the real cost.
+  - *Second try:* the headline was the total, "+32 min". That hid the decision: the pick
+    cost 2 minutes of travel, and every option spent the same 30 minutes shopping.
+  - *Now:* extra travel leads, because it is what the choice changes. The arrival time sits
+    beside it, and the next line says how much later than direct, including time in shops.
+  One module computes all three figures for the headline, the rows, the map pins and the
+  breakdown, so they cannot disagree again ([ranking.md](ranking.md)).
 - **Being honest beats looking complete.** Opening hours exist for about 20% of outlets; the
   rest say "hours not confirmed" rather than guessing. Bus times without a live key are
   labelled samples. Mock routing never invents a bus number.
@@ -106,18 +111,54 @@ Smaller fixes came out of looking at every state at three widths:
 - Sorting the combined option list by score put an "easier alternative" above the app's
   actual pick.
 
+## Reviewing it as a sceptic
+
+I then tried the demo as a sceptical reviewer would, and found that the app's own words did not
+hold up:
+
+- **The headline example made a false claim.** Punggol to Orchard, panadol and groceries,
+  prefer FairPrice. The pick's explanation said it had "the lowest combined added time,
+  walking and transfers". The row under it, ION Orchard, was a minute quicker and walked less.
+  The pick was right, because ION has no FairPrice, but the sentence was a fixed string.
+- **"Not McDonald's" sent you to McDonald's.**
+- **"Max 5 minutes detour" failed every option,** because the 8 minutes spent buying bubble
+  tea counted as detour.
+- **Adding "coffee if convenient" cost 12 minutes,** and the fallback offered dropped the
+  groceries, the errand that was needed.
+- **Editing a chosen place wiped the field.** The field was keyed on its value, so the first
+  keystroke remounted it empty with focus gone.
+
+Each of these passed a green suite, because nearly every test ran on a twelve-mall seed where
+every mall has everything. So the fixes came with tests that run where the bugs live:
+
+- **The explanation is written from the comparison.** It names the quicker rival and the
+  reason the pick still wins. A sentence claiming "least extra travel" is checked against
+  every routed option before it is shown.
+- **Golden journeys on the real 14,900-outlet catalogue.** They pin properties a person
+  would check: the explanation is true, limits mean travel, a fallback is only offered when it
+  is better at something. They caught a real bug the first time they ran. Each two-stop plan
+  is routed in both orders, and the comparison kept the worse order.
+- **Pruning, measured.** `tools/compare_exhaustive.py` plans 20 journeys as deployed and again
+  with every limit opened wide. The deployed pick matches on 18 of 20, and the two misses cost
+  at most 1.6 minutes. Earlier, the pruning had silently missed the obvious two-stop plan
+  beside the origin.
+- **A parser evaluation that includes what people type.** 32 held-out phrasings, written
+  before any tuning, cover negation, typos, Singlish, Chinese and clock times. They went from
+  2 of 32 to 31 of 32.
+
 ## How it's verified
 
-- 370 backend tests, including the network-mock, parser, error-code and ranking cases above.
-- A phrasing evaluation that CI fails below 90%.
-- 164 browser tests with the API stubbed (phone and desktop, light and dark), and 14 that run
-  the real API serving the production build, so the client and the API can't drift apart
-  unnoticed.
+- Over 500 backend tests, including the golden journeys and the parser property tests.
+- The phrasing evaluation: 112 phrasings, 96% on the held-out set. CI fails below 90%.
+- Browser tests with the API stubbed: phone and desktop, light and dark.
+- Browser tests against the real API serving the production build, so the client and the API
+  can't drift apart unnoticed.
+- The pruning comparison above, on 20 journeys.
 
 ## What I'd do next
 
-- Host the demo (the container and `render.yaml` are ready) and record a handful of live
-  OneMap journeys, so live and mock can be compared side by side.
-- Split `page.tsx`. The planner's state lives in one large component, and separating it is a
-  redesign rather than a file move.
+- Record a handful of live OneMap journeys next to the offline ones, so the estimates can be
+  checked against a real timetable.
 - A "why not X?" answer for when a traveller expects a place the ranking passed over.
+- Time windows: "pharmacy before it closes, then dinner". That is the full orienteering
+  version of the problem, and opening hours are already in the ranking.
