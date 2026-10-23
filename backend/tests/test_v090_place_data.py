@@ -296,3 +296,30 @@ def test_bundled_supplements_carry_source_and_licence() -> None:
     post_offices = json.loads((data / "singapore-osm-post-offices.json").read_text(encoding="utf-8"))
     assert post_offices["capture_metadata"]["license"] == "ODbL 1.0"
     assert all(item["tags"]["amenity"] == "post_office" for item in post_offices["elements"])
+
+
+def test_every_category_has_a_dwell_time_and_an_env_override(monkeypatch) -> None:
+    from dataclasses import fields
+
+    from app.config import DwellTimes, Settings
+    from app.poi_taxonomy import CATEGORIES
+
+    names = {item.name for item in fields(DwellTimes)}
+    leaves = {
+        item.slug for item in CATEGORIES
+        if not any(child.parent_slug == item.slug for child in CATEGORIES)
+    }
+    assert leaves <= names, leaves - names
+
+    defaults = DwellTimes()
+    assert defaults.atm < defaults.convenience < defaults.groceries
+    assert defaults.post_office > defaults.parcel
+
+    monkeypatch.setenv("DWELL_ATM_MINUTES", "3")
+    monkeypatch.setenv("DWELL_HAIRCUTS_MINUTES", "40")
+    monkeypatch.setenv("DWELL_GROCERIES_MINUTES", "25")
+    settings = Settings.from_env()
+    assert settings.dwell_times.atm == 3
+    assert settings.dwell_times.haircuts == 40
+    assert settings.dwell_times.groceries == 25
+    assert settings.dwell_times.pharmacy == defaults.pharmacy

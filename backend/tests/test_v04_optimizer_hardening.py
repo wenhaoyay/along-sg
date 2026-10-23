@@ -81,7 +81,7 @@ async def test_unverified_time_support_surfaces_limitation(repository) -> None:
         departure,
     )
 
-    assert recommendations["best_overall"].total_route.dwell_minutes == 8
+    assert recommendations["best_overall"].total_route.dwell_minutes == DwellTimes().parcel
     assert diagnostics["time_aware_dwell_applied"] is False
     assert recommendations["best_overall"].stop_arrivals == (None,)
     assert diagnostics["time_dependency_limitation"]
