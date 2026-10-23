@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -44,6 +45,18 @@ area["ISO3166-1"="SG"][admin_level=2]->.sg;
 );
 out center tags bb;
 """.strip()
+
+# Bump when the transform changes what it makes of the same capture (a new
+# category, a naming rule), so a deploy re-ingests a database built by the old
+# code even though the capture file itself has not changed.
+TRANSFORM_VERSION = "2026-10-23.1"
+
+# A capture with at least this many malls is the real, whole-island catalogue
+# rather than a test fixture or a bounded probe, and retires the curated seed.
+FULL_CATALOGUE_MIN_MALLS = 100
+
+# OSM names a few malls in a way nobody would write them.
+MALL_NAME_FIXES = {"nex": "NEX"}
 
 # Rail stations anchor the "station_area" hub type; bus stops only widen the
 # transit-access test. Singapore has ~130 rail stations against ~5,100 bus
@@ -359,9 +372,11 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
         source_id = f"mall:{_source_id(element)}"
         tags = element.get("tags") or {}
         transport_id, transport_distance = nearest_station(coordinate)
+        mall_name = tags.get("name") or "Shopping mall"
+        mall_name = MALL_NAME_FIXES.get(normalize_text(mall_name), mall_name)
         hubs.append({
             "name": _unique_name(
-                tags.get("name") or "Shopping mall",
+                mall_name,
                 source_id,
                 used_names,
                 _qualifiers(tags, transport_id, node_index),
@@ -542,11 +557,55 @@ async def download_osm_payload(url: str | None = None) -> dict[str, Any]:
     return payload
 
 
-def ingest_payload(repository: HubRepository, payload: dict[str, Any]) -> IngestionReport:
+def ingest_payload(
+    repository: HubRepository,
+    payload: dict[str, Any],
+    fingerprint: str | None = None,
+) -> IngestionReport:
     nodes, hubs, outlets, report = transform_osm_payload(payload)
-    repository.replace_source_data("openstreetmap", nodes, hubs, outlets)
+    repository.replace_source_data(
+        "openstreetmap", nodes, hubs, outlets,
+        retire_curated_seed=report.imported_malls >= FULL_CATALOGUE_MIN_MALLS,
+    )
+    repository.set_meta({
+        "osm_captured_at": report.captured_at,
+        "catalogue_fingerprint": fingerprint or payload_fingerprint(payload),
+        "transform_version": TRANSFORM_VERSION,
+    })
     return report
+
+
+def payload_fingerprint(payload: dict[str, Any]) -> str:
+    """Identify a capture and the code that transforms it."""
+    digest = hashlib.sha256(TRANSFORM_VERSION.encode("utf-8"))
+    digest.update(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8"))
+    return digest.hexdigest()
+
+
+def file_fingerprint(*paths: Path) -> str:
+    """The same, from the files on disk, without parsing them."""
+    digest = hashlib.sha256(TRANSFORM_VERSION.encode("utf-8"))
+    for path in paths:
+        if path.exists():
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def load_payload(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+OSM_CAPTURE_FILE = "singapore-osm-pois.json"
+
+
+def catalogue_files(data_dir: Path | None = None) -> tuple[Path, ...]:
+    """Every file the catalogue is built from, main capture first."""
+    base = data_dir or DATA_DIR
+    return (base / OSM_CAPTURE_FILE,)
+
+
+def load_catalogue(data_dir: Path | None = None) -> dict[str, Any]:
+    """The bundled capture, ready for `ingest_payload`."""
+    return load_payload(catalogue_files(data_dir)[0])

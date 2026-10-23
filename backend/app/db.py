@@ -27,9 +27,15 @@ def _seed_distance_km(
     return 2 * 6371.0088 * asin(sqrt(inner))
 
 
+# Twelve malls that bootstrap an empty catalogue, so the app and its tests run
+# without the OSM capture. They are not verified data: their outlets are
+# illustrative and `last_verified_at` stays NULL. Ingesting the real catalogue
+# retires every one of them (see `replace_source_data`). Coordinates are the
+# building centroids, checked against the 2026-09-09 OSM capture - NEX used to
+# sit 2.6 km west of the real mall, on the other side of the PIE.
 HUB_SEED = (
     (1, "Waterway Point", 1.4067, 103.9023, "mall", "punggol-station", "waterway-point"),
-    (2, "NEX Serangoon", 1.3509, 103.8488, "mall", "serangoon-station", "nex"),
+    (2, "NEX", 1.3508, 103.8723, "mall", "serangoon-station", "nex"),
     (3, "Plaza Singapura", 1.3006, 103.8452, "mall", "dhoby-ghaut-station", "plaza-singapura"),
     (4, "ION Orchard", 1.3040, 103.8318, "mall", "orchard-station", "ion-orchard"),
     (5, "Tampines Mall", 1.3526, 103.9447, "mall", "tampines-station", "tampines-mall"),
@@ -41,6 +47,14 @@ HUB_SEED = (
     (11, "313@Somerset", 1.3010, 103.8385, "mall", "somerset-station", "313-somerset"),
     (12, "Northpoint City", 1.4295, 103.8354, "mall", "yishun-station", "northpoint-city"),
 )
+
+# Other names the same building carries in OSM, normalised, so ingestion can
+# tell that "nex" and "HDB Hub" are these seed hubs and retire them.
+HUB_SEED_ALIASES = {
+    2: ("nex", "nex serangoon"),
+    9: ("lot one shoppers mall", "lot one shoppers' mall"),
+    10: ("hdb hub", "toa payoh hdb hub"),
+}
 
 OUTLET_SEED = (
     (1, 1, "FairPrice Finest", "groceries"), (2, 1, "Guardian", "pharmacy"),
@@ -170,6 +184,12 @@ class HubRepository:
                 -- The Commons file name is kept beside the URL because the URL
                 -- is derived from it and the page stating the file's licence is
                 -- addressed by name.
+                -- Facts about the catalogue as a whole: which capture it was
+                -- built from (so a deploy can tell a new capture from the one
+                -- already on disk) and whether the bootstrap seed was retired.
+                CREATE TABLE IF NOT EXISTS catalog_meta (
+                    key TEXT PRIMARY KEY, value TEXT, updated_at TEXT
+                );
                 CREATE TABLE IF NOT EXISTS brand_logos (
                     wikidata_id TEXT PRIMARY KEY,
                     brand_label TEXT,
@@ -264,6 +284,13 @@ class HubRepository:
         # Once ingestion has superseded a seed hub with the real thing, that
         # name belongs to the ingested row, so re-seeding it would collide with
         # UNIQUE(hubs.name) and take the whole server down at startup.
+        # Once the real catalogue has retired the seed it stays retired: its
+        # outlets were never verified and must not come back on a restart.
+        retired = connection.execute(
+            "SELECT value FROM catalog_meta WHERE key='curated_seed_retired'"
+        ).fetchone()
+        if retired and retired[0] == "1":
+            return
         superseded = {
             row[0] for row in connection.execute(
                 "SELECT name FROM hubs WHERE source<>'curated'"
@@ -303,6 +330,24 @@ class HubRepository:
                 "INSERT OR IGNORE INTO outlet_categories(outlet_id, category_slug) VALUES (?, ?)",
                 (outlet_id, category),
             )
+
+    def get_meta(self, key: str) -> str | None:
+        with self._connect() as connection:
+            row = connection.execute("SELECT value FROM catalog_meta WHERE key=?", (key,)).fetchone()
+        return row[0] if row else None
+
+    def set_meta(self, values: dict[str, str | None]) -> None:
+        with self._connect() as connection:
+            self._set_meta(connection, values)
+
+    @staticmethod
+    def _set_meta(connection: sqlite3.Connection, values: dict[str, str | None]) -> None:
+        now = datetime.now().astimezone().isoformat(timespec="seconds")
+        connection.executemany(
+            """INSERT INTO catalog_meta(key, value, updated_at) VALUES (?, ?, ?)
+               ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at""",
+            ((key, value, now) for key, value in values.items()),
+        )
 
     def count_outlets(self, active_only: bool = True) -> int:
         where = "WHERE closure_status != 'closed'" if active_only else ""
@@ -835,28 +880,55 @@ class HubRepository:
     def replace_source_data(
         self, source: str, transport_nodes: Iterable[dict[str, Any]],
         hubs: Iterable[dict[str, Any]], outlets: Iterable[dict[str, Any]],
+        retire_curated_seed: bool = False,
+        extra_sources: tuple[str, ...] = (),
     ) -> None:
+        """Swap in one source's catalogue.
+
+        ``extra_sources`` are replaced along with it - supplementary datasets
+        merged into the same build (HSA pharmacies) are rebuilt with it, or a
+        re-ingest would collide with their previous rows.
+
+        ``retire_curated_seed`` is for the real, full catalogue: every curated
+        seed hub and its invented outlets go, matched or not, and stay gone.
+        """
         node_records, hub_records, outlet_records = list(transport_nodes), list(hubs), list(outlets)
+        sources = (source, *extra_sources)
+        source_marks = ",".join("?" for _ in sources)
         with self._connect() as connection:
-            old_hub_ids = [row[0] for row in connection.execute("SELECT id FROM hubs WHERE source=?", (source,))]
+            old_hub_ids = [row[0] for row in connection.execute(
+                f"SELECT id FROM hubs WHERE source IN ({source_marks})", sources,
+            )]
             # A curated seed hub is a bootstrap, not a fact. Where an incoming
             # hub describes the same building - same normalized name, within
             # 400 m - retire the seed copy, or the two reach the user as
             # competing recommendations for one mall.
-            incoming = {
-                normalize_text(hub["name"]): (hub["latitude"], hub["longitude"])
-                for hub in hub_records
-            }
+            incoming: dict[str, list[tuple[float, float]]] = {}
+            for hub in hub_records:
+                incoming.setdefault(normalize_text(hub["name"]), []).append(
+                    (hub["latitude"], hub["longitude"])
+                )
             for row in connection.execute(
-                "SELECT id, name, latitude, longitude FROM hubs WHERE source<>?", (source,)
+                f"SELECT id, name, latitude, longitude, source FROM hubs WHERE source NOT IN ({source_marks})",
+                sources,
             ):
-                match = incoming.get(normalize_text(row[1]))
-                if match is not None and _seed_distance_km(row[2], row[3], match) <= 0.4:
+                if retire_curated_seed and row[4] == "curated":
+                    old_hub_ids.append(row[0])
+                    continue
+                names = {normalize_text(row[1])}
+                if row[4] == "curated":
+                    names.update(normalize_text(item) for item in HUB_SEED_ALIASES.get(row[0], ()))
+                if any(
+                    _seed_distance_km(row[2], row[3], match) <= 0.4
+                    for name in names for match in incoming.get(name, ())
+                ):
                     old_hub_ids.append(row[0])
             if old_hub_ids:
                 placeholders = ",".join("?" for _ in old_hub_ids)
                 connection.execute(f"DELETE FROM outlets WHERE hub_id IN ({placeholders})", old_hub_ids)
                 connection.execute(f"DELETE FROM hubs WHERE id IN ({placeholders})", old_hub_ids)
+            if retire_curated_seed:
+                self._set_meta(connection, {"curated_seed_retired": "1"})
             connection.execute("DELETE FROM transport_nodes WHERE source=?", (source,))
             connection.executemany(
                 """

@@ -14,7 +14,12 @@ if str(BACKEND_ROOT) not in sys.path:
 
 from app.config import Settings  # noqa: E402
 from app.db import HubRepository  # noqa: E402
-from app.poi_ingestion import download_osm_payload, ingest_payload, load_payload  # noqa: E402
+from app.poi_ingestion import (  # noqa: E402
+    download_osm_payload,
+    file_fingerprint,
+    ingest_payload,
+    load_payload,
+)
 
 
 async def main() -> None:
@@ -28,8 +33,10 @@ async def main() -> None:
     parser.add_argument("--database", type=Path, help="SQLite database path")
     args = parser.parse_args()
 
+    fingerprint = None
     if args.input:
         payload = load_payload(args.input)
+        fingerprint = file_fingerprint(args.input)
     else:
         payload = await download_osm_payload()
         args.save_raw.parent.mkdir(parents=True, exist_ok=True)
@@ -37,7 +44,7 @@ async def main() -> None:
 
     repository = HubRepository(args.database or Settings.from_env().database_path)
     repository.initialize()
-    report = ingest_payload(repository, payload)
+    report = ingest_payload(repository, payload, fingerprint=fingerprint)
     print(json.dumps({"ingestion": asdict(report), "database": repository.stats()}, indent=2))
 
 

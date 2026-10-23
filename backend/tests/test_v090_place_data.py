@@ -1,0 +1,171 @@
+"""Place data quality: seed hubs, taxonomy, names and catalogue refresh."""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+from pathlib import Path
+
+from app.db import HUB_SEED, HubRepository
+from app.poi_ingestion import (
+    file_fingerprint,
+    ingest_payload,
+    transform_osm_payload,
+)
+from app.poi_taxonomy import derived_display_name, infer_categories, is_generic_name
+
+
+def _hub(name: str, latitude: float, longitude: float, source_id: str) -> dict:
+    return {
+        "name": name, "latitude": latitude, "longitude": longitude,
+        "semantic_type": "mall", "transport_area_id": None,
+        "consolidation_group_id": source_id, "source": "openstreetmap",
+        "source_id": source_id, "last_verified_at": "2026-09-09T00:00:00+00:00",
+        "opening_hours": None, "closure_status": "unknown",
+        "transport_node_distance_m": 50.0, "address": None,
+    }
+
+
+def _hub_rows(database: Path) -> list[tuple[str, str]]:
+    with sqlite3.connect(database) as connection:
+        return connection.execute("SELECT name, source FROM hubs ORDER BY name").fetchall()
+
+
+def test_nex_seed_sits_on_the_real_mall() -> None:
+    nex = next(row for row in HUB_SEED if row[6] == "nex")
+    # 23 Serangoon Central. It used to be at 103.8488 - 2.6 km west.
+    assert abs(nex[2] - 1.3508) < 0.001 and abs(nex[3] - 103.8723) < 0.001
+
+
+def test_osm_names_retire_the_seed_hub_for_the_same_building(tmp_path) -> None:
+    database = tmp_path / "errands.db"
+    repository = HubRepository(database)
+    repository.initialize()
+    repository.replace_source_data("openstreetmap", [], [
+        _hub("NEX", 1.3504, 103.8723, "mall:way/174035941"),
+        _hub("Lot One Shoppers' Mall", 1.3852, 103.7450, "mall:way/173131856"),
+        _hub("HDB Hub", 1.3320, 103.8485, "mall:way/170403710"),
+    ], [])
+    names = {name for name, source in _hub_rows(database) if source == "curated"}
+    assert not names & {"NEX", "Lot One", "Toa Payoh HDB Hub"}
+    # The other nine seeds survive a partial capture.
+    assert "ION Orchard" in names
+
+
+def test_full_catalogue_retires_every_unverified_seed_for_good(tmp_path) -> None:
+    database = tmp_path / "errands.db"
+    repository = HubRepository(database)
+    repository.initialize()
+    repository.replace_source_data(
+        "openstreetmap", [], [_hub("Somewhere Mall", 1.33, 103.80, "mall:way/1")], [],
+        retire_curated_seed=True,
+    )
+    assert all(source != "curated" for _name, source in _hub_rows(database))
+    with sqlite3.connect(database) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM outlets WHERE last_verified_at IS NULL"
+        ).fetchone()[0] == 0
+    # A restart must not bring the invented outlets back.
+    HubRepository(database).initialize()
+    assert all(source != "curated" for _name, source in _hub_rows(database))
+    assert repository.get_meta("curated_seed_retired") == "1"
+
+
+def test_ingest_records_the_capture_and_fingerprint(tmp_path) -> None:
+    repository = HubRepository(tmp_path / "errands.db")
+    repository.initialize()
+    payload = {
+        "capture_metadata": {"captured_at": "2026-09-09T02:41:49+00:00"},
+        "elements": [
+            {"type": "node", "id": 1, "lat": 1.30, "lon": 103.80,
+             "tags": {"amenity": "atm", "brand": "UOB"}},
+        ],
+    }
+    ingest_payload(repository, payload, fingerprint="abc")
+    assert repository.get_meta("osm_captured_at") == "2026-09-09T02:41:49+00:00"
+    assert repository.get_meta("catalogue_fingerprint") == "abc"
+
+
+def test_prepare_beta_data_reingests_when_the_capture_changes(tmp_path, monkeypatch) -> None:
+    from scripts import prepare_beta_data
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    capture = data_dir / "singapore-osm-pois.json"
+    elements = [
+        {"type": "node", "id": index, "lat": 1.30 + index / 1000, "lon": 103.80,
+         "tags": {"shop": "convenience", "name": f"Shop {index}"}}
+        for index in range(40)
+    ]
+    capture.write_text(json.dumps({
+        "capture_metadata": {"captured_at": "2026-01-01T00:00:00+00:00"},
+        "elements": elements,
+    }), encoding="utf-8")
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "beta.db"))
+
+    assert prepare_beta_data.main(data_dir) is True
+    # Same files: nothing to do, even though the volume holds > 30 outlets.
+    assert prepare_beta_data.main(data_dir) is False
+
+    capture.write_text(json.dumps({
+        "capture_metadata": {"captured_at": "2026-02-01T00:00:00+00:00"},
+        "elements": elements[:35],
+    }), encoding="utf-8")
+    assert prepare_beta_data.main(data_dir) is True
+    repository = HubRepository(tmp_path / "beta.db")
+    assert repository.get_meta("osm_captured_at") == "2026-02-01T00:00:00+00:00"
+    assert repository.get_meta("catalogue_fingerprint") == file_fingerprint(capture)
+
+
+def test_cafe_cuisine_decides_coffee() -> None:
+    assert "coffee" in infer_categories({"amenity": "cafe"})
+    assert "coffee" in infer_categories({"amenity": "cafe", "cuisine": "coffee_shop"})
+    assert "coffee" not in infer_categories({"amenity": "cafe", "name": "LiHO Tea"})
+    assert "coffee" not in infer_categories({"amenity": "cafe", "cuisine": "juice"})
+    assert "coffee" not in infer_categories({"amenity": "cafe", "cuisine": "ice_cream;bubble_tea"})
+    assert "coffee" in infer_categories({"amenity": "cafe", "cuisine": "bubble_tea;coffee_shop"})
+
+
+def test_brand_seed_no_longer_calls_bubble_tea_or_cheers_coffee(repository) -> None:
+    by_slug = {brand["slug"]: brand for brand in repository.brand_catalog()}
+    for slug in ("koi-the", "liho-tea", "mr-coconut", "cheers"):
+        assert "coffee" not in by_slug[slug]["categories"], slug
+
+
+def test_medical_supply_is_not_optical_and_atms_and_post_offices_have_categories() -> None:
+    assert "optical" not in infer_categories({"shop": "medical_supply"})
+    assert infer_categories({"shop": "optician"}) == ("optical",)
+    assert infer_categories({"amenity": "atm", "brand": "UOB"}) == ("atm", "banking")
+    assert infer_categories({"amenity": "bank", "atm": "yes"}) == ("banking", "atm")
+    assert infer_categories({"amenity": "post_office"}) == ("post_office", "parcel")
+
+
+def test_food_categories_come_from_cuisine() -> None:
+    assert "fried_chicken" in infer_categories({"amenity": "fast_food", "cuisine": "chicken"})
+    assert "fried_chicken" not in infer_categories({"amenity": "restaurant", "cuisine": "chicken"})
+    assert "japanese_food" in infer_categories({"amenity": "restaurant", "cuisine": "ramen"})
+    assert "chinese_food" in infer_categories({"amenity": "restaurant", "cuisine": "cantonese"})
+
+
+def test_display_names_prefer_brand_operator_and_cuisine() -> None:
+    assert derived_display_name({"amenity": "atm"}, ("atm",), "UOB") == "UOB ATM"
+    assert derived_display_name({"amenity": "atm", "operator": "Citibank"}, ("atm",)) == "Citibank ATM"
+    assert derived_display_name({"amenity": "atm", "name": "POSB ATM"}, ("atm",), "DBS/POSB") == "POSB ATM"
+    assert derived_display_name({"amenity": "atm"}, ("atm",)) == "ATM"
+    assert derived_display_name({"amenity": "restaurant", "cuisine": "chinese"}, ("restaurants",)) == "Chinese restaurant"
+    assert derived_display_name({"amenity": "food_court"}, ("restaurants",)) == "Food court"
+    assert derived_display_name({"amenity": "restaurant"}, ("restaurants",)) == "Restaurant"
+    assert derived_display_name({"amenity": "restaurant", "name": "Restaurant", "cuisine": "thai"}, ("restaurants",)) == "Thai restaurant"
+    assert is_generic_name("Shopping mall") and not is_generic_name("Bugis Junction")
+
+
+def test_unnamed_atms_ingest_as_brand_atms() -> None:
+    payload = {"elements": [
+        {"type": "node", "id": 1, "lat": 1.30, "lon": 103.80,
+         "tags": {"amenity": "atm", "brand": "UOB", "operator": "UOB"}},
+        {"type": "node", "id": 2, "lat": 1.31, "lon": 103.80,
+         "tags": {"amenity": "atm", "brand": "OCBC Bank"}},
+    ]}
+    _nodes, _hubs, outlets, _report = transform_osm_payload(payload)
+    assert sorted(item["name"] for item in outlets) == ["OCBC ATM", "UOB ATM"]
+    assert {item["brand_slug"] for item in outlets} == {"uob", "ocbc"}
