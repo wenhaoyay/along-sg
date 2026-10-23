@@ -2,6 +2,11 @@ export type ThemePreference = "system" | "light" | "dark";
 
 export const THEME_STORAGE_KEY = "along-theme";
 
+/** The page ground in each scheme: the browser chrome (<meta name=
+ *  "theme-color">), the installed app's manifest and the switch below all
+ *  read it from here, and it matches --page-bg in globals.css. */
+export const THEME_COLOR = { light: "#eceeed", dark: "#0c1211" } as const;
+
 /** Applied to <html> before first paint, and again on every change.
  *
  * Kept as a plain string so the same logic can run from the blocking inline
@@ -36,7 +41,7 @@ export function resolveTheme(preference: ThemePreference): "light" | "dark" {
 export function applyTheme(preference: ThemePreference): "light" | "dark" {
   const theme = resolveTheme(preference);
   document.documentElement.setAttribute("data-theme", theme);
-  const ground = theme === "dark" ? "#0c1211" : "#dfe7e3";
+  const ground = THEME_COLOR[theme];
   document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
     meta.content = ground;
   });

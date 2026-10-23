@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { ArrowLeft, ArrowRight, ArrowDownUp, ChevronRight, Info, Search } from "lucide-react";
 
 import {
@@ -544,20 +543,24 @@ export default function Home() {
           <strong>Along</strong>
         </a>
         <div>
+          {/* Plain links, not next/link: Next 16's static export names the
+            page's prefetch file differently from the one the client asks for,
+            so a prefetch 404s. A plan is a link now, so leaving for this page
+            and coming Back no longer loses it. */}
           {sampleTimes && (
-            <Link
+            <a
               className="sample-badge"
-              href="/privacy#demo"
+              href="/privacy/#demo"
               title="Real lines and stations; the minutes are estimates"
             >
               Sample times
-            </Link>
+            </a>
           )}
           <ThemeToggle />
-          <Link className="icon-link" href="/privacy">
+          <a className="icon-link" href="/privacy/">
             <Info size={17} aria-hidden="true" />
             <span>Privacy</span>
-          </Link>
+          </a>
         </div>
       </header>
 

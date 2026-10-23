@@ -15,9 +15,11 @@ import {
 const ORDER: ThemePreference[] = ["system", "light", "dark"];
 
 const LABEL: Record<ThemePreference, string> = {
-  system: "Theme: match device",
-  light: "Theme: light",
-  dark: "Theme: dark",
+  // Each begins with the word on the button, so a voice user saying what they
+  // see ("click Auto") reaches it.
+  system: "Theme: Auto, matching the device",
+  light: "Theme: Light",
+  dark: "Theme: Dark",
 };
 
 const SHORT: Record<ThemePreference, string> = { system: "Auto", light: "Light", dark: "Dark" };

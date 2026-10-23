@@ -222,7 +222,7 @@ def create_app(settings: Settings | None = None, ops: OpsSettings | None = None)
 
     app = FastAPI(
         title="Along API",
-        version="0.10.0",
+        version="0.11.0",
         lifespan=lifespan,
     )
     # Starlette runs the last added outermost: CORS wraps the guards so a 413

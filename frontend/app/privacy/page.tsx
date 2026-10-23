@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           </a>
           , each under its own licence; where there is none, a symbol is drawn instead.
         </p>
-        <h2>Travel times in this demo</h2>
+        <h2 id="demo">Travel times in this demo</h2>
         <p>
           This public demo plans over Singapore’s real rail network with estimated times, so it
           works without any account or key. Lines, stations, interchanges and stop counts are real;

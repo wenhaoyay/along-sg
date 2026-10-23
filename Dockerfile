@@ -8,6 +8,11 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
 ENV NEXT_PUBLIC_API_BASE_URL=""
+# Where link previews point (og:image needs an absolute URL). Render passes
+# build variables as build arguments, so set NEXT_PUBLIC_SITE_URL there if
+# the service's URL is not this one.
+ARG NEXT_PUBLIC_SITE_URL=https://along-sg.onrender.com
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 RUN npm run build
 
 FROM python:3.12.15-slim-bookworm AS runtime

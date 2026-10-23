@@ -11,8 +11,11 @@ export function ServiceWorker() {
     if (process.env.NODE_ENV !== "production") return;
     if (!("serviceWorker" in navigator)) return;
     const timer = window.setTimeout(() => {
+      // The build id in the URL makes each deploy a new worker with caches of
+      // its own; sw.js reads it back.
+      const build = encodeURIComponent(process.env.NEXT_PUBLIC_BUILD_ID ?? "dev");
       void navigator.serviceWorker
-        .register("/sw.js")
+        .register(`/sw.js?v=${build}`)
         .then(async () => {
           // Hand the worker the assets this page really loaded. It activated
           // too late to intercept them, so without this the offline shell has

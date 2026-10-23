@@ -184,12 +184,22 @@ export function DiscoveryPalette({
     );
   }
 
+  /* The palette replaces the button that opened it, so closing it would leave
+   * focus on nothing - a keyboard user was dropped back at the top of the
+   * page. Once the planner has put the button back, focus goes to it. */
+  function close() {
+    onClose();
+    window.requestAnimationFrame(() =>
+      document.querySelector<HTMLElement>("[data-discovery-trigger], .catalog-toggle")?.focus(),
+    );
+  }
+
   function onSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Escape") {
       if (query) {
         setQuery("");
         setResults([]);
-      } else onClose();
+      } else close();
       return;
     }
     if (!results.length) return;
@@ -208,13 +218,16 @@ export function DiscoveryPalette({
   }
 
   const resultListId = "catalog-discovery-results";
+  const listed = query.trim().length >= 2 && !searching;
+  // The list exists only while there is something in it to choose.
+  const expanded = listed && results.length > 0;
   return (
     <section className="discovery" aria-label="Find something" data-testid="discovery-palette">
       <div className="discovery-title">
         <button
           type="button"
           className="discovery-back"
-          onClick={onClose}
+          onClick={close}
           aria-label="Close category browser"
         >
           <ArrowLeft size={18} />
@@ -241,13 +254,22 @@ export function DiscoveryPalette({
           }}
           onKeyDown={onSearchKeyDown}
           placeholder="Brands, shops or categories"
+          role="combobox"
           aria-label="Search brands, shops or categories"
-          aria-controls={resultListId}
+          aria-expanded={expanded}
+          aria-controls={expanded ? resultListId : undefined}
           aria-autocomplete="list"
-          aria-activedescendant={activeIndex >= 0 ? `${resultListId}-${activeIndex}` : undefined}
+          aria-activedescendant={
+            expanded && activeIndex >= 0 ? `${resultListId}-${activeIndex}` : undefined
+          }
         />
         {searching && (
-          <LoaderCircle className="spinner-icon" size={17} aria-label="Searching catalog" />
+          <LoaderCircle
+            className="spinner-icon"
+            size={17}
+            role="img"
+            aria-label="Searching catalog"
+          />
         )}
       </label>
       {!query && (
@@ -272,12 +294,20 @@ export function DiscoveryPalette({
           </div>
         </div>
       )}
-      {query.trim().length >= 2 && !searching && (
-        <div className="discovery-results" id={resultListId} role="listbox">
+      {expanded && (
+        <div
+          className="discovery-results"
+          id={resultListId}
+          role="listbox"
+          aria-label="Matching brands, shops and categories"
+        >
           {results.map((item, index) => (
             <button
               type="button"
               role="option"
+              // Reached with the arrow keys from the search field, as a
+              // combobox's options are, not one Tab stop each.
+              tabIndex={-1}
               id={`${resultListId}-${index}`}
               aria-selected={activeIndex === index}
               className={activeIndex === index ? "active" : ""}
@@ -300,13 +330,13 @@ export function DiscoveryPalette({
               </span>
             </button>
           ))}
-          {!results.length && (
-            <p className="empty-search">
-              No reliable place yet. You can still search the free-form request, try a broader
-              category, or edit the term.
-            </p>
-          )}
         </div>
+      )}
+      {listed && !results.length && (
+        <p className="empty-search" role="status">
+          No reliable place yet. You can still search the free-form request, try a broader category,
+          or edit the term.
+        </p>
       )}
       {query.trim().length >= 2 && !searching && !results.length && suggestions.length > 0 && (
         <div className="discovery-recovery">
@@ -348,12 +378,12 @@ export function DiscoveryPalette({
               <button
                 className="remove-selection"
                 type="button"
-                aria-label={`Remove ${selection.category}`}
+                aria-label={`Remove ${categoryBySlug.get(selection.category)?.name ?? selection.category.replaceAll("_", " ")}`}
                 onClick={() => onChange(selections.filter((_, itemIndex) => itemIndex !== index))}
               >
                 <X size={16} />
               </button>
-              <div className="mode-picker" aria-label="Preference strength">
+              <div className="mode-picker" role="group" aria-label="Preference strength">
                 {(["any", "preferred", "required"] as SelectionMode[]).map((mode) => {
                   const disabled =
                     (mode !== "any" && !selection.item) ||
@@ -363,6 +393,7 @@ export function DiscoveryPalette({
                       type="button"
                       key={mode}
                       disabled={disabled}
+                      aria-pressed={selection.mode === mode}
                       className={selection.mode === mode ? "active" : ""}
                       onClick={() => setMode(index, mode)}
                     >

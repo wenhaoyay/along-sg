@@ -38,6 +38,22 @@ export default defineConfig({
         colorScheme: "dark",
       },
     },
+    {
+      // Safari's engine at an iPhone's size: most phones that open a shared
+      // link to this app are iPhones, and Chromium's mobile emulation is not
+      // WebKit. Needs `npx playwright install webkit`. Runs the specs that
+      // wait for hydration before typing; beta-flow types at once, which a
+      // WebKit development build is often still too slow for.
+      name: "mobile-webkit",
+      testMatch: ["accessibility.spec.ts"],
+      use: {
+        browserName: "webkit",
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 3,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
   ],
   webServer: {
     command: "npm run dev -- --hostname 127.0.0.1 --port 3000",

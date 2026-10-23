@@ -73,3 +73,28 @@ export function lineColor(shortName?: string | null, longName?: string | null): 
   }
   return null;
 }
+
+const DARK_INK = "#0c1211";
+
+function luminance(hex: string) {
+  const channel = (offset: number) => {
+    const value = parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+/**
+ * The ink for a label set on a bar of `color`: white where it reaches WCAG
+ * AA (4.5:1), near-black otherwise.
+ *
+ * Signage colours are not chosen for white type at 11px. White is 2.1:1 on
+ * the Circle line's orange and 1.9:1 on Cross Island's pale blue, and still
+ * short of AA on Jurong Region, East West and the LRT grey - so the ink is
+ * computed from the colour, not assumed.
+ */
+export function inkOn(color: string): string {
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return "#fff";
+  const white = 1.05 / (luminance(color) + 0.05);
+  return white >= 4.5 ? "#fff" : DARK_INK;
+}
