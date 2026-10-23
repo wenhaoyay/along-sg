@@ -60,19 +60,22 @@ OUTLET_SEED = (
     (29, 10, "SingPost", "parcel"), (30, 10, "DBS/POSB", "banking"),
 )
 
+# What each chain sells. A chain is listed under a category only when you
+# would go there for it: Cheers is a convenience store, and KOI, LiHO and Mr
+# Coconut sell bubble tea and coconut shakes - none of them is a coffee stop.
 BRAND_CATEGORY_SEED = {
-    "7-eleven": ("convenience",), "cheers": ("convenience", "coffee"),
-    "cold-storage": ("groceries",), "dbs-posb": ("banking",),
+    "7-eleven": ("convenience",), "cheers": ("convenience",),
+    "cold-storage": ("groceries",), "dbs-posb": ("banking", "atm"),
     "fairprice": ("groceries", "convenience"),
     "guardian": ("pharmacy", "convenience"),
     "jollibee": ("fast_food", "fried_chicken"),
-    "kfc": ("fast_food", "fried_chicken"), "koi-the": ("bubble_tea", "coffee"),
-    "liho-tea": ("bubble_tea", "coffee"), "mcdonalds": ("fast_food",),
-    "mr-coconut": ("bubble_tea", "fast_food", "coffee"),
-    "ocbc": ("banking",), "popeyes": ("fast_food", "fried_chicken"),
-    "singpost": ("parcel",), "starbucks": ("coffee",),
+    "kfc": ("fast_food", "fried_chicken"), "koi-the": ("bubble_tea",),
+    "liho-tea": ("bubble_tea",), "mcdonalds": ("fast_food",),
+    "mr-coconut": ("bubble_tea",),
+    "ocbc": ("banking", "atm"), "popeyes": ("fast_food", "fried_chicken"),
+    "singpost": ("parcel", "post_office"), "starbucks": ("coffee",),
     "subway": ("fast_food",), "texas-chicken": ("fast_food", "fried_chicken"),
-    "toast-box": ("coffee",), "uob": ("banking",), "watsons": ("pharmacy",),
+    "toast-box": ("coffee",), "uob": ("banking", "atm"), "watsons": ("pharmacy",),
 }
 
 
@@ -239,6 +242,12 @@ class HubRepository:
         connection.executemany(
             "INSERT OR REPLACE INTO brand_aliases(alias_normalized, brand_id) VALUES (?, ?)",
             ((alias, brand_ids[slug]) for alias, (slug, _) in BRAND_ALIASES.items()),
+        )
+        # The seed is the whole truth for these brands, so a category taken out
+        # of it (KOI as coffee) has to leave an existing database as well.
+        connection.executemany(
+            "DELETE FROM brand_categories WHERE brand_id=?",
+            ((brand_ids[slug],) for slug in BRAND_CATEGORY_SEED),
         )
         connection.executemany(
             "INSERT OR IGNORE INTO brand_categories(brand_id, category_slug) VALUES (?, ?)",

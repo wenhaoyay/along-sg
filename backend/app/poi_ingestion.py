@@ -13,9 +13,10 @@ from app.db import HUB_SEED, HubRepository
 from app.domain import Coordinate
 from app.poi_taxonomy import (
     canonical_brand,
+    derived_display_name,
     infer_categories,
+    is_generic_name,
     normalize_text,
-    unnamed_label,
 )
 from app.providers.mock import haversine_km
 
@@ -396,13 +397,15 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
         tags = element.get("tags") or {}
         source_id = _source_id(element)
         brand_slug, canonical_name = canonical_brand(tags.get("brand"), tags.get("operator"), tags.get("name"))
-        base_name = canonical_name or tags.get("name")
+        # What a person reads: its name, else what its tags say it is ("UOB
+        # ATM", "Chinese restaurant"), else the category's noun.
+        display_name = derived_display_name(tags, categories, canonical_name)
         # Two names, deliberately. The dedupe key stays keyed on the element id
-        # for an unnamed place - collapsing it to "Bakery" would merge two
-        # different unnamed bakeries twenty metres apart into one - while the
-        # display name is what a person reads and must never carry a row id.
-        dedupe_name = base_name or f"{categories[0].replace('_', ' ').title()} {source_id}"
-        display_name = base_name or unnamed_label(categories[0])
+        # for a place without a name of its own - collapsing it to "Bakery"
+        # would merge two different unnamed bakeries twenty metres apart into
+        # one - while the display name must never carry a row id.
+        identified = bool(canonical_name) or not is_generic_name(tags.get("name"))
+        dedupe_name = display_name if identified else f"{display_name} {source_id}"
         dedupe_key = f"{brand_slug or normalize_text(dedupe_name)}|{','.join(categories)}"
         if any(key == dedupe_key and haversine_km(coordinate, previous) <= 0.025 for key, previous in dedupe_seen):
             deduplicated += 1
