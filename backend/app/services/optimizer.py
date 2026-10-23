@@ -385,7 +385,10 @@ class Optimizer:
         categories = normalize_categories(errands)
         baseline = await route(origin, destination, effective_start)
         main_candidate_limit = self.max_candidates if not fallbacks else max(1, self.max_candidates - 2)
-        pipeline = staged_candidate_pipeline(
+        # Candidate selection is CPU and SQLite work; run off the event loop
+        # so one plan does not stall every other request (and /health).
+        pipeline = await asyncio.to_thread(
+            staged_candidate_pipeline,
             self.repository,
             categories,
             origin,
@@ -409,7 +412,8 @@ class Optimizer:
         fallback_pipelines = []
         fallback_options = []
         for fallback in fallbacks:
-            fallback_pipeline = staged_candidate_pipeline(
+            fallback_pipeline = await asyncio.to_thread(
+                staged_candidate_pipeline,
                 self.repository,
                 fallback.categories,
                 origin,

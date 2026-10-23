@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from datetime import datetime
 
 from app.domain import CandidateFallback, Coordinate, Hub, OptimizationPreferences, RouteResult, ScoredCandidate
@@ -9,6 +10,7 @@ from app.intent_models import (
     Urgency,
     WalkingTolerance,
 )
+from app.services.candidates import BrandExcludingRepository, exclude_brand_stores
 from app.services.optimizer import Optimizer
 from app.poi_taxonomy import NEAR_MISS_SUBSTITUTES
 
@@ -142,6 +144,13 @@ async def optimize_intent(
 ]:
     all_errands = intent.required_errands + intent.optional_errands
     categories = [item.category for item in all_errands]
+    excluded = frozenset(brand for item in all_errands for brand in item.excluded_brands)
+    if excluded:
+        # A per-request view: the shared optimizer (and its route cache) is
+        # untouched, only the hubs it is offered lose the excluded stores.
+        optimizer = copy.copy(optimizer)
+        optimizer.repository = BrandExcludingRepository(optimizer.repository, excluded)
+        extra_hubs = tuple(exclude_brand_stores(list(extra_hubs), excluded))
     baseline, recommendations, diagnostics, considered = await optimizer.optimize(
         origin,
         destination,

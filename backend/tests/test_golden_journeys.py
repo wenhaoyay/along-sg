@@ -21,6 +21,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.db import HubRepository
 from app.main import create_app
+from app.ops import OpsSettings
 from app.poi_ingestion import ingest_payload, load_payload
 
 CAPTURE = Path(__file__).resolve().parents[1] / "data" / "singapore-osm-pois.json"
@@ -40,7 +41,9 @@ def client(tmp_path_factory: pytest.TempPathFactory):
         analytics_database_path=database.with_suffix(".analytics.db"),
         expose_diagnostics=True,
     )
-    with TestClient(create_app(settings)) as test_client:
+    # Many plans from one test client in seconds: the public rate limit would
+    # answer 429, and it is not what these tests are about.
+    with TestClient(create_app(settings, OpsSettings(rate_limit_enabled=False))) as test_client:
         yield test_client
 
 

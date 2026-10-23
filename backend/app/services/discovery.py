@@ -50,6 +50,13 @@ def compact_text(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", value.casefold())
 
 
+def _strong_name_match(direct: bool, expansion: SemanticExpansion) -> bool:
+    """A word found in a place's name is strong evidence only when the word
+    is known to be what is wanted. For an unrecognised word it is a guess
+    ("kopi" -> "121 Reservoir Kopi Point"), so at most likely."""
+    return direct and expansion.semantic_type != NeedSemanticType.UNKNOWN
+
+
 def contains_normalized_phrase(text: str, term: str) -> bool:
     """Match a normalized term on token boundaries, not as a word prefix.
 
@@ -600,7 +607,7 @@ class NeedResolver:
                 continue
             if expansion.semantic_type in {NeedSemanticType.BRAND, NeedSemanticType.SPECIFIC_BUSINESS, NeedSemanticType.UNKNOWN} and not direct:
                 continue
-            tier = EvidenceTier.STRONG if direct else EvidenceTier.SUPPORTED
+            tier = EvidenceTier.STRONG if _strong_name_match(direct, expansion) else EvidenceTier.SUPPORTED
             source = DiscoverySource.OPENSTREETMAP if row["source"] == "openstreetmap" else DiscoverySource.LOCAL_CATALOG
             places.append(ResolvedPlace(
                 display_name=row["display_name"], canonical_name=row["display_name"],
@@ -608,7 +615,7 @@ class NeedResolver:
                 address=row["address"], mall_or_hub=row["hub_name"],
                 category=row["categories"][0] if row["categories"] else expansion.category_hint,
                 concept=concept.slug if concept else None, source=source,
-                confidence=DiscoveryConfidence.STRONG if direct else DiscoveryConfidence.LIKELY,
+                confidence=DiscoveryConfidence.STRONG if tier == EvidenceTier.STRONG else DiscoveryConfidence.LIKELY,
                 evidence=tuple(row["evidence"]), provenance=(source,), evidence_tier=tier,
                 suitability="business_verified" if expansion.semantic_type == NeedSemanticType.DISH else "category_likely",
                 relevance_score=1.0 if direct else 0.7,
@@ -640,10 +647,10 @@ class NeedResolver:
             return None
         if expansion.semantic_type in {NeedSemanticType.PRODUCT, NeedSemanticType.SERVICE} and not (direct or category_match):
             return None
-        tier = EvidenceTier.STRONG if direct else EvidenceTier.SUPPORTED
+        tier = EvidenceTier.STRONG if _strong_name_match(direct, expansion) else EvidenceTier.SUPPORTED
         suitability = "business_verified" if direct and expansion.semantic_type == NeedSemanticType.DISH else "category_likely"
         return dataclass_replace(
-            place, confidence=DiscoveryConfidence.STRONG if direct else DiscoveryConfidence.LIKELY,
+            place, confidence=DiscoveryConfidence.STRONG if tier == EvidenceTier.STRONG else DiscoveryConfidence.LIKELY,
             evidence_tier=tier, suitability=suitability, relevance_score=1.0 if direct else 0.65,
             structured_evidence=(*place.structured_evidence, CandidatePlaceEvidence(
                 source=place.source, source_type="normalized_provider", tier=tier,
