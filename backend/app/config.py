@@ -129,7 +129,7 @@ class Settings:
     route_cache_departure_bucket_minutes: int = 1
     routing_concurrency: int = 4
     llm_intent_enabled: bool = False
-    expose_diagnostics: bool = True
+    expose_diagnostics: bool = False
     openai_api_key: str | None = None
     openai_intent_model: str = "gpt-4.1-mini"
     openai_base_url: str = "https://api.openai.com/v1"

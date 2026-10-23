@@ -14,3 +14,8 @@ backend/data/*.sqlite
 backend/data/*.sqlite-*
 work
 outputs
+.github
+docs
+backend/tests
+backend/fixtures
+backend/data/*.wal

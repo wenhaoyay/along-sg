@@ -20,11 +20,12 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: |
-            backend/requirements.txt
+            backend/requirements.lock
             backend/requirements-dev.txt
+      # The pinned set the image ships, plus the test tools.
       - name: Install backend dependencies
         working-directory: backend
-        run: python -m pip install -r requirements-dev.txt
+        run: python -m pip install -r requirements.lock -r requirements-dev.txt
       - name: Run backend test suite
         working-directory: backend
         env:
@@ -51,7 +52,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: backend/requirements.lock
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -59,7 +60,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install backend dependencies
         working-directory: backend
-        run: python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements.lock
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -127,10 +128,16 @@ jobs:
         run: docker build -t along-sg-pr .
       - name: Start production image
         run: docker run -d --name along-sg-pr -p 8000:8000 -e ONEMAP_MOCK=true -e DATAMALL_MOCK=true along-sg-pr
-      - name: Verify health endpoint
+      - name: Verify health endpoint and a planned journey
         run: |
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:8000/health >/dev/null; then
+              # The catalogue is baked in: a plan must work on the first request.
+              curl --fail --silent --show-error -X POST http://127.0.0.1:8000/api/optimize \
+                -H 'content-type: application/json' \
+                -d '{"origin":{"coordinate":{"latitude":1.4052,"longitude":103.9024}},"destination":{"coordinate":{"latitude":1.3043,"longitude":103.8322}},"errands":["groceries"]}' \
+                > /dev/null || { docker logs along-sg-pr; exit 1; }
+              test "$(docker exec along-sg-pr id -u)" != "0" || { echo "container runs as root"; exit 1; }
               exit 0
             fi
             if ! docker inspect -f '{{.State.Running}}' along-sg-pr | grep -q true; then
