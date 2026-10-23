@@ -323,3 +323,47 @@ def test_every_category_has_a_dwell_time_and_an_env_override(monkeypatch) -> Non
     assert settings.dwell_times.haircuts == 40
     assert settings.dwell_times.groceries == 25
     assert settings.dwell_times.pharmacy == defaults.pharmacy
+
+
+def _resolve(repository: HubRepository, query: str):
+    import asyncio
+
+    from app.providers.mock import MockOneMapProvider
+    from app.services.discovery import LocationResolver
+
+    return asyncio.run(LocationResolver(repository, MockOneMapProvider()).resolve(query, 3))
+
+
+def test_landmarks_outrank_shops_that_mention_them(tmp_path) -> None:
+    repository = HubRepository(tmp_path / "errands.db")
+    repository.initialize()
+    # The shops that used to answer these queries.
+    repository.replace_source_data("openstreetmap", [], [
+        {**_hub("7-Eleven (Sentosa)", 1.2562, 103.8211, "poi:node/1"), "semantic_type": "station_area"},
+        {**_hub("ATM (Changi Road)", 1.3186, 103.9092, "poi:node/2"), "semantic_type": "standalone"},
+    ], [])
+    sentosa = _resolve(repository, "Sentosa")
+    assert [item.display_name for item in sentosa] == ["Sentosa"]
+    assert sentosa[0].entity_type == "area"
+    changi = _resolve(repository, "Changi")[0]
+    assert changi.display_name == "Changi Airport"
+    assert abs(changi.coordinate.latitude - 1.359) < 0.01 and changi.coordinate.longitude > 103.98
+    assert _resolve(repository, "Changi T4")[0].display_name == "Changi Airport Terminal 4"
+    assert _resolve(repository, "sentossa")[0].display_name == "Sentosa"
+    nex = _resolve(repository, "NEX")[0]
+    assert abs(nex.coordinate.longitude - 103.8723) < 0.001
+    # An exact station name still wins: HarbourFront is the MRT station.
+    assert _resolve(repository, "HarbourFront")[0].entity_type == "mrt_station"
+
+
+def test_landmark_gazetteer_is_inside_singapore_and_unambiguous() -> None:
+    from app.landmarks import LandmarkGazetteer, _compact
+
+    gazetteer = LandmarkGazetteer.load()
+    assert len(gazetteer.entries) >= 40
+    for entry in gazetteer.entries:
+        assert 1.2 < entry["latitude"] < 1.48 and 103.6 < entry["longitude"] < 104.05, entry["id"]
+        assert entry["coordinate_source"] in {"osm", "curated"}
+    for key, items in gazetteer.index.items():
+        assert len({entry["id"] for entry, _alias in items}) == 1, key
+    assert _compact("Changi T1") == "changit1"

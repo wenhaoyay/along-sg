@@ -18,6 +18,7 @@ from app.discovery_models import (
     ResolvedLocation, ResolvedNeed, ResolvedPlace, SemanticExpansion,
 )
 from app.domain import Coordinate
+from app.landmarks import LandmarkGazetteer
 from app.poi_taxonomy import normalize_text
 from app.providers.base import (
     LocationAmbiguousError, LocationNotFoundError, MapProvider, ProviderError,
@@ -125,7 +126,10 @@ def _station_alias_keys(value: str) -> set[str]:
 
 
 class LocationResolver:
-    def __init__(self, repository: HubRepository, provider: MapProvider, gazetteer_path: Path | None = None):
+    def __init__(
+        self, repository: HubRepository, provider: MapProvider,
+        gazetteer_path: Path | None = None, landmark_path: Path | None = None,
+    ):
         self.repository = repository
         self.provider = provider
         payload = json.loads((gazetteer_path or DATA_DIR / "singapore-transit-gazetteer.json").read_text(encoding="utf-8"))
@@ -136,6 +140,10 @@ class LocationResolver:
             for alias in station["aliases"]:
                 for key in _station_alias_keys(alias):
                     self.alias_index.setdefault(key, []).append((station, alias))
+        # Areas and landmarks ("Sentosa", "Changi T3", "NUS"): places people
+        # name as a destination that the shop catalogue cannot answer, and
+        # that used to resolve to whichever 7-Eleven carried the word.
+        self.landmarks = LandmarkGazetteer.load(landmark_path)
 
     def _station_result(self, station: dict, confidence: DiscoveryConfidence, alias: str | None = None) -> ResolvedLocation:
         codes = " / ".join(station["station_codes"])
@@ -180,6 +188,12 @@ class LocationResolver:
             confidence = DiscoveryConfidence.EXACT if len(exact) == 1 else DiscoveryConfidence.AMBIGUOUS
             return [self._station_result(item[0], confidence, item[1]) for item in exact.values()][:limit]
 
+        # A landmark named exactly outranks every shop and every near-miss
+        # station spelling; one named nearly ranks below a near-miss station.
+        landmark = self.landmarks.match(query, fuzzy=False)
+        if landmark:
+            return [landmark]
+
         query_compact = compact_text(query)
         query_digits = "".join(re.findall(r"\d+", query_compact))
         scored: list[tuple[float, dict, str]] = []
@@ -195,6 +209,10 @@ class LocationResolver:
             return [self._station_result(scored[0][1], DiscoveryConfidence.STRONG, scored[0][2])]
         if scored:
             return [self._station_result(item[1], DiscoveryConfidence.AMBIGUOUS, item[2]) for item in scored[:limit]]
+
+        landmark = self.landmarks.match(query, fuzzy=True)
+        if landmark:
+            return [landmark]
 
         local = self.repository.search_hubs(query, limit)
         if local:

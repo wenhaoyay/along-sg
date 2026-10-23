@@ -428,13 +428,15 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
         mall_name = MALL_NAME_FIXES.get(normalize_text(mall_name), mall_name)
         generic = is_generic_name(mall_name)
         if not generic:
-            existing = same_mall.find(mall_name, coordinate, _address_key(tags))
+            # A mall is one building whatever its outlines say its address is
+            # ("311 New Upper Changi Rd" against "... Road").
+            existing = same_mall.find(mall_name, coordinate, "")
             if existing is not None:
                 # The same mall twice: its shops go to the first copy.
                 merged_hubs += 1
                 mall_lookup.append((existing, element, coordinate))
                 continue
-            same_mall.add(mall_name, coordinate, _address_key(tags), source_id)
+            same_mall.add(mall_name, coordinate, "", source_id)
         transport_id, transport_distance = nearest_station(coordinate)
         hubs.append({
             "name": _unique_name(
