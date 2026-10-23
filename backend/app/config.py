@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -29,36 +29,76 @@ class ScoringWeights:
 
 @dataclass(frozen=True)
 class DwellTimes:
-    groceries: float = 20.0
-    pharmacy: float = 10.0
-    parcel: float = 8.0
-    electronics: float = 15.0
+    """Minutes spent at a stop for each errand, on top of getting there.
+
+    Plausible defaults for a single errand on a weekday, inside the building -
+    the walk from the station is already in the route. Every field can be
+    overridden with DWELL_<CATEGORY>_MINUTES (e.g. DWELL_ATM_MINUTES=3).
+    """
+
+    # Find the machine, withdraw, go: 1-2 minutes, plus a short queue.
+    atm: float = 2.0
+    # A counter at a branch: a ticket queue and a teller, rarely under 15.
     banking: float = 15.0
-    fast_food: float = 15.0
-    fried_chicken: float = 15.0
-    bubble_tea: float = 8.0
-    coffee: float = 12.0
-    convenience: float = 5.0
-    restaurants: float = 30.0
+    # A handful of items and one till; Singapore convenience stores are small.
+    convenience: float = 3.0
+    # A basket shop at a supermarket: find 5-10 items and queue at checkout.
+    groceries: float = 15.0
+    # Off-the-shelf items, or a pharmacist question; a prescription takes longer.
+    pharmacy: float = 8.0
+    # Scan a code at a locker or hand over a parcel at a pickup counter.
+    parcel: float = 4.0
+    # A post office counter: take a number, weigh and pay. Queues are common.
+    post_office: float = 10.0
+    # Browse and pay for one item; staff often need to fetch stock.
+    electronics: float = 15.0
+    # Order and collect a takeaway at the counter.
+    fast_food: float = 8.0
+    fried_chicken: float = 8.0
+    # Order, wait while it is shaken, collect.
+    bubble_tea: float = 6.0
+    # A takeaway coffee; sitting down is a meal, not an errand.
+    coffee: float = 6.0
+    # A sit-down meal: order, eat and pay.
+    restaurants: float = 45.0
     burgers: float = 20.0
-    japanese_food: float = 30.0
-    korean_food: float = 30.0
-    chinese_food: float = 30.0
-    bakeries: float = 8.0
-    dessert: float = 12.0
-    stationery: float = 10.0
-    hardware: float = 15.0
+    japanese_food: float = 45.0
+    korean_food: float = 45.0
+    chinese_food: float = 45.0
+    # Pick from the shelf and pay.
+    bakeries: float = 5.0
+    # A takeaway dessert or ice cream.
+    dessert: float = 8.0
+    stationery: float = 8.0
+    # Find a specific part, often with help from the counter.
+    hardware: float = 12.0
+    # A ready bunch takes minutes; a made-up bouquet longer.
     florists: float = 10.0
-    pet_supplies: float = 15.0
+    pet_supplies: float = 10.0
+    # Browse, perhaps try one thing on.
     clothing: float = 20.0
-    household: float = 20.0
+    household: float = 15.0
+    # A print or copy job at a counter, including the wait for it.
     printing: float = 10.0
+    # A haircut is 20-30 minutes in the chair, plus waiting for a seat.
     haircuts: float = 30.0
-    optical: float = 20.0
-    repairs: float = 20.0
+    # Collecting glasses or a quick adjustment; an eye test is longer.
+    optical: float = 15.0
+    # Dropping off or collecting a repair, not waiting for one.
+    repairs: float = 10.0
 
     def for_categories(self, categories: tuple[str, ...]) -> float:
         return sum(float(getattr(self, category, 10.0 if category.startswith("open_") else 0.0)) for category in categories)
+
+    @classmethod
+    def from_env(cls) -> "DwellTimes":
+        """Defaults, with DWELL_<CATEGORY>_MINUTES overriding any field."""
+        overrides = {}
+        for item in fields(cls):
+            value = os.getenv(f"DWELL_{item.name.upper()}_MINUTES")
+            if value is not None and value.strip():
+                overrides[item.name] = float(value)
+        return cls(**overrides)
 
 
 @dataclass(frozen=True)
@@ -165,18 +205,7 @@ class Settings:
                     os.getenv("OPTIMIZER_DATA_QUALITY_BONUS", "2.5")
                 ),
             ),
-            dwell_times=DwellTimes(
-                groceries=float(os.getenv("DWELL_GROCERIES_MINUTES", "20")),
-                pharmacy=float(os.getenv("DWELL_PHARMACY_MINUTES", "10")),
-                parcel=float(os.getenv("DWELL_PARCEL_MINUTES", "8")),
-                electronics=float(os.getenv("DWELL_ELECTRONICS_MINUTES", "15")),
-                banking=float(os.getenv("DWELL_BANKING_MINUTES", "15")),
-                fast_food=float(os.getenv("DWELL_FAST_FOOD_MINUTES", "15")),
-                fried_chicken=float(os.getenv("DWELL_FRIED_CHICKEN_MINUTES", "15")),
-                bubble_tea=float(os.getenv("DWELL_BUBBLE_TEA_MINUTES", "8")),
-                coffee=float(os.getenv("DWELL_COFFEE_MINUTES", "12")),
-                convenience=float(os.getenv("DWELL_CONVENIENCE_MINUTES", "5")),
-            ),
+            dwell_times=DwellTimes.from_env(),
             max_candidates=int(os.getenv("OPTIMIZER_MAX_CANDIDATES", "6")),
             max_straight_line_detour_km=float(
                 os.getenv("OPTIMIZER_MAX_STRAIGHT_LINE_DETOUR_KM", "12")

@@ -67,7 +67,9 @@ def test_the_element_id_survives_only_where_nothing_else_could_work() -> None:
 
 def test_a_place_osm_never_named_gets_a_noun_not_a_slug() -> None:
     assert unnamed_label("bakeries") == "Bakery"
-    assert unnamed_label("banking") == "ATM or bank"
+    # ATMs have their own category, so an unnamed banking place is a bank.
+    assert unnamed_label("banking") == "Bank"
+    assert unnamed_label("atm") == "ATM"
     assert unnamed_label("parcel") == "Parcel point"
     assert unnamed_label("pet_supplies") == "Pet shop"
 

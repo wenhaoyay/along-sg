@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.config import Settings
+from app.config import DwellTimes, Settings
 from app.main import create_app
 from app.services.candidates import generate_candidates
 
@@ -65,7 +65,8 @@ def test_hub_is_returned_once_with_both_matching_outlets(tmp_path: Path) -> None
     assert any(item["consolidated"] for item in body["recommendations"].values())
 
     for recommendation in body["recommendations"].values():
-        assert recommendation["dwell_minutes"] == 30
+        # The configured groceries + pharmacy allowances, not a literal.
+        assert recommendation["dwell_minutes"] == DwellTimes().groceries + DwellTimes().pharmacy
         assert recommendation["routed_segment_count"] >= 2
         assert recommendation["stop_relationship"]
         assert recommendation["explanation"]

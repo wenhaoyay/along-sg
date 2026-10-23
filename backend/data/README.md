@@ -49,3 +49,16 @@ about 130 rail stations - classifying the two alike would relabel most of the ca
 Opening hours remain the weakest field: 3,000 of 14,774 active outlets (20%) publish
 them. That is twice the previous absolute count and the same proportion. Everything
 else is unknown and is presented as unknown.
+
+## Supplements (October 2026)
+
+Two smaller files are merged into the capture at ingest; the capture file itself
+is untouched. See `docs/data-sources.md` for sources, licences and the merge rules.
+
+- `singapore-osm-post-offices.json` - post offices, a separate bounded Overpass
+  query (the main capture's query never asked for `amenity=post_office`).
+- `singapore-hsa-pharmacies.json` - the Health Sciences Authority's register of
+  retail pharmacies from data.gov.sg (Singapore Open Data Licence 1.0), with the
+  register's own coordinates. Only pharmacies OSM does not already map are added.
+
+Refresh both with `scripts/fetch_supplementary_data.py`.

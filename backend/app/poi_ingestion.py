@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -13,9 +14,10 @@ from app.db import HUB_SEED, HubRepository
 from app.domain import Coordinate
 from app.poi_taxonomy import (
     canonical_brand,
+    derived_display_name,
     infer_categories,
+    is_generic_name,
     normalize_text,
-    unnamed_label,
 )
 from app.providers.mock import haversine_km
 
@@ -44,6 +46,18 @@ area["ISO3166-1"="SG"][admin_level=2]->.sg;
 out center tags bb;
 """.strip()
 
+# Bump when the transform changes what it makes of the same capture (a new
+# category, a naming rule), so a deploy re-ingests a database built by the old
+# code even though the capture file itself has not changed.
+TRANSFORM_VERSION = "2026-10-23.1"
+
+# A capture with at least this many malls is the real, whole-island catalogue
+# rather than a test fixture or a bounded probe, and retires the curated seed.
+FULL_CATALOGUE_MIN_MALLS = 100
+
+# OSM names a few malls in a way nobody would write them.
+MALL_NAME_FIXES = {"nex": "NEX"}
+
 # Rail stations anchor the "station_area" hub type; bus stops only widen the
 # transit-access test. Singapore has ~130 rail stations against ~5,100 bus
 # stops, so treating the two alike would reclassify most of the catalog.
@@ -63,6 +77,8 @@ class IngestionReport:
     known_opening_hours: int
     canonical_brand_pois: int
     captured_at: str
+    # Hubs folded into another with the same name within 300 m.
+    merged_hubs: int = 0
 
 
 def _coordinate(element: dict[str, Any]) -> Coordinate | None:
@@ -236,8 +252,14 @@ def _unique_name(
     source_id: str,
     used: set[str],
     qualifiers: tuple[str, ...] = (),
+    always_qualify: bool = False,
 ) -> str:
     """A display name no other hub has taken.
+
+    Compared without case: "Each A Cup" and "Each a cup" are one name to a
+    reader, and two hubs carrying it were the commonest "duplicate" in the
+    catalogue. ``always_qualify`` is for a generic name ("Shopping mall",
+    "Food court"), which identifies nothing even when it happens to be unique.
 
     Collisions here are mundane rather than exceptional - Singapore has three
     hundred 7-Elevens - so this ran on the fallback branch for a third of the
@@ -246,24 +268,66 @@ def _unique_name(
     human qualifier was taken too.
     """
     base = name.strip() or f"Unnamed place {source_id}"
-    if base not in used:
-        used.add(base)
+
+    def take(candidate: str) -> bool:
+        key = candidate.casefold()
+        # Taken names are kept casefolded; a caller's own set may not be.
+        if key in used or candidate in used:
+            return False
+        used.add(key)
+        return True
+
+    if not (always_qualify and qualifiers) and take(base):
         return base
     for qualifier in qualifiers:
         candidate = f"{base} ({qualifier})"
-        if candidate not in used:
-            used.add(candidate)
+        if take(candidate):
             return candidate
     # Two of the same chain on one street: number them, the way a person would.
     stem = f"{base} ({qualifiers[0]})" if qualifiers else base
     for index in range(2, 100):
         candidate = f"{stem} {index}"
-        if candidate not in used:
-            used.add(candidate)
+        if take(candidate):
             return candidate
     candidate = f"{base} · {source_id}"
-    used.add(candidate)
+    used.add(candidate.casefold())
     return candidate
+
+
+# Two hubs with the same name this close together are one place mapped twice
+# (a node and a building outline, or two editors), not two branches.
+SAME_PLACE_RADIUS_KM = 0.3
+
+
+def _address_key(tags: dict[str, str]) -> str:
+    return normalize_text(" ".join(filter(None, (
+        tags.get("addr:housenumber"), tags.get("addr:street"),
+    ))))
+
+
+class _SamePlaceIndex:
+    """Hubs already created, by normalised name, to merge a second copy."""
+
+    def __init__(self) -> None:
+        self._entries: dict[str, list[tuple[str, Coordinate, str]]] = {}
+
+    @staticmethod
+    def _key(name: str) -> str:
+        # normalize_text keeps only ASCII letters and digits, so every Chinese
+        # name would share the empty key and merge with every other.
+        return normalize_text(name) or " ".join(name.casefold().split())
+
+    def find(self, name: str, coordinate: Coordinate, address_key: str) -> str | None:
+        for source_id, other, other_address in self._entries.get(self._key(name), ()):
+            # Two addresses that disagree are two branches, however close.
+            if address_key and other_address and address_key != other_address:
+                continue
+            if haversine_km(coordinate, other) <= SAME_PLACE_RADIUS_KM:
+                return source_id
+        return None
+
+    def add(self, name: str, coordinate: Coordinate, address_key: str, source_id: str) -> None:
+        self._entries.setdefault(self._key(name), []).append((source_id, coordinate, address_key))
 
 
 def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], IngestionReport]:
@@ -351,20 +415,38 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
     # and `replace_source_data` retires the superseded curated hub - so their
     # names must stay available here, or every one of them would be renamed
     # "ION Orchard - mall:way/123" to dodge a collision that no longer exists.
-    used_names = {row[1] for row in HUB_SEED if row[4] != "mall"}
+    used_names = {row[1].casefold() for row in HUB_SEED if row[4] != "mall"}
     hubs: list[dict[str, Any]] = []
     mall_lookup: list[tuple[str, dict[str, Any], Coordinate]] = []
+    same_mall = _SamePlaceIndex()
+    same_place = _SamePlaceIndex()
+    merged_hubs = 0
     for element, coordinate in malls:
         source_id = f"mall:{_source_id(element)}"
         tags = element.get("tags") or {}
+        mall_name = tags.get("name") or "Shopping mall"
+        mall_name = MALL_NAME_FIXES.get(normalize_text(mall_name), mall_name)
+        generic = is_generic_name(mall_name)
+        if not generic:
+            # A mall is one building whatever its outlines say its address is
+            # ("311 New Upper Changi Rd" against "... Road").
+            existing = same_mall.find(mall_name, coordinate, "")
+            if existing is not None:
+                # The same mall twice: its shops go to the first copy.
+                merged_hubs += 1
+                mall_lookup.append((existing, element, coordinate))
+                continue
+            same_mall.add(mall_name, coordinate, "", source_id)
         transport_id, transport_distance = nearest_station(coordinate)
         hubs.append({
             "name": _unique_name(
-                tags.get("name") or "Shopping mall",
+                mall_name,
                 source_id,
                 used_names,
                 _qualifiers(tags, transport_id, node_index),
+                always_qualify=generic,
             ),
+            "name_is_generic": int(generic),
             "latitude": coordinate.latitude,
             "longitude": coordinate.longitude,
             "semantic_type": "mall",
@@ -396,14 +478,16 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
         tags = element.get("tags") or {}
         source_id = _source_id(element)
         brand_slug, canonical_name = canonical_brand(tags.get("brand"), tags.get("operator"), tags.get("name"))
-        base_name = canonical_name or tags.get("name")
+        # What a person reads: its name, else what its tags say it is ("UOB
+        # ATM", "Chinese restaurant"), else the category's noun.
+        display_name = derived_display_name(tags, categories, canonical_name)
         # Two names, deliberately. The dedupe key stays keyed on the element id
-        # for an unnamed place - collapsing it to "Bakery" would merge two
-        # different unnamed bakeries twenty metres apart into one - while the
-        # display name is what a person reads and must never carry a row id.
-        dedupe_name = base_name or f"{categories[0].replace('_', ' ').title()} {source_id}"
-        display_name = base_name or unnamed_label(categories[0])
-        dedupe_key = f"{brand_slug or normalize_text(dedupe_name)}|{','.join(categories)}"
+        # for a place without a name of its own - collapsing it to "Bakery"
+        # would merge two different unnamed bakeries twenty metres apart into
+        # one - while the display name must never carry a row id.
+        identified = bool(canonical_name) or not is_generic_name(tags.get("name"))
+        dedupe_name = display_name if identified else f"{display_name} {source_id}"
+        dedupe_key = f"{brand_slug or _SamePlaceIndex._key(dedupe_name)}|{','.join(categories)}"
         if any(key == dedupe_key and haversine_km(coordinate, previous) <= 0.025 for key, previous in dedupe_seen):
             deduplicated += 1
             continue
@@ -426,29 +510,54 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                     nearby_malls, key=lambda item: haversine_km(coordinate, item[2])
                 )
             else:
-                hub_source_id = f"poi:{source_id}"
-                transport_id, transport_distance = nearest_station(coordinate)
-                hubs.append({
-                    "name": _unique_name(
-                        display_name,
-                        source_id,
-                        used_names,
-                        _qualifiers(tags, transport_id, node_index),
-                    ),
-                    "latitude": coordinate.latitude,
-                    "longitude": coordinate.longitude,
-                    "semantic_type": "station_area" if _is_station_area(nearest_rail_distance_m(coordinate)) else "standalone",
-                    "transport_area_id": transport_id,
-                    "consolidation_group_id": hub_source_id,
-                    "source": source,
-                    "source_id": hub_source_id,
-                    "last_verified_at": captured_at,
-                    "opening_hours": tags.get("opening_hours"),
-                    "closure_status": "closed" if _is_closed(tags) else "unknown",
-                    "transport_node_distance_m": transport_distance,
-                    "address": _address(tags),
-                })
-        hub_dedupe_key = (hub_source_id, normalize_text(dedupe_name), categories[0])
+                # Generic: the name says what it is, not which one - "Food
+                # court", "Chinese restaurant". A brand-derived name ("Citibank
+                # ATM") is not generic.
+                generic = is_generic_name(display_name) or not (
+                    identified or tags.get("brand") or tags.get("operator")
+                )
+                # Merged by name only when the name is its own: a chain is
+                # never merged (two 7-Elevens 200 m apart are two shops), and
+                # neither is "Food court" or "Citibank ATM".
+                mergeable = (
+                    not is_generic_name(tags.get("name"))
+                    and not brand_slug and not tags.get("brand")
+                )
+                existing = (
+                    same_place.find(display_name, coordinate, _address_key(tags))
+                    if mergeable else None
+                )
+                if existing is not None:
+                    hub_source_id = existing
+                    merged_hubs += 1
+                else:
+                    hub_source_id = f"poi:{source_id}"
+                    if mergeable:
+                        same_place.add(display_name, coordinate, _address_key(tags), hub_source_id)
+                    transport_id, transport_distance = nearest_station(coordinate)
+                    hubs.append({
+                        "name": _unique_name(
+                            display_name,
+                            source_id,
+                            used_names,
+                            _qualifiers(tags, transport_id, node_index),
+                            always_qualify=generic,
+                        ),
+                        "name_is_generic": int(generic),
+                        "latitude": coordinate.latitude,
+                        "longitude": coordinate.longitude,
+                        "semantic_type": "station_area" if _is_station_area(nearest_rail_distance_m(coordinate)) else "standalone",
+                        "transport_area_id": transport_id,
+                        "consolidation_group_id": hub_source_id,
+                        "source": element.get("_source", source),
+                        "source_id": hub_source_id,
+                        "last_verified_at": element.get("_verified_at", captured_at),
+                        "opening_hours": tags.get("opening_hours"),
+                        "closure_status": "closed" if _is_closed(tags) else "unknown",
+                        "transport_node_distance_m": transport_distance,
+                        "address": _address(tags),
+                    })
+        hub_dedupe_key = (hub_source_id, _SamePlaceIndex._key(dedupe_name), categories[0])
         if hub_dedupe_key in outlet_hub_seen:
             deduplicated += 1
             continue
@@ -487,9 +596,10 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
             # validation step can prove they match the known outlet brand.
             "brand_wikidata": _wikidata_id(tags),
             "categories": categories,
-            "source": source,
+            # A supplementary dataset (the HSA register) names itself.
+            "source": element.get("_source", source),
             "source_id": source_id,
-            "last_verified_at": captured_at,
+            "last_verified_at": element.get("_verified_at", captured_at),
             "opening_hours": tags.get("opening_hours"),
             "closure_status": "closed" if is_closed else "unknown",
         })
@@ -500,6 +610,7 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
         imported_transport_nodes=len(nodes), deduplicated_pois=deduplicated,
         closed_pois=closed_count, known_opening_hours=known_hours,
         canonical_brand_pois=branded, captured_at=captured_at,
+        merged_hubs=merged_hubs,
     )
     return nodes, hubs, outlets, report
 
@@ -539,11 +650,134 @@ async def download_osm_payload(url: str | None = None) -> dict[str, Any]:
     return payload
 
 
-def ingest_payload(repository: HubRepository, payload: dict[str, Any]) -> IngestionReport:
+def ingest_payload(
+    repository: HubRepository,
+    payload: dict[str, Any],
+    fingerprint: str | None = None,
+) -> IngestionReport:
     nodes, hubs, outlets, report = transform_osm_payload(payload)
-    repository.replace_source_data("openstreetmap", nodes, hubs, outlets)
+    repository.replace_source_data(
+        "openstreetmap", nodes, hubs, outlets,
+        retire_curated_seed=report.imported_malls >= FULL_CATALOGUE_MIN_MALLS,
+        extra_sources=SUPPLEMENTARY_SOURCES,
+    )
+    repository.set_meta({
+        "osm_captured_at": report.captured_at,
+        "catalogue_fingerprint": fingerprint or payload_fingerprint(payload),
+        "transform_version": TRANSFORM_VERSION,
+    })
     return report
+
+
+def payload_fingerprint(payload: dict[str, Any]) -> str:
+    """Identify a capture and the code that transforms it."""
+    digest = hashlib.sha256(TRANSFORM_VERSION.encode("utf-8"))
+    digest.update(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8"))
+    return digest.hexdigest()
+
+
+def file_fingerprint(*paths: Path) -> str:
+    """The same, from the files on disk, without parsing them."""
+    digest = hashlib.sha256(TRANSFORM_VERSION.encode("utf-8"))
+    for path in paths:
+        if path.exists():
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def load_payload(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+OSM_CAPTURE_FILE = "singapore-osm-pois.json"
+# Supplements, each fetched by scripts/fetch_supplementary_data.py and merged
+# into the main capture at ingest. The main capture file is never edited.
+POST_OFFICE_FILE = "singapore-osm-post-offices.json"
+HSA_PHARMACY_FILE = "singapore-hsa-pharmacies.json"
+HSA_SOURCE = "hsa_pharmacy_register"
+SUPPLEMENTARY_SOURCES = (HSA_SOURCE,)
+# A registered pharmacy this close to one OSM already maps is that pharmacy.
+HSA_SAME_PHARMACY_KM = 0.08
+
+
+def catalogue_files(data_dir: Path | None = None) -> tuple[Path, ...]:
+    """Every file the catalogue is built from, main capture first."""
+    base = data_dir or DATA_DIR
+    supplements = tuple(
+        path for path in (base / POST_OFFICE_FILE, base / HSA_PHARMACY_FILE) if path.exists()
+    )
+    return (base / OSM_CAPTURE_FILE, *supplements)
+
+
+def _hsa_elements(register: dict[str, Any]) -> list[dict[str, Any]]:
+    """The HSA register as OSM-shaped elements, tagged with their own source."""
+    verified = register.get("metadata", {}).get("last_updated") or register.get("metadata", {}).get("fetched_at")
+    elements = []
+    for item in register.get("pharmacies", []):
+        tags = {
+            "amenity": "pharmacy", "healthcare": "pharmacy", "dispensing": "yes",
+            "name": item["name"], "brand": item.get("brand"), "branch": item.get("branch"),
+            "addr:housenumber": item.get("house_number"), "addr:street": item.get("street"),
+            "addr:postcode": item.get("postal_code"), "addr:unit": item.get("unit"),
+            "official_name": item.get("registered_name"),
+        }
+        elements.append({
+            "type": "hsa", "id": item["id"],
+            "lat": item["latitude"], "lon": item["longitude"],
+            "tags": {key: value for key, value in tags.items() if value},
+            "_source": HSA_SOURCE, "_verified_at": verified,
+        })
+    return elements
+
+
+def merge_supplements(
+    payload: dict[str, Any],
+    post_offices: dict[str, Any] | None = None,
+    pharmacy_register: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, int]]:
+    """The main capture plus its supplements, and what each one added.
+
+    Post offices are OSM elements and merge by element id. A registered
+    pharmacy is added only where OSM maps no pharmacy within 80 m: the two
+    are one shop, and OSM's tags (opening hours, brand ids) are richer.
+    """
+    elements = list(payload.get("elements") or [])
+    seen = {(item.get("type"), item.get("id")) for item in elements}
+    added = {"post_offices": 0, "hsa_pharmacies": 0, "hsa_pharmacies_already_mapped": 0}
+    for element in (post_offices or {}).get("elements") or []:
+        key = (element.get("type"), element.get("id"))
+        if key not in seen:
+            seen.add(key)
+            elements.append(element)
+            added["post_offices"] += 1
+    if pharmacy_register:
+        mapped = [
+            coordinate for element in elements
+            if "pharmacy" in infer_categories(element.get("tags") or {})
+            and (coordinate := _coordinate(element)) is not None
+        ]
+        index = _SpatialIndex([(str(position), coordinate) for position, coordinate in enumerate(mapped)])
+        for element in _hsa_elements(pharmacy_register):
+            _nearest, distance_m = index.nearest(Coordinate(element["lat"], element["lon"]))
+            if distance_m is not None and distance_m <= HSA_SAME_PHARMACY_KM * 1000:
+                added["hsa_pharmacies_already_mapped"] += 1
+                continue
+            elements.append(element)
+            added["hsa_pharmacies"] += 1
+    return {**payload, "elements": elements}, added
+
+
+def load_catalogue(data_dir: Path | None = None) -> dict[str, Any]:
+    """The bundled capture with its supplements, ready for `ingest_payload`."""
+    base = data_dir or DATA_DIR
+    payload = load_payload(base / OSM_CAPTURE_FILE)
+    post_offices = base / POST_OFFICE_FILE
+    register = base / HSA_PHARMACY_FILE
+    merged, _added = merge_supplements(
+        payload,
+        load_payload(post_offices) if post_offices.exists() else None,
+        load_payload(register) if register.exists() else None,
+    )
+    return merged
