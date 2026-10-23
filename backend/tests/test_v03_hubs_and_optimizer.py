@@ -29,6 +29,7 @@ def test_hub_is_returned_once_with_both_matching_outlets(tmp_path: Path) -> None
         database_path=tmp_path / "optimize.db",
         max_candidates=8,
         max_straight_line_detour_km=20,
+        expose_diagnostics=True,
     )
     app = create_app(settings)
     with TestClient(app) as client:
