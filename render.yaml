@@ -11,7 +11,7 @@
 # static JSON, so a page can show them without waiting for that.
 services:
   - type: web
-    name: along-the-way-beta
+    name: along-sg
     runtime: docker
     plan: free
     # Singapore, where the data and the users are. If the free plan is not

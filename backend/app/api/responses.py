@@ -439,5 +439,5 @@ def outcome_message(outcome: str, has_recommendations: bool) -> str | None:
 def hidden_fields(settings: Settings) -> set[str] | None:
     """Response fields kept from the browser. Candidate counts, cache hits,
     token counts and LLM cost are for whoever runs the service: shown only
-    only with EXPOSE_DIAGNOSTICS=true, or Settings(expose_diagnostics=True) in tests."""
+    with EXPOSE_DIAGNOSTICS=true, or Settings(expose_diagnostics=True) in tests."""
     return None if settings.expose_diagnostics else {"diagnostics"}

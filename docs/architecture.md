@@ -239,7 +239,7 @@ Dwell duration is configured by category and included in total journey inconveni
 
 Hubs now carry three distinct identifiers: physical semantic type, transport/station area, and consolidation group. Same-place errands consolidate; stores in the same station area or within 500 metres remain separate stops with an explicit relationship; more distant stores are genuinely separate stops.
 
-Live findings and acceptance status live in `docs/onemap-pt-contract.md`; the live diagnostic is `docs/live-optimization-diagnostic.md`.
+Live findings and acceptance status live in `docs/onemap-pt-contract.md`; the live diagnostic is `docs/archive/live-optimization-diagnostic.md`.
 
 ## V0.5 POI intelligence and bounded scaling
 
