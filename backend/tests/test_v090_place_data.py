@@ -169,3 +169,66 @@ def test_unnamed_atms_ingest_as_brand_atms() -> None:
     _nodes, _hubs, outlets, _report = transform_osm_payload(payload)
     assert sorted(item["name"] for item in outlets) == ["OCBC ATM", "UOB ATM"]
     assert {item["brand_slug"] for item in outlets} == {"uob", "ocbc"}
+
+
+def _node(identifier: int, latitude: float, longitude: float, **tags: str) -> dict:
+    return {"type": "node", "id": identifier, "lat": latitude, "lon": longitude, "tags": tags}
+
+
+def test_one_place_mapped_twice_becomes_one_hub() -> None:
+    payload = {"elements": [
+        _node(1, 1.3029, 103.8640, amenity="restaurant", name="Golden Mile Food Centre"),
+        _node(2, 1.3032, 103.8639, amenity="food_court", name="Golden Mile Food Centre", cuisine="local"),
+        # Same name, 2 km away: a different place.
+        _node(3, 1.3200, 103.8640, amenity="restaurant", name="Golden Mile Food Centre"),
+        # A chain is never merged by name.
+        _node(4, 1.3000, 103.8000, shop="convenience", brand="7-Eleven", name="7-Eleven"),
+        _node(5, 1.3010, 103.8000, shop="convenience", brand="7-Eleven", name="7-Eleven"),
+    ]}
+    _nodes, hubs, outlets, report = transform_osm_payload(payload)
+    assert report.merged_hubs == 1
+    golden = [hub for hub in hubs if hub["name"].startswith("Golden Mile")]
+    assert len(golden) == 2
+    assert len([hub for hub in hubs if hub["name"].startswith("7-Eleven")]) == 2
+
+
+def test_names_that_differ_only_in_case_are_told_apart() -> None:
+    payload = {"elements": [
+        _node(1, 1.30, 103.80, amenity="cafe", name="Each A Cup", cuisine="bubble_tea", **{"addr:street": "Bedok North Road"}),
+        _node(2, 1.40, 103.80, amenity="cafe", name="Each a cup", cuisine="bubble_tea", **{"addr:street": "Woodlands Drive"}),
+    ]}
+    _nodes, hubs, _outlets, _report = transform_osm_payload(payload)
+    names = sorted(hub["name"] for hub in hubs)
+    assert len({name.casefold() for name in names}) == 2
+    assert any("(" in name for name in names)
+
+
+def test_chinese_names_are_not_one_name() -> None:
+    payload = {"elements": [
+        _node(1, 1.3000, 103.8000, amenity="restaurant", name="喜迎客"),
+        _node(2, 1.3001, 103.8001, amenity="restaurant", name="真味"),
+    ]}
+    _nodes, hubs, outlets, report = transform_osm_payload(payload)
+    assert report.deduplicated_pois == 0 and report.merged_hubs == 0
+    assert len(outlets) == 2 and len(hubs) == 2
+
+
+def test_generic_hubs_are_flagged_and_carry_a_street(tmp_path) -> None:
+    payload = {"elements": [
+        {"type": "way", "id": 10, "bounds": {"minlat": 1.3055, "maxlat": 1.3061, "minlon": 103.8328, "maxlon": 103.8334},
+         "tags": {"shop": "mall", "addr:street": "Scotts Road"}},
+        _node(2, 1.35, 103.90, amenity="food_court", **{"addr:street": "Bedok North Street 1"}),
+        _node(3, 1.36, 103.90, amenity="restaurant", name="Kok Sen"),
+    ]}
+    _nodes, hubs, _outlets, _report = transform_osm_payload(payload)
+    by_name = {hub["name"]: hub for hub in hubs}
+    assert by_name["Shopping mall (Scotts Road)"]["name_is_generic"] == 1
+    assert by_name["Food court (Bedok North Street 1)"]["name_is_generic"] == 1
+    assert by_name["Kok Sen"]["name_is_generic"] == 0
+
+    repository = HubRepository(tmp_path / "errands.db")
+    repository.initialize()
+    ingest_payload(repository, payload)
+    with sqlite3.connect(tmp_path / "errands.db") as connection:
+        flagged = {row[0] for row in connection.execute("SELECT name FROM hubs WHERE name_is_generic=1")}
+    assert flagged == {"Shopping mall (Scotts Road)", "Food court (Bedok North Street 1)"}

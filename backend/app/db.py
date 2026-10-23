@@ -115,7 +115,8 @@ class HubRepository:
                     source TEXT NOT NULL DEFAULT 'curated', source_id TEXT,
                     last_verified_at TEXT, opening_hours TEXT,
                     closure_status TEXT NOT NULL DEFAULT 'unknown',
-                    transport_node_distance_m REAL, address TEXT
+                    transport_node_distance_m REAL, address TEXT,
+                    name_is_generic INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE TABLE IF NOT EXISTS brands (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL UNIQUE,
@@ -207,6 +208,10 @@ class HubRepository:
                 "closure_status": "TEXT NOT NULL DEFAULT 'unknown'",
                 "transport_node_distance_m": "REAL",
                 "address": "TEXT",
+                # 1 when the hub's own name only says what it is ("Shopping
+                # mall", "Food court"); its display name then carries a street
+                # or station, and a presenter should lead with that.
+                "name_is_generic": "INTEGER NOT NULL DEFAULT 0",
             })
             self._migrate_columns(connection, "outlets", {
                 "brand_id": "INTEGER REFERENCES brands(id)",
@@ -941,17 +946,21 @@ class HubRepository:
             )
             hub_id_by_source: dict[str, int] = {}
             for hub in hub_records:
-                hub = {**hub, "address": hub.get("address")}
+                hub = {
+                    **hub, "address": hub.get("address"),
+                    "name_is_generic": int(bool(hub.get("name_is_generic"))),
+                }
                 cursor = connection.execute(
                     """
                     INSERT INTO hubs(name, latitude, longitude, semantic_type,
                         transport_area_id, consolidation_group_id, source, source_id,
                         last_verified_at, opening_hours, closure_status,
-                        transport_node_distance_m, address)
+                        transport_node_distance_m, address, name_is_generic)
                     VALUES (:name, :latitude, :longitude, :semantic_type,
                         :transport_area_id, :consolidation_group_id, :source,
                         :source_id, :last_verified_at, :opening_hours,
-                        :closure_status, :transport_node_distance_m, :address)
+                        :closure_status, :transport_node_distance_m, :address,
+                        :name_is_generic)
                     """, hub,
                 )
                 hub_id_by_source[hub["source_id"]] = int(cursor.lastrowid)
