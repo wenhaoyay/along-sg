@@ -200,6 +200,12 @@ class ScoredCandidate:
     hard_constraints_satisfied: bool = True
     stop_arrivals: tuple[datetime | None, ...] = ()
     stop_dwell_minutes: tuple[float, ...] = ()
+    # Extra time on trains, buses and on foot, without the time in shops. Shop
+    # time is the same at every place that does the same errands, so this is
+    # the figure that tells two places apart.
+    incremental_travel_minutes: float = 0.0
+    why_this_wins: str = ""
+    missing_preferred_brands: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -61,6 +61,11 @@ class IntentOptimizeRequest(JourneyRequest):
     confirmed_discovery_places: list[ConfirmedDiscoveryPlace] = Field(default_factory=list, max_length=2)
 
 
+class SubstitutionResponse(BaseModel):
+    requested: str
+    substitute: str
+
+
 class CoordinateResponse(BaseModel):
     latitude: float
     longitude: float
@@ -223,6 +228,14 @@ class RecommendationResponse(BaseModel):
     stop_relationship: str
     explanation: str
     why_this_wins: str
+    # Extra time moving (trains, buses, walking) compared with going direct,
+    # without time in shops. The figure the options differ by.
+    incremental_travel_minutes: float = 0
+    # What a partial or substitute option leaves out or swaps, and which
+    # preferred brands it lacks, so the page can say so in words.
+    omitted_categories: list[str] = Field(default_factory=list)
+    substituted_categories: list[SubstitutionResponse] = Field(default_factory=list)
+    missing_preferred_brands: list[str] = Field(default_factory=list)
     match_classification: str = "best_match"
     quality_label: str = "Best option"
     hard_constraints_satisfied: bool = True
@@ -258,7 +271,7 @@ class NearMissResponse(BaseModel):
     substitute_category: str
     stop_name: str
     approximate_straight_line_detour_km: float
-    match_classification: str = "easier_alternative"
+    match_classification: str = "substitute"
     explanation: str
 
 

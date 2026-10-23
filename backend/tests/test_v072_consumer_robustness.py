@@ -62,7 +62,7 @@ def test_strict_limit_is_not_presented_as_satisfied(tmp_path: Path) -> None:
     assert body["outcome"] == "closest_option"
     assert closest["match_classification"] == "exceeds_limit"
     assert closest["hard_constraints_satisfied"] is False
-    assert closest["quality_label"] == "Closest option"
+    assert closest["quality_label"] == "Over your limit"
 
 
 def test_preferred_brand_can_relax_but_required_brand_never_substitutes(tmp_path: Path) -> None:
@@ -83,7 +83,7 @@ def test_preferred_brand_can_relax_but_required_brand_never_substitutes(tmp_path
     with TestClient(app) as client:
         preferred = client.post("/api/optimize-intent", json={**base, "intent": _intent("fried_chicken", errand={"preferred_brand": "KFC", "substitutes_allowed": True})}).json()
         required = client.post("/api/optimize-intent", json={**base, "intent": _intent("fried_chicken", errand={"exact_brand": "KFC", "substitutes_allowed": False})}).json()
-    assert preferred["recommendations"]["best_overall"]["match_classification"] == "easier_alternative"
+    assert preferred["recommendations"]["best_overall"]["match_classification"] == "without_preferred_brand"
     assert preferred["recommendations"]["best_overall"]["stops"][0]["display_name"] == "Easy Chicken"
     assert all("Easy Chicken" not in json.dumps(item["businesses"]) for item in required["recommendations"]["best_overall"]["stops"])
     assert "KFC" in json.dumps(required["recommendations"]["best_overall"]["stops"])

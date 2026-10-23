@@ -80,7 +80,7 @@ def _fallbacks(intent: IntentV1) -> tuple[CandidateFallback, ...]:
         categories = tuple(substitute if category == item.category else category for category in requested)
         fallbacks.append(CandidateFallback(
             categories=categories,
-            match_classification="easier_alternative",
+            match_classification="substitute",
             requested_categories=requested,
             substituted_categories=((item.category, substitute),),
             exact_brands=tuple(
@@ -95,7 +95,24 @@ def _fallbacks(intent: IntentV1) -> tuple[CandidateFallback, ...]:
             ),
         ))
 
-    if len(errands) == 2:
+    # With an "if convenient" errand, the only sensible partial plan is the
+    # required errands alone. Offering the optional one by itself dropped the
+    # errand the person actually needed and called it an alternative.
+    if intent.optional_errands and intent.required_errands:
+        required = tuple(item.category for item in intent.required_errands)
+        fallbacks.append(CandidateFallback(
+            categories=required,
+            match_classification="partial_option",
+            requested_categories=requested,
+            omitted_categories=tuple(category for category in requested if category not in required),
+            exact_brands=tuple(
+                (item.category, item.exact_brand) for item in intent.required_errands if item.exact_brand
+            ),
+            exact_places=tuple(
+                (item.category, item.exact_place) for item in intent.required_errands if item.exact_place
+            ),
+        ))
+    elif len(errands) == 2:
         for item in errands:
             fallbacks.append(CandidateFallback(
                 categories=(item.category,),

@@ -57,6 +57,7 @@ from app.schemas import (
     RecommendationResponse,
     RouteLegResponse,
     RouteResponse,
+    SubstitutionResponse,
     StopResponse,
 )
 from app.services.candidates import decode_polyline, generate_near_misses
@@ -356,22 +357,24 @@ def recommendation_response(
         routed_segment_count=candidate.routed_segment_count,
         stop_relationship=candidate.option.stop_relationship,
         explanation=candidate.explanation,
-        why_this_wins={
-            "Best Overall": (
-                "Lowest combined added time, walking and transfer impact among the evaluated options."
-            ),
-            "Fastest": "Lowest added journey time among the evaluated options.",
-            "Least Walking": "Lowest added walking among the evaluated options.",
-        }.get(label, "A low-inconvenience option for this journey."),
+        why_this_wins=candidate.why_this_wins,
+        incremental_travel_minutes=candidate.incremental_travel_minutes,
+        omitted_categories=list(candidate.option.omitted_categories),
+        substituted_categories=[
+            SubstitutionResponse(requested=requested, substitute=substitute)
+            for requested, substitute in candidate.option.substituted_categories
+        ],
+        missing_preferred_brands=list(candidate.missing_preferred_brands),
         match_classification=candidate.match_classification,
         quality_label={
             "best_match": "Best option",
-            "exact_match": "Exact match",
+            "exact_match": "Has your preferred brand",
             "closest_exact": "Closest exact match",
             "best_available": "Best available",
-            "easier_alternative": "Easier alternative",
-            "partial_option": "Partial option",
-            "exceeds_limit": "Closest option",
+            "without_preferred_brand": "Not your preferred brand",
+            "substitute": "Substitute",
+            "partial_option": "One errand only",
+            "exceeds_limit": "Over your limit",
         }.get(candidate.match_classification, "Good match"),
         hard_constraints_satisfied=candidate.hard_constraints_satisfied,
         detour_breakdown=DetourBreakdownResponse(

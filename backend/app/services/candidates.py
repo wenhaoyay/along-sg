@@ -76,6 +76,11 @@ def generate_candidates_from_hubs(
     for first_hub, second_hub in product(first_hubs, second_hubs):
         if first_hub.id == second_hub.id:
             continue
+        # A hub that has both errands is already an option on its own, and
+        # adding a second building to it only adds a stop. Pairs like that
+        # filled routing slots that a genuinely separate pair needed.
+        if {first, second}.issubset(first_hub.categories) or {first, second}.issubset(second_hub.categories):
+            continue
         ids = tuple(sorted((first_hub.id, second_hub.id)))
         if ids in seen:
             continue
@@ -164,6 +169,13 @@ def distance_to_geometry_km(point: Coordinate, geometry: tuple[Coordinate, ...])
     )
 
 
+def _hub_access_km(hub: Hub, geometry: tuple[Coordinate, ...]) -> float:
+    """One hub's share of `transit_access_rank_km`: leaving the route there and back, plus the walk to its station."""
+    leave = 2 * distance_to_geometry_km(hub.coordinate, geometry) if geometry else 0.0
+    walk = (hub.transport_node_distance_m / 1000) if hub.transport_node_distance_m is not None else 1.0
+    return leave + walk
+
+
 def _coverage_rank(
     hub: Hub,
     categories: tuple[str, ...],
@@ -249,8 +261,15 @@ def staged_candidate_pipeline(
             hub.id: hub for hub in ranked_hubs
             if set(categories).issubset(hub.categories)
         }
+        # Hubs that hold only one of the errands are chosen by how cheaply the
+        # network reaches them, not by coverage: sorted coverage-first, malls
+        # holding both filled every slot, and the single-errand shop beside the
+        # origin that made the best two-stop plan was never considered.
         for category in categories:
-            matches = [hub for hub in ranked_hubs if category in hub.categories]
+            matches = sorted(
+                (hub for hub in ranked_hubs if category in hub.categories and hub.id not in selected_by_id),
+                key=lambda hub: (_hub_access_km(hub, geometry), hub.id),
+            )
             selected_by_id.update({hub.id: hub for hub in matches[:max_hubs_per_category]})
         selected_hubs = list(selected_by_id.values())
 

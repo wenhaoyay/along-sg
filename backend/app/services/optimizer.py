@@ -21,7 +21,9 @@ from app.domain import (
     ScoredCandidate,
 )
 from app.presentation import hub_data_quality
-from app.providers.base import MapProvider, ProviderNoRouteError
+from app.providers.base import MapProvider, ProviderError, ProviderNoRouteError
+from app.services.explain import explain_alternative, explain_best
+from app.services.opening_hours import check_hours
 from app.services.candidates import baseline_geometry, normalize_categories, staged_candidate_pipeline
 from app.discovery_models import DiscoverySearchContext
 
@@ -159,6 +161,21 @@ def rank_recommendations(
             _outcomes_are_indistinguishable(item, kept) for kept in unique.values()
         ):
             continue
+        # "Fastest" that is 0.2 min quicker for an extra change, or "Least
+        # walking" that walks 20 m less, is not a choice worth offering.
+        best = unique.get("best_overall")
+        if best is not None and key == "fastest" and (
+            best.incremental_detour_minutes - item.incremental_detour_minutes
+            < INDISTINGUISHABLE_DETOUR_MINUTES
+        ):
+            continue
+        if best is not None and key == "least_walking" and (
+            best.incremental_walking_distance_m - item.incremental_walking_distance_m
+            < INDISTINGUISHABLE_WALKING_METRES
+            and best.incremental_walking_minutes - item.incremental_walking_minutes
+            < INDISTINGUISHABLE_WALKING_MINUTES
+        ):
+            continue
         unique[key] = item
         seen.add(signature)
     return unique
@@ -172,7 +189,10 @@ def rank_recommendations(
 MAX_CONSIDERED_REPORTED = 6
 
 INDISTINGUISHABLE_DETOUR_MINUTES = 2.0
+# A one-errand option is shown beside full matches only if it saves this much travel.
+PARTIAL_OPTION_MIN_SAVING_MINUTES = 5.0
 INDISTINGUISHABLE_WALKING_METRES = 100.0
+INDISTINGUISHABLE_WALKING_MINUTES = 1.5
 
 
 def _outcomes_are_indistinguishable(
@@ -301,6 +321,8 @@ class Optimizer:
         soft_budget_warned = False
         hard_budget_reached = False
         no_route_candidate_count = 0
+        provider_error_candidate_count = 0
+        closed_candidate_count = 0
         time_aware = self.provider.supports_departure_time_routing
         effective_start = departure or datetime.now(SINGAPORE_TZ)
         intent_preferences = preferences or OptimizationPreferences()
@@ -428,6 +450,7 @@ class Optimizer:
 
         async def evaluate(option, stop_order) -> ScoredCandidate | None:
             nonlocal no_route_candidate_count, excessive_detour_candidate_count
+            nonlocal provider_error_candidate_count, closed_candidate_count
             async with semaphore:
                 current_departure = effective_start
                 current_coordinate = origin
@@ -435,6 +458,10 @@ class Optimizer:
                 dwell_total = 0.0
                 stop_arrivals = []
                 stop_dwells = []
+                # When the router cannot be asked for a departure time, the
+                # clock is still advanced here so opening hours can be checked.
+                clock = effective_start
+                estimated_arrivals: list[datetime] = []
                 try:
                     for stop in stop_order:
                         segment = await route(
@@ -454,6 +481,9 @@ class Optimizer:
                             )
                             current_departure = arrival + timedelta(minutes=dwell)
                         stop_arrivals.append(arrival)
+                        clock = arrival or (clock + timedelta(minutes=segment.duration_minutes))
+                        estimated_arrivals.append(clock)
+                        clock = clock + timedelta(minutes=dwell)
                         current_coordinate = stop.coordinate
                     segments.append(
                         await route(
@@ -465,6 +495,32 @@ class Optimizer:
                 except ProviderNoRouteError:
                     no_route_candidate_count += 1
                     return None
+                except ProviderError:
+                    # One failed check must not sink the plan: skip this place
+                    # and let the others stand. Only the direct trip is vital.
+                    provider_error_candidate_count += 1
+                    return None
+
+                # A place whose every matching shop is listed as shut when
+                # you get there is not an answer, however close it is.
+                open_on_arrival: list[bool] = []
+                for stop_index, stop in enumerate(stop_order):
+                    stop_open = False
+                    for category in option.categories_at(stop.id):
+                        statuses = [
+                            check_hours(
+                                store.opening_hours or stop.opening_hours,
+                                estimated_arrivals[stop_index],
+                                stop_dwells[stop_index],
+                            )
+                            for store in stop.stores
+                            if category in store.all_categories
+                        ]
+                        if statuses and all(status == "closed" for status in statuses):
+                            closed_candidate_count += 1
+                            return None
+                        stop_open = stop_open or "open" in statuses
+                    open_on_arrival.append(stop_open)
 
                 total = combine_routes(
                     segments,
@@ -481,9 +537,15 @@ class Optimizer:
                     max(0.0, total.walking_distance_m - baseline.walking_distance_m), 1
                 )
                 extra_transfers = max(0, total.transfers - baseline.transfers)
+                travel_minutes = float(
+                    total.raw_metadata.get("travel_minutes", total.duration_minutes - dwell_total)
+                )
+                extra_travel = round(max(0.0, travel_minutes - baseline.duration_minutes), 2)
                 soft_exceeded: list[str] = []
                 hard_exceeded: list[str] = []
-                if intent_preferences.max_detour_minutes is not None and detour > intent_preferences.max_detour_minutes:
+                # A limit on the detour is a limit on travel: the time spent in
+                # the shop is the errand itself, the same wherever it is done.
+                if intent_preferences.max_detour_minutes is not None and extra_travel > intent_preferences.max_detour_minutes:
                     (hard_exceeded if intent_preferences.max_detour_is_hard else soft_exceeded).append("added time")
                 if intent_preferences.max_extra_walking_minutes is not None and extra_walking > intent_preferences.max_extra_walking_minutes:
                     (hard_exceeded if intent_preferences.max_extra_walking_is_hard else soft_exceeded).append("walking")
@@ -530,7 +592,10 @@ class Optimizer:
                     data_quality_bonus=self.weights.data_quality_bonus,
                 )
                 data_quality = round(
-                    sum(hub_data_quality(stop) for stop in option.stops) / len(option.stops), 3
+                    sum(
+                        hub_data_quality(stop, open_on_arrival[index])
+                        for index, stop in enumerate(stop_order)
+                    ) / len(stop_order), 3
                 )
                 classification = option.match_classification
                 if classification == "best_match":
@@ -543,11 +608,12 @@ class Optimizer:
                     elif intent_preferences.preferred_brands and preferred_satisfied:
                         classification = "exact_match"
                     elif intent_preferences.preferred_brands and not preferred_satisfied:
-                        classification = "easier_alternative"
+                        classification = "without_preferred_brand"
                 quality_note = {
                     "closest_exact": "It is slightly beyond the preference you gave us.",
                     "best_available": "It adds more time than our usual comfortable range, but it is the least disruptive full match.",
-                    "easier_alternative": "It relaxes a preference that you allowed us to substitute.",
+                    "without_preferred_brand": "It does not have the brand you prefer.",
+                    "substitute": "It uses a similar kind of shop instead of the one you asked for.",
                     "partial_option": "It fits one useful part of the request into this journey.",
                     "exceeds_limit": "It is the closest option we found, but it exceeds a limit you marked as strict.",
                 }.get(classification, "")
@@ -558,9 +624,9 @@ class Optimizer:
                     incremental_detour_minutes=detour,
                     incremental_walking_minutes=extra_walking,
                     incremental_transfers=extra_transfers,
-                    overall_score=max(0.0, calculate_score(
+                    overall_score=calculate_score(
                         detour, extra_walking, extra_transfers, weighted, data_quality,
-                    ) - preference_adjustment),
+                    ) - preference_adjustment,
                     incremental_walking_distance_m=extra_walking_distance,
                     routed_segment_count=len(segments),
                     stop_arrivals=tuple(stop_arrivals),
@@ -573,6 +639,20 @@ class Optimizer:
                     match_classification=classification,
                     data_quality_score=data_quality,
                     hard_constraints_satisfied=not hard_exceeded,
+                    incremental_travel_minutes=extra_travel,
+                    missing_preferred_brands=tuple(
+                        brand
+                        for category, brand in intent_preferences.preferred_brands
+                        if category in option.required_categories
+                        and not any(
+                            category in option.categories_at(stop.id)
+                            and any(
+                                store.canonical_brand == brand and category in store.all_categories
+                                for store in stop.stores
+                            )
+                            for stop in option.stops
+                        )
+                    ),
                 )
 
         jobs = [
@@ -597,8 +677,31 @@ class Optimizer:
             signature = tuple(stop.id for stop in item.ordered_stops)
             if signature in seen_stops:
                 continue
-            if item.match_classification == "easier_alternative":
-                key = "easier_alternative"
+            # A one-errand option next to full matches only earns a place by
+            # saving real travel; otherwise it is clutter that reads as a
+            # cheaper answer than it is.
+            if (
+                item.match_classification == "partial_option"
+                and accepted_full
+                and recommendations.get("best_overall") is not None
+                and recommendations["best_overall"].incremental_travel_minutes
+                - item.incremental_travel_minutes
+                < PARTIAL_OPTION_MIN_SAVING_MINUTES
+            ):
+                continue
+            # A substitute is worth showing only if it gets you there sooner;
+            # a similar shop that also arrives later is no alternative at all.
+            if (
+                item.match_classification == "substitute"
+                and accepted_full
+                and recommendations.get("best_overall") is not None
+                and recommendations["best_overall"].incremental_detour_minutes
+                - item.incremental_detour_minutes
+                < PARTIAL_OPTION_MIN_SAVING_MINUTES
+            ):
+                continue
+            if item.match_classification == "substitute":
+                key = "substitute"
             elif item.match_classification == "partial_option":
                 suffix = "_".join(item.option.required_categories)
                 key = f"partial_{suffix}"
@@ -609,6 +712,16 @@ class Optimizer:
                 seen_stops.add(signature)
             if len(recommendations) >= 5:
                 break
+
+        best = recommendations.get("best_overall")
+        explained: dict[str, ScoredCandidate] = {}
+        for key, item in recommendations.items():
+            if key == "best_overall":
+                why = explain_best(item, primary_pool, intent_preferences)
+            else:
+                why = explain_alternative(key, item, best, intent_preferences)
+            explained[key] = replace(item, why_this_wins=why)
+        recommendations = explained
 
         # The comparison the optimiser performs is this product's whole claim,
         # and until now it ended in the bin: every candidate that was actually
@@ -662,6 +775,8 @@ class Optimizer:
                 or routing_calls + routing_call_offset >= self.routing_hard_budget
             ),
             "no_route_candidate_count": no_route_candidate_count,
+            "provider_error_candidate_count": provider_error_candidate_count,
+            "closed_candidate_count": closed_candidate_count,
             "time_aware_dwell_applied": time_aware,
             "departure_time_routing_verified": time_aware,
             "time_dependency_limitation": (

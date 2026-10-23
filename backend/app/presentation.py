@@ -80,9 +80,12 @@ def hub_location_context(hub: Hub) -> DisplayLocation:
     return DisplayLocation(f"{area} area", "area", 0.5, True)
 
 
-def hub_data_quality(hub: Hub) -> float:
+def hub_data_quality(hub: Hub, open_on_arrival: bool = False) -> float:
+    """How sure we are this place is what and where it says. Listed hours only
+    count when they say it is open when you get there: a place known to be
+    closed used to score higher than one whose hours were simply unknown."""
     location = hub_location_context(hub)
-    hours_bonus = 0.05 if hub.opening_hours or any(store.opening_hours for store in hub.stores) else 0.0
+    hours_bonus = 0.05 if open_on_arrival else 0.0
     return min(1.0, location.quality + hours_bonus)
 
 

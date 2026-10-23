@@ -15,7 +15,13 @@ def test_two_errand_generation_includes_consolidated_hubs(repository) -> None:
     separate = [candidate for candidate in candidates if len(candidate.stops) == 2]
 
     assert consolidated
-    assert separate
+    # A pair only exists when neither building holds both errands; a mall that
+    # has both is an option on its own and is never padded with a second stop.
+    assert all(
+        not {"groceries", "pharmacy"}.issubset(stop.categories)
+        for candidate in separate
+        for stop in candidate.stops
+    )
     assert all(len(candidate.stops) == 1 for candidate in consolidated)
     assert all(
         {"groceries", "pharmacy"}.issubset(candidate.stops[0].categories)
