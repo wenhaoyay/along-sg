@@ -2,17 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowDownUp,
-  ChevronRight,
-  Footprints,
-  Info,
-  Search,
-  SlidersHorizontal,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowDownUp, ChevronRight, Info, Search } from "lucide-react";
 
 import {
   CatalogCategory,
@@ -35,6 +25,16 @@ import { EXAMPLES, placeName, type Example } from "./examples";
 import { laterMinutes, signed, travelMinutes } from "./components/journey/figures";
 import { clockTime } from "./components/journey/format";
 import { readTrip, tripQuery } from "./share";
+import { NoticeLane } from "./components/planner/NoticeLane";
+import { TripOptions } from "./components/planner/TripOptions";
+import {
+  categoryName,
+  intentLabel,
+  type Conflict,
+  type Intent,
+  type Notice,
+  type TripStyle,
+} from "./components/planner/types";
 
 /* How long an example waits for the live answer before showing the saved run
  * of it. A free host sleeps when idle and takes about a minute to wake; a
@@ -62,48 +62,6 @@ const QUICK_NEEDS = [
   ["pharmacy", "Pharmacy"],
 ] as const;
 
-type OpenNeed = {
-  raw_text: string;
-  inferred_type: string;
-  category_hint?: string | null;
-  resolution_status: string;
-};
-type IntentErrand = {
-  category: string;
-  required: boolean;
-  exact_brand?: string | null;
-  preferred_brand?: string | null;
-  exact_place?: string | null;
-  substitutes_allowed: boolean;
-  discovery_concept?: string | null;
-  discovery_category?: string | null;
-  open_need?: OpenNeed | null;
-};
-type Intent = {
-  schema_version: "1.0";
-  original_text: string;
-  required_errands: IntentErrand[];
-  optional_errands: IntentErrand[];
-  preferences: {
-    walking_tolerance: string;
-    transfer_tolerance: string;
-    prefer_consolidated_stops: boolean;
-    urgency: string;
-    max_detour_is_hard?: boolean;
-  };
-  parse_method: "deterministic" | "llm";
-  confidence: number;
-};
-type Conflict = {
-  endpoint: "origin" | "destination";
-  current_label: string;
-  mentioned_text: string;
-  mentioned_label: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  reason: string;
-};
-
 function context(location: ResolvedLocation) {
   return { label: location.label, coordinate: location.coordinate };
 }
@@ -127,16 +85,11 @@ export default function Home() {
   const searchRef = useRef<AbortController | null>(null);
   const [loadingSlow, setLoadingSlow] = useState(false);
   const [searchStage, setSearchStage] = useState<"discovery" | "routing">("discovery");
-  const [tripStyle, setTripStyle] = useState<"balanced" | "faster" | "walking">("balanced");
-  const [error, setError] = useState<string | null>(null);
-  const [clarification, setClarification] = useState<string | null>(null);
-  const [conflict, setConflict] = useState<Conflict | null>(null);
-  const [pendingIntent, setPendingIntent] = useState<Intent | null>(null);
-  const [partial, setPartial] = useState<{
-    intent: Intent;
-    text: string;
-    missing: string[];
-  } | null>(null);
+  const [tripStyle, setTripStyle] = useState<TripStyle>("balanced");
+  // At most one message before a plan: a question, a journey conflict, a
+  // partly understood request or an error (see Notice).
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const error = notice?.kind === "error" ? notice.text : null;
   const [sheet, setSheet] = useState<"peek" | "half">("half");
   const needRef = useRef<HTMLTextAreaElement>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -218,18 +171,16 @@ export default function Home() {
   useEffect(() => {
     plannerRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [result]);
-  useEffect(() => {
-    if (conflict) plannerRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [conflict]);
   useEffect(() => () => searchRef.current?.abort(), []);
   /* A message answering the button press opened below the fold of the
    * planner card - "A quick check" for "hello" was cut off at the bottom
    * edge, and Browse categories opened its search box there with no list in
    * sight. Whatever just appeared is scrolled into view. */
   useEffect(() => {
-    if (!clarification && !error && !partial) return;
+    if (!notice) return;
+    if (notice.kind === "conflict") plannerRef.current?.scrollTo({ top: 0, behavior: "auto" });
     noticeRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [clarification, error, partial]);
+  }, [notice]);
   useEffect(() => {
     if (discoveryOpen) discoveryRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [discoveryOpen]);
@@ -254,7 +205,7 @@ export default function Home() {
     setNeed(example.need);
     setIntent(null);
     setSelections([]);
-    setPartial(null);
+    setNotice(null);
     setPreviewExample(null);
     setTripStyle("balanced");
     exampleRef.current = example.id;
@@ -291,7 +242,9 @@ export default function Home() {
     setCancelled(false);
     setLoading(true);
     setLoadingSlow(false);
-    setError(null);
+    // A new search answers the last error; a question or a partial match
+    // stays on screen until the answer replaces it.
+    setNotice((current) => (current?.kind === "error" ? null : current));
     return controller;
   }
 
@@ -380,7 +333,7 @@ export default function Home() {
       rank === "recommended" ? [] : rankRoutedOptions((body as Result).recommendations ?? {}, rank);
     setSelectedKey(ranked[0]?.[0] ?? "best_overall");
     setSheet("half");
-    setPartial(null);
+    setNotice(null);
     setActiveStop(null);
     // The plan becomes a link: shareable, and Back returns to the form. A
     // structured (browsed) selection has no text to put in a link.
@@ -394,9 +347,7 @@ export default function Home() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setError(null);
-    setClarification(null);
-    setConflict(null);
+    setNotice(null);
     setLoadingSlow(false);
     setSearchStage("discovery");
     const controller = beginSearch();
@@ -424,27 +375,36 @@ export default function Home() {
       controller.signal.throwIfAborted();
       if (!response.ok) throw new Error(errorMessage(response.status, body));
       if (body.journey_conflicts?.length) {
-        setConflict(body.journey_conflicts[0]);
-        setPendingIntent(body.intent ?? null);
-        setClarification(body.clarification_question ?? null);
+        setNotice({
+          kind: "conflict",
+          conflict: body.journey_conflicts[0],
+          pending: body.intent ?? null,
+          text: body.clarification_question ?? "",
+        });
         return;
       }
       if (body.intent && body.unresolved_terms?.length) {
-        setPartial({ intent: body.intent, text: need, missing: body.unresolved_terms });
+        setNotice({
+          kind: "partial",
+          intent: body.intent,
+          text: need,
+          missing: body.unresolved_terms,
+        });
         return;
       }
       if (body.status !== "resolved" || !body.intent) {
-        setClarification(body.clarification_question ?? "Tell us a little more about the errand.");
+        setNotice({
+          kind: "clarify",
+          text: body.clarification_question ?? "Tell us a little more about the errand.",
+        });
         return;
       }
-      if (body.clarification_question) setClarification(body.clarification_question);
       await optimize(body.intent, controller.signal);
     } catch (caught) {
       if (controller.signal.aborted) return;
-      const message = failureMessage(caught);
       // A saved run already on screen stays, marked as not refreshed.
       setSavedRun((saved) => (saved ? { ...saved, liveFailed: true } : saved));
-      setError(message);
+      setNotice({ kind: "error", text: failureMessage(caught) });
     } finally {
       if (searchRef.current === controller) setLoading(false);
     }
@@ -460,7 +420,8 @@ export default function Home() {
   }
 
   function resolveConflict(action: "keep" | "change") {
-    if (!conflict) return;
+    if (notice?.kind !== "conflict") return;
+    const { conflict, pending } = notice;
     if (
       action === "change" &&
       conflict.mentioned_label &&
@@ -477,12 +438,30 @@ export default function Home() {
       if (conflict.endpoint === "origin") setOrigin(next);
       else setDestination(next);
     }
-    if (pendingIntent) {
-      setNeed(pendingIntent.original_text);
-      setIntent(pendingIntent);
+    if (pending) {
+      setNeed(pending.original_text);
+      setIntent(pending);
     }
-    setConflict(null);
-    setClarification(null);
+    setNotice(null);
+  }
+
+  function editConflictEndpoint() {
+    if (notice?.kind !== "conflict") return;
+    if (notice.conflict.endpoint === "origin") setOrigin(null);
+    else setDestination(null);
+    setNotice(null);
+  }
+
+  async function continuePartial() {
+    if (notice?.kind !== "partial") return;
+    const controller = beginSearch();
+    try {
+      await optimize(notice.intent, controller.signal);
+    } catch (caught) {
+      if (!controller.signal.aborted) setNotice({ kind: "error", text: failureMessage(caught) });
+    } finally {
+      if (searchRef.current === controller) setLoading(false);
+    }
   }
 
   function selectQuickNeed(slug: string, label: string) {
@@ -683,8 +662,8 @@ export default function Home() {
                     setOrigin(destination);
                     setDestination(origin);
                     setIntent(null);
-                    setError(null);
-                    setClarification(null);
+                    // A partial match is about the text, which the swap keeps.
+                    setNotice((current) => (current?.kind === "partial" ? current : null));
                   }}
                 >
                   <ArrowDownUp size={16} aria-hidden="true" />
@@ -711,7 +690,7 @@ export default function Home() {
                     onKeyDown={submitOnEnter}
                     onChange={(event) => {
                       setNeed(event.target.value);
-                      setPartial(null);
+                      setNotice((current) => (current?.kind === "partial" ? null : current));
                       setIntent(null);
                       setSelections([]);
                     }}
@@ -730,79 +709,14 @@ export default function Home() {
                   ))}
                 </div>
               )}
-              <div className="trip-style" role="group" aria-label="Journey preference">
-                <button
-                  type="button"
-                  aria-pressed={tripStyle === "balanced"}
-                  onClick={() => setTripStyle("balanced")}
-                >
-                  <SlidersHorizontal size={14} aria-hidden="true" />
-                  Best overall
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={tripStyle === "faster"}
-                  onClick={() => setTripStyle("faster")}
-                >
-                  <Zap size={14} aria-hidden="true" />
-                  Faster
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={tripStyle === "walking"}
-                  onClick={() => setTripStyle("walking")}
-                >
-                  <Footprints size={14} aria-hidden="true" />
-                  Less walking
-                </button>
-              </div>
-              <p className="preference-hint">
-                {tripStyle === "walking"
-                  ? "Give easier walks more weight when comparing stops."
-                  : tripStyle === "faster"
-                    ? "Give extra journey time more weight when comparing stops."
-                    : "Weigh extra time, walking and changes, and how sure we are of each place."}
-              </p>
-              {/* The same segmented control as the preference above it. A
-                  native select here was smaller, differently styled and the
-                  only one on the page. */}
-              <div className="departure-controls">
-                <div className="trip-style departure-mode" role="group" aria-label="Departure">
-                  {(
-                    [
-                      ["now", "Leave now"],
-                      ["later", "Leave later"],
-                    ] as const
-                  ).map(([mode, label]) => (
-                    <button
-                      type="button"
-                      key={mode}
-                      aria-pressed={leaveMode === mode}
-                      onClick={() => {
-                        setLeaveMode(mode);
-                        /* An empty time field met with the browser's own "Please
-                         * fill out this field". Start from a sensible answer. */
-                        if (mode === "later" && !leaveAt) setLeaveAt(sgLocalInput(30));
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                {leaveMode === "later" && (
-                  <label>
-                    Singapore time (SGT)
-                    <input
-                      aria-label="Departure time in Singapore"
-                      type="datetime-local"
-                      value={leaveAt}
-                      min={sgLocalInput(0)}
-                      onChange={(event) => setLeaveAt(event.target.value)}
-                      required
-                    />
-                  </label>
-                )}
-              </div>
+              <TripOptions
+                style={tripStyle}
+                onStyle={setTripStyle}
+                leaveMode={leaveMode}
+                onLeaveMode={setLeaveMode}
+                leaveAt={leaveAt}
+                onLeaveAt={setLeaveAt}
+              />
 
               {(intent || selections.length > 0) && (
                 <div className="intent-preview">
@@ -836,74 +750,18 @@ export default function Home() {
                 </div>
               )}
 
-              <div ref={noticeRef} className="notice-lane">
-                {clarification && (
-                  <div className={conflict ? "notice conflict" : "notice"} role="alert">
-                    <strong>{conflict ? "Your journey changed" : "A quick check"}</strong>
-                    <p>{clarification}</p>
-                    {conflict && (
-                      <div className="conflict-actions">
-                        <button type="button" onClick={() => resolveConflict("keep")}>
-                          Keep {conflict.current_label}
-                        </button>
-                        {conflict.mentioned_label && (
-                          <button type="button" onClick={() => resolveConflict("change")}>
-                            Use {conflict.mentioned_label}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (conflict.endpoint === "origin") setOrigin(null);
-                            else setDestination(null);
-                            setConflict(null);
-                          }}
-                        >
-                          Edit {conflict.endpoint}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {error && (
-                  <div className="notice error" role="alert">
-                    <strong>That didn’t work</strong>
-                    <p>{error}</p>
-                  </div>
-                )}
-                {partial && partial.text === need && !selections.length && (
-                  <div className="notice" role="alert">
-                    <strong>We found part of your request</strong>
-                    <p>
-                      Not resolved: {partial.missing.join(", ")}. Continue with{" "}
-                      {[...partial.intent.required_errands, ...partial.intent.optional_errands]
-                        .map((item) => intentLabel(categories, item))
-                        .join(" and ")}{" "}
-                      only?
-                    </p>
-                    <div className="conflict-actions">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const controller = beginSearch();
-                          try {
-                            await optimize(partial.intent, controller.signal);
-                          } catch (caught) {
-                            if (!controller.signal.aborted) setError(failureMessage(caught));
-                          } finally {
-                            if (searchRef.current === controller) setLoading(false);
-                          }
-                        }}
-                      >
-                        Continue with matched errands
-                      </button>
-                      <button type="button" onClick={() => needRef.current?.focus()}>
-                        Edit request
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <NoticeLane
+                ref={noticeRef}
+                notice={notice}
+                need={need}
+                browsing={selections.length > 0}
+                categories={categories}
+                onKeep={() => resolveConflict("keep")}
+                onUseMentioned={() => resolveConflict("change")}
+                onEditEndpoint={editConflictEndpoint}
+                onContinuePartial={continuePartial}
+                onEditRequest={() => needRef.current?.focus()}
+              />
 
               <div ref={discoveryRef}>
                 {discoveryOpen && (
@@ -1117,20 +975,6 @@ export default function Home() {
   );
 }
 
-function categoryName(categories: CatalogCategory[], slug: string) {
-  return categories.find((item) => item.slug === slug)?.name ?? slug.replaceAll("_", " ");
-}
-function intentLabel(categories: CatalogCategory[], item: IntentErrand) {
-  const label =
-    item.open_need?.raw_text ??
-    item.exact_brand ??
-    item.preferred_brand ??
-    item.exact_place ??
-    categoryName(categories, item.category);
-  if (item.open_need?.inferred_type === "product" && item.discovery_category)
-    return `${label} · ${categoryName(categories, item.discovery_category)}`;
-  return label;
-}
 type ParseResponse = {
   status?: string;
   intent?: Intent | null;
@@ -1179,13 +1023,4 @@ function errorMessage(status: number, body: { detail?: unknown }) {
       ? body.detail
       : "Part of that request needs another look.";
   return "We couldn’t check routes right now. Please try again.";
-}
-
-/* A datetime-local value ("2026-10-02T14:05") for Singapore time, `ahead`
- * minutes from now and rounded up to five, whatever the device's own zone. */
-function sgLocalInput(ahead: number) {
-  const at = new Date(Date.now() + ahead * 60_000);
-  at.setUTCMinutes(Math.ceil(at.getUTCMinutes() / 5) * 5, 0, 0);
-  const sg = new Date(at.getTime() + 8 * 60 * 60_000);
-  return sg.toISOString().slice(0, 16);
 }

@@ -1,4 +1,5 @@
 import type { ResolvedLocation } from "./components/LocationField";
+import type { TripStyle } from "./components/planner/types";
 
 /* A plan as a link: where from, where to, what for, and how to weigh it.
  *
@@ -6,8 +7,6 @@ import type { ResolvedLocation } from "./components/LocationField";
  * the link carries; the names ride along so the fields read the same when the
  * link is opened. Nothing else - no result, no times - so a shared link always
  * plans afresh rather than replaying a stale answer. */
-
-export type TripStyle = "balanced" | "faster" | "walking";
 
 export type SharedTrip = {
   origin: ResolvedLocation;

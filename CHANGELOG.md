@@ -2,6 +2,102 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.11.0 - Every claim checkable
+
+A devil's-advocate review tried the demo the way a reviewer would. In the
+headline example, the pick's "why this wins" said it had the lowest time,
+walking and changes, while the option listed under it was quicker and walked
+less. The headline figure was mostly time in shops. "Not McDonald's" sent you
+to McDonald's. Editing a chosen place wiped it. This release makes every
+figure and sentence on screen true of the comparison behind it, and makes the
+demo something a stranger can open.
+
+**What the app claims**
+
+- **"Why this wins" is written from the comparison.** It names the quicker
+  rival and the real reason the pick still ranks first (a preferred brand,
+  one building, fewer changes, less walking). It claims "least extra travel"
+  only when that is true. `services/explain.py`.
+- **Extra travel leads; time in shops is said beside it.** The headline, the
+  row figures, the map pins and the breakdown read one set of figures:
+  extra travel, time in shops, and how much later than direct.
+  `journey/figures.ts`, `docs/ranking.md`.
+- **Labels say what they mean.**
+  - Every row: "no FairPrice", "substitute: convenience store",
+    "skips pharmacy", "over your limit".
+  - On the pick: "Not your preferred brand", "Substitute". These replace
+    "Easier alternative", which also appeared beside "5 min more travel".
+- **Limits mean travel.** "Max 5 minutes detour" no longer fails on the 8
+  minutes spent buying bubble tea.
+- **"If convenient" stays optional.** The only partial plan offered keeps the
+  errand you needed.
+
+**What it finds**
+
+- **Two-stop plans beside the origin are found.** Jurong East to Changi, "KFC
+  and bubble tea", now picks Koi Express then JEM (+3.8 min), not Bugis
+  Junction.
+- **Places listed as closed when you arrive are skipped.**
+- **Realistic time at stops.** An ATM is 2 min and a supermarket 15. ATMs and
+  post offices are categories of their own.
+- **Place data:**
+  - NEX is in the right place, and the three invented seed malls are gone.
+  - 55 duplicate mall names are merged.
+  - 134 pharmacies are added from the HSA register (data.gov.sg), plus
+    SingPost post offices.
+  - Places are named from their tags ("UOB ATM", not "ATM or bank").
+  - "Sentosa" and "Changi" find the place, not a shop.
+- **Requests:**
+  - Negation: "not McDonald's", "Guardian not Watsons".
+  - Typos ("panadl"), Singlish (kopi, tapau, makan) and Chinese (牛奶, 奶茶).
+  - Clock times ("before 7pm").
+  - Words the parser cannot read are always reported back, never dropped.
+  - Held-out phrasings: 96%.
+- **Pruning measured.** `tools/compare_exhaustive.py`: the deployed pick
+  matches an unpruned search on 18 of 20 journeys, and the misses are within
+  1.6 min.
+
+**Using it**
+
+- **Editing.** Changing a chosen place keeps what you type. Enter searches,
+  and the search button stays on screen.
+- **Plans are links.** Back returns to the form, and "Share this plan" uses
+  the share sheet or the clipboard.
+- **Google Maps.** It gets the plan one leg at a time instead of dropping
+  everything after the stop.
+- **Failures are sentences.** No more "Unexpected token '<'"; a dropped
+  connection says so.
+- **Accessibility.** Inputs are named by their visible labels, focus follows
+  the answer, and a single status sentence announces it.
+- **Honesty about the demo.**
+  - "Sample times" in the app bar whenever the routing is offline.
+  - The privacy page matches the code: no analytics.
+  - MIT licence, with the data licences noted.
+
+**Running it**
+
+- **Free hosting.** The image is non-root with the catalogue baked in, the
+  dependencies are pinned, and `render.yaml` targets Render's free plan.
+  `docs/deploy.md` has the steps.
+- **Waking up.** Saved runs of the three examples appear while a sleeping
+  instance wakes, labelled as saved.
+- **Faster.** Candidate selection runs off the event loop with cached hubs:
+  ten concurrent plans take about 0.5 s each, down from 3.4 s, and `/health`
+  stays responsive.
+- **Protected.** Per-client rate limits, request size limits, timeouts on
+  both plan routes, and naive datetimes read as Singapore time instead of a
+  500.
+
+**Code**
+
+- **`Optimizer.optimize` split into stages:** generate, budget, price, choose
+  and report. Behaviour is unchanged.
+- **Tests:**
+  - Test files are named by behaviour.
+  - Golden journeys run on the real catalogue.
+  - New suites for the parser and the planner's editing, sharing and
+    failure cases.
+
 ## 0.10.0 - Showing the detour
 
 A design review found that the product's one idea, the cost of a detour measured against the
