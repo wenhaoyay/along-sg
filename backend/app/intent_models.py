@@ -164,12 +164,24 @@ class IntentParseDiagnostics(BaseModel):
     correction_applied: bool = False
 
 
+class SpellingCorrection(BaseModel):
+    typed: str
+    understood_as: str
+
+
 class IntentParseResponse(BaseModel):
     status: IntentStatus
     intent: IntentV1 | None = None
     unresolved_terms: list[str] = Field(default_factory=list)
     clarification_question: str | None = None
     diagnostics: IntentParseDiagnostics
+    # Words read as a near spelling of a catalog term ("panadl" -> "panadol").
+    # The intent's confidence is lowered when there are any, so the page can
+    # ask "did you mean ...?" before trusting the plan.
+    spelling_corrections: list[SpellingCorrection] = Field(default_factory=list)
+    # Plain sentences about how the request was read: an excluded brand, an
+    # "or" kept as a preference, a concept planned as a broader category.
+    notes: list[str] = Field(default_factory=list)
     journey_mentions: list[JourneyMention] = Field(default_factory=list)
     journey_conflicts: list[JourneyConflict] = Field(default_factory=list)
 

@@ -499,9 +499,10 @@
   {
    "text": "grab dinner",
    "expect": [
-    "fast_food"
+    "restaurants"
    ],
-   "set": "held_out"
+   "set": "held_out",
+   "note": "Expected fast_food until 2026-10: dinner is a meal, so restaurants; fast food only when asked for."
   },
   {
    "text": "some fruits",
