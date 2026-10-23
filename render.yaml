@@ -1,28 +1,48 @@
+# Along as a portfolio demo on Render's free plan.
+#
+# Offline by design: routing, bus arrivals and place search run on bundled
+# data and the deterministic mock, so the demo needs no credentials and
+# spends no third-party quota. The POI catalogue is built into the image at
+# `docker build` time (see Dockerfile), so there is no disk - free web
+# services cannot have one - and a restart or redeploy loses nothing.
+#
+# A free instance sleeps after 15 idle minutes and takes about a minute to
+# wake. backend/tools/export_examples.py saves the homepage examples as
+# static JSON, so a page can show them without waiting for that.
 services:
   - type: web
     name: along-the-way-beta
     runtime: docker
-    plan: starter
+    plan: free
+    # Singapore, where the data and the users are. If the free plan is not
+    # offered there when this blueprint is applied, use the nearest region
+    # that has it.
     region: singapore
     healthCheckPath: /health
-    disk:
-      name: beta-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: ONEMAP_MOCK
-        value: "false"
-      - key: ONEMAP_EMAIL
-        sync: false
-      - key: ONEMAP_PASSWORD
-        sync: false
+        value: "true"
+      - key: DATAMALL_MOCK
+        value: "true"
       - key: LLM_INTENT_ENABLED
         value: "false"
-      - key: BETA_ADMIN_TOKEN
-        generateValue: true
-      - key: ANALYTICS_RETENTION_DAYS
-        value: "90"
+      - key: DISCOVERY_LIVE_ENABLED
+        value: "false"
+      - key: DISCOVERY_WEB_ENABLED
+        value: "false"
+      - key: DISCOVERY_SEMANTIC_LLM_ENABLED
+        value: "false"
+      # Nothing in the frontend sends events; the routes answer 404.
+      - key: ANALYTICS_ENABLED
+        value: "false"
+      - key: EXPOSE_DIAGNOSTICS
+        value: "false"
       - key: OPTIMIZATION_TIMEOUT_SECONDS
-        value: "45"
+        value: "30"
+      # The page and the API share one origin, so no cross-origin callers.
       - key: CORS_ALLOWED_ORIGINS
         value: ""
+      # Render's proxy reaches the container from a private address; only
+      # then is X-Forwarded-For believed (rate limits are per client).
+      - key: FORWARDED_ALLOW_IPS
+        value: "127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
