@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import os
 import re
 import sqlite3
+import threading
+from collections import OrderedDict
 from datetime import datetime
 from math import cos, radians, sqrt
 from pathlib import Path
@@ -77,8 +80,47 @@ BRAND_CATEGORY_SEED = {
 
 
 class HubRepository:
+    # Category lookups kept in memory, keyed by category tuple. Bounded: the
+    # key space is the category catalogue's combinations, not user text.
+    HUB_CACHE_MAX_ENTRIES = 256
+
     def __init__(self, path: Path):
         self.path = path
+        self._cache_lock = threading.Lock()
+        self._cache_version: tuple[int, ...] | None = None
+        self._hub_cache: OrderedDict[tuple[str, ...], tuple[Hub, ...]] = OrderedDict()
+        self._hub_by_id: dict[int, Hub] = {}
+        self._outlet_counts: dict[bool, int] = {}
+
+    def catalogue_version(self) -> tuple[int, ...]:
+        """A token that changes whenever the catalogue file does, whoever wrote it.
+
+        An ingest runs as its own process, so an in-process write counter alone
+        would miss it. SQLite's header carries a change counter (offset 24) that
+        every committed write in rollback-journal mode increments; mtime and
+        size cover the rest, and the WAL file covers WAL mode.
+        """
+        try:
+            stat = os.stat(self.path)
+            with open(self.path, "rb") as handle:
+                handle.seek(24)
+                counter = int.from_bytes(handle.read(4), "big")
+        except OSError:
+            return (-1,)
+        try:
+            wal = os.stat(f"{self.path}-wal")
+            wal_signature = (wal.st_mtime_ns, wal.st_size)
+        except OSError:
+            wal_signature = (0, 0)
+        return (stat.st_mtime_ns, stat.st_size, counter, *wal_signature)
+
+    def _cache_current(self, version: tuple[int, ...]) -> None:
+        # Caller holds the lock. A changed catalogue drops everything at once.
+        if self._cache_version != version:
+            self._hub_cache.clear()
+            self._hub_by_id.clear()
+            self._outlet_counts.clear()
+            self._cache_version = version
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path)
@@ -296,9 +338,19 @@ class HubRepository:
             )
 
     def count_outlets(self, active_only: bool = True) -> int:
+        version = self.catalogue_version()
+        with self._cache_lock:
+            self._cache_current(version)
+            cached = self._outlet_counts.get(active_only)
+        if cached is not None:
+            return cached
         where = "WHERE closure_status != 'closed'" if active_only else ""
         with self._connect() as connection:
-            return int(connection.execute(f"SELECT COUNT(*) FROM outlets {where}").fetchone()[0])
+            count = int(connection.execute(f"SELECT COUNT(*) FROM outlets {where}").fetchone()[0])
+        with self._cache_lock:
+            if self._cache_version == version:
+                self._outlet_counts[active_only] = count
+        return count
 
     def category_catalog(self) -> tuple[str, ...]:
         with self._connect() as connection:
@@ -569,8 +621,34 @@ class HubRepository:
         return tuple(row[0] for row in rows) or categories
 
     def find_for_categories(self, categories: tuple[str, ...]) -> list[Hub]:
+        """Active hubs serving any of the categories, from memory when unchanged.
+
+        Every optimisation used to reload each hub of the category from SQLite
+        and rebuild it, about half a second of a request on the full catalogue.
+        The result is cached per category tuple until the catalogue file
+        changes (`catalogue_version`). Hubs are frozen and interned by id, so
+        categories sharing a hub share one object; callers get a fresh list.
+        """
         if not categories:
             return []
+        key = tuple(categories)
+        version = self.catalogue_version()
+        with self._cache_lock:
+            self._cache_current(version)
+            cached = self._hub_cache.get(key)
+            if cached is not None:
+                self._hub_cache.move_to_end(key)
+                return list(cached)
+        hubs = self._load_for_categories(key)
+        with self._cache_lock:
+            if self._cache_version == version:
+                hubs = [self._hub_by_id.setdefault(hub.id, hub) for hub in hubs]
+                self._hub_cache[key] = tuple(hubs)
+                while len(self._hub_cache) > self.HUB_CACHE_MAX_ENTRIES:
+                    self._hub_cache.popitem(last=False)
+        return list(hubs)
+
+    def _load_for_categories(self, categories: tuple[str, ...]) -> list[Hub]:
         with self._connect() as connection:
             expanded = self._descendant_categories(connection, categories)
             placeholders = ",".join("?" for _ in expanded)
