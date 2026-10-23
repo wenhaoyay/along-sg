@@ -435,14 +435,17 @@ def derived_display_name(
             return own_name
         label = canonical_name or (own_name if named else "") or brand_label
         return f"{label} ATM" if label else unnamed_label("atm")
+    if amenity == "post_office":
+        # "Bedok Central Post Office" says which one; "SingPost" does not.
+        if named and canonical_brand(own_name)[0] is None:
+            return own_name
+        return f"{canonical_name} post office" if canonical_name else unnamed_label("post_office")
     if canonical_name:
         return canonical_name
     if named:
         return own_name
     if amenity == "bank" and brand_label:
         return brand_label if "bank" in normalize_text(brand_label).split() else f"{brand_label} bank"
-    if amenity == "post_office":
-        return unnamed_label("post_office")
     if amenity == "food_court":
         return "Food court"
     cuisines = cuisine_list(tags.get("cuisine"))

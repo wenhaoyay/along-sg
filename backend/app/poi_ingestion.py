@@ -547,9 +547,9 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
                         "semantic_type": "station_area" if _is_station_area(nearest_rail_distance_m(coordinate)) else "standalone",
                         "transport_area_id": transport_id,
                         "consolidation_group_id": hub_source_id,
-                        "source": source,
+                        "source": element.get("_source", source),
                         "source_id": hub_source_id,
-                        "last_verified_at": captured_at,
+                        "last_verified_at": element.get("_verified_at", captured_at),
                         "opening_hours": tags.get("opening_hours"),
                         "closure_status": "closed" if _is_closed(tags) else "unknown",
                         "transport_node_distance_m": transport_distance,
@@ -594,9 +594,10 @@ def transform_osm_payload(payload: dict[str, Any]) -> tuple[list[dict[str, Any]]
             # validation step can prove they match the known outlet brand.
             "brand_wikidata": _wikidata_id(tags),
             "categories": categories,
-            "source": source,
+            # A supplementary dataset (the HSA register) names itself.
+            "source": element.get("_source", source),
             "source_id": source_id,
-            "last_verified_at": captured_at,
+            "last_verified_at": element.get("_verified_at", captured_at),
             "opening_hours": tags.get("opening_hours"),
             "closure_status": "closed" if is_closed else "unknown",
         })
@@ -656,6 +657,7 @@ def ingest_payload(
     repository.replace_source_data(
         "openstreetmap", nodes, hubs, outlets,
         retire_curated_seed=report.imported_malls >= FULL_CATALOGUE_MIN_MALLS,
+        extra_sources=SUPPLEMENTARY_SOURCES,
     )
     repository.set_meta({
         "osm_captured_at": report.captured_at,
@@ -688,14 +690,92 @@ def load_payload(path: Path) -> dict[str, Any]:
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 OSM_CAPTURE_FILE = "singapore-osm-pois.json"
+# Supplements, each fetched by scripts/fetch_supplementary_data.py and merged
+# into the main capture at ingest. The main capture file is never edited.
+POST_OFFICE_FILE = "singapore-osm-post-offices.json"
+HSA_PHARMACY_FILE = "singapore-hsa-pharmacies.json"
+HSA_SOURCE = "hsa_pharmacy_register"
+SUPPLEMENTARY_SOURCES = (HSA_SOURCE,)
+# A registered pharmacy this close to one OSM already maps is that pharmacy.
+HSA_SAME_PHARMACY_KM = 0.08
 
 
 def catalogue_files(data_dir: Path | None = None) -> tuple[Path, ...]:
     """Every file the catalogue is built from, main capture first."""
     base = data_dir or DATA_DIR
-    return (base / OSM_CAPTURE_FILE,)
+    supplements = tuple(
+        path for path in (base / POST_OFFICE_FILE, base / HSA_PHARMACY_FILE) if path.exists()
+    )
+    return (base / OSM_CAPTURE_FILE, *supplements)
+
+
+def _hsa_elements(register: dict[str, Any]) -> list[dict[str, Any]]:
+    """The HSA register as OSM-shaped elements, tagged with their own source."""
+    verified = register.get("metadata", {}).get("last_updated") or register.get("metadata", {}).get("fetched_at")
+    elements = []
+    for item in register.get("pharmacies", []):
+        tags = {
+            "amenity": "pharmacy", "healthcare": "pharmacy", "dispensing": "yes",
+            "name": item["name"], "brand": item.get("brand"), "branch": item.get("branch"),
+            "addr:housenumber": item.get("house_number"), "addr:street": item.get("street"),
+            "addr:postcode": item.get("postal_code"), "addr:unit": item.get("unit"),
+            "official_name": item.get("registered_name"),
+        }
+        elements.append({
+            "type": "hsa", "id": item["id"],
+            "lat": item["latitude"], "lon": item["longitude"],
+            "tags": {key: value for key, value in tags.items() if value},
+            "_source": HSA_SOURCE, "_verified_at": verified,
+        })
+    return elements
+
+
+def merge_supplements(
+    payload: dict[str, Any],
+    post_offices: dict[str, Any] | None = None,
+    pharmacy_register: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, int]]:
+    """The main capture plus its supplements, and what each one added.
+
+    Post offices are OSM elements and merge by element id. A registered
+    pharmacy is added only where OSM maps no pharmacy within 80 m: the two
+    are one shop, and OSM's tags (opening hours, brand ids) are richer.
+    """
+    elements = list(payload.get("elements") or [])
+    seen = {(item.get("type"), item.get("id")) for item in elements}
+    added = {"post_offices": 0, "hsa_pharmacies": 0, "hsa_pharmacies_already_mapped": 0}
+    for element in (post_offices or {}).get("elements") or []:
+        key = (element.get("type"), element.get("id"))
+        if key not in seen:
+            seen.add(key)
+            elements.append(element)
+            added["post_offices"] += 1
+    if pharmacy_register:
+        mapped = [
+            coordinate for element in elements
+            if "pharmacy" in infer_categories(element.get("tags") or {})
+            and (coordinate := _coordinate(element)) is not None
+        ]
+        index = _SpatialIndex([(str(position), coordinate) for position, coordinate in enumerate(mapped)])
+        for element in _hsa_elements(pharmacy_register):
+            _nearest, distance_m = index.nearest(Coordinate(element["lat"], element["lon"]))
+            if distance_m is not None and distance_m <= HSA_SAME_PHARMACY_KM * 1000:
+                added["hsa_pharmacies_already_mapped"] += 1
+                continue
+            elements.append(element)
+            added["hsa_pharmacies"] += 1
+    return {**payload, "elements": elements}, added
 
 
 def load_catalogue(data_dir: Path | None = None) -> dict[str, Any]:
-    """The bundled capture, ready for `ingest_payload`."""
-    return load_payload(catalogue_files(data_dir)[0])
+    """The bundled capture with its supplements, ready for `ingest_payload`."""
+    base = data_dir or DATA_DIR
+    payload = load_payload(base / OSM_CAPTURE_FILE)
+    post_offices = base / POST_OFFICE_FILE
+    register = base / HSA_PHARMACY_FILE
+    merged, _added = merge_supplements(
+        payload,
+        load_payload(post_offices) if post_offices.exists() else None,
+        load_payload(register) if register.exists() else None,
+    )
+    return merged

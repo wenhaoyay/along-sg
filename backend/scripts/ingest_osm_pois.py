@@ -15,9 +15,12 @@ if str(BACKEND_ROOT) not in sys.path:
 from app.config import Settings  # noqa: E402
 from app.db import HubRepository  # noqa: E402
 from app.poi_ingestion import (  # noqa: E402
+    OSM_CAPTURE_FILE,
+    catalogue_files,
     download_osm_payload,
     file_fingerprint,
     ingest_payload,
+    load_catalogue,
     load_payload,
 )
 
@@ -31,10 +34,19 @@ async def main() -> None:
         help="Where to save a newly downloaded attributed export",
     )
     parser.add_argument("--database", type=Path, help="SQLite database path")
+    parser.add_argument(
+        "--no-supplements", action="store_true",
+        help="Ingest the capture alone, without the post offices and HSA pharmacies beside it",
+    )
     args = parser.parse_args()
 
     fingerprint = None
-    if args.input:
+    if args.input and args.input.name == OSM_CAPTURE_FILE and not args.no_supplements:
+        # The bundled capture: merge the supplementary files kept beside it,
+        # exactly as a deploy does, so both record the same fingerprint.
+        payload = load_catalogue(args.input.parent)
+        fingerprint = file_fingerprint(*catalogue_files(args.input.parent))
+    elif args.input:
         payload = load_payload(args.input)
         fingerprint = file_fingerprint(args.input)
     else:

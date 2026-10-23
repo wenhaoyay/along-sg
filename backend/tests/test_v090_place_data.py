@@ -232,3 +232,67 @@ def test_generic_hubs_are_flagged_and_carry_a_street(tmp_path) -> None:
     with sqlite3.connect(tmp_path / "errands.db") as connection:
         flagged = {row[0] for row in connection.execute("SELECT name FROM hubs WHERE name_is_generic=1")}
     assert flagged == {"Shopping mall (Scotts Road)", "Food court (Bedok North Street 1)"}
+
+
+def test_post_offices_and_registered_pharmacies_merge_into_the_capture() -> None:
+    from app.poi_ingestion import HSA_SOURCE, merge_supplements
+
+    capture = {"elements": [
+        _node(1, 1.3000, 103.8000, amenity="pharmacy", name="Guardian"),
+    ]}
+    post_offices = {"elements": [
+        _node(2, 1.3240, 103.9300, amenity="post_office", name="Bedok Central Post Office", operator="Singapore Post"),
+        _node(1, 1.3000, 103.8000, amenity="pharmacy", name="Guardian"),  # already present
+    ]}
+    register = {"metadata": {"last_updated": "2025-11-08T10:12:28+08:00"}, "pharmacies": [
+        # 20 m from the mapped Guardian: the same shop.
+        {"id": "A", "name": "Guardian", "brand": "Guardian", "latitude": 1.30015, "longitude": 103.80005},
+        {"id": "B", "name": "Smith Pharmacy", "latitude": 1.3500, "longitude": 103.8500,
+         "street": "Serangoon Central", "postal_code": "556083"},
+    ]}
+    merged, added = merge_supplements(capture, post_offices, register)
+    assert added == {"post_offices": 1, "hsa_pharmacies": 1, "hsa_pharmacies_already_mapped": 1}
+
+    _nodes, hubs, outlets, _report = transform_osm_payload(merged)
+    by_name = {item["name"]: item for item in outlets}
+    assert by_name["Bedok Central Post Office"]["categories"] == ("post_office", "parcel")
+    smith = by_name["Smith Pharmacy"]
+    assert smith["source"] == HSA_SOURCE
+    assert smith["last_verified_at"] == "2025-11-08T10:12:28+08:00"
+    assert any(hub["source"] == HSA_SOURCE for hub in hubs)
+
+
+def test_a_brand_named_post_office_reads_as_a_post_office() -> None:
+    tags = {"amenity": "post_office", "name": "Singapore Post", "operator": "Singapore Post"}
+    assert derived_display_name(tags, ("post_office",), "SingPost") == "SingPost post office"
+
+
+def test_reingest_replaces_supplementary_rows(tmp_path) -> None:
+    from app.poi_ingestion import merge_supplements
+
+    register = {"metadata": {}, "pharmacies": [
+        {"id": "B", "name": "Smith Pharmacy", "latitude": 1.35, "longitude": 103.85},
+    ]}
+    payload, _added = merge_supplements({"elements": []}, None, register)
+    repository = HubRepository(tmp_path / "errands.db")
+    repository.initialize()
+    ingest_payload(repository, payload)
+    ingest_payload(repository, payload)  # must not collide with the first run
+    with sqlite3.connect(tmp_path / "errands.db") as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM outlets WHERE name='Smith Pharmacy'"
+        ).fetchone()[0] == 1
+
+
+def test_bundled_supplements_carry_source_and_licence() -> None:
+    data = Path(__file__).resolve().parents[1] / "data"
+    register = json.loads((data / "singapore-hsa-pharmacies.json").read_text(encoding="utf-8"))
+    assert "Singapore Open Data Licence" in register["metadata"]["license"]
+    assert register["metadata"]["dataset_id"] == "d_bb92615f43de22933e4479558b1f6c36"
+    assert register["pharmacies"] and all(
+        1.1 < item["latitude"] < 1.5 and 103.5 < item["longitude"] < 104.1
+        for item in register["pharmacies"]
+    )
+    post_offices = json.loads((data / "singapore-osm-post-offices.json").read_text(encoding="utf-8"))
+    assert post_offices["capture_metadata"]["license"] == "ODbL 1.0"
+    assert all(item["tags"]["amenity"] == "post_office" for item in post_offices["elements"])
