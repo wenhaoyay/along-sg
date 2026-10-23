@@ -315,6 +315,12 @@ def test_every_category_has_a_dwell_time_and_an_env_override(monkeypatch) -> Non
     assert defaults.atm < defaults.convenience < defaults.groceries
     assert defaults.post_office > defaults.parcel
 
+    # A developer's local .env may pin older allowances; this test is about
+    # the defaults and the override mechanism, not about that file.
+    import os
+
+    for name in [key for key in os.environ if key.startswith("DWELL_")]:
+        monkeypatch.delenv(name)
     monkeypatch.setenv("DWELL_ATM_MINUTES", "3")
     monkeypatch.setenv("DWELL_HAIRCUTS_MINUTES", "40")
     monkeypatch.setenv("DWELL_GROCERIES_MINUTES", "25")
