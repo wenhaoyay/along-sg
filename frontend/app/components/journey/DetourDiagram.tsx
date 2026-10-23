@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { inkOn } from "../../lineColors";
 import { clockTime } from "./format";
 import { RANK_LABELS, type RankKey, tradeoffCopy } from "./ranking";
 import { directStrip, recommendationStrip, type Strip } from "./strips";
@@ -48,6 +49,7 @@ export function DetourDiagram({
   // length of a bar you were already reading.
   const scale = Math.max(direct.total, ...strips.map(([, , strip]) => strip.total)) * 1.02;
   const directAt = (direct.total / scale) * 100;
+  const longest = Math.max(direct.total, ...strips.map(([, , strip]) => strip.total));
 
   return (
     <section className="detour" aria-labelledby="detour-title">
@@ -94,18 +96,24 @@ export function DetourDiagram({
               key={key}
               className={`detour-row option${key === selectedKey ? " selected" : ""}`}
               aria-pressed={key === selectedKey}
-              aria-label={`${name}${tag ? ` (${tag})` : ""}: ${travel} min extra travel, ${later} min later than going direct${
-                item.arrival_time ? `, arrive ${clockTime(item.arrival_time)}` : ""
-              }${trade ? `. ${trade}` : ""}`}
               onClick={() => onSelect(key)}
               onMouseEnter={() => onHover?.(key)}
               onFocus={() => onHover?.(key)}
               onBlur={() => onHover?.(null)}
             >
               <span className="detour-name">{name}</span>
+              {/* The row's name is its own visible text plus what the bar
+                  shows, said in words - an aria-label that rephrased the
+                  figures did not contain what a voice user sees. */}
               <span className="detour-figure">
                 {travel} min
-                {item.arrival_time ? ` · ${clockTime(item.arrival_time)}` : ""}
+                <span className="sr-only">{` extra travel, ${later} min later than going direct`}</span>
+                {item.arrival_time ? (
+                  <>
+                    <span className="sr-only">, arrive</span>
+                    {` · ${clockTime(item.arrival_time)}`}
+                  </>
+                ) : null}
               </span>
               <Track strip={strip} scale={scale} />
               {(tag || trade) && (
@@ -118,6 +126,7 @@ export function DetourDiagram({
           );
         })}
       </div>
+      <Axis direct={direct.total} longest={longest} scale={scale} />
 
       <div className="detour-foot">
         <ul className="detour-legend" aria-label="Diagram key">
@@ -168,6 +177,7 @@ function Track({ strip, scale }: { strip: Strip; scale: number }) {
                 left: `${(piece.start / scale) * 100}%`,
                 width: `${width}%`,
                 "--piece-color": piece.color ?? undefined,
+                "--piece-ink": piece.color ? inkOn(piece.color) : undefined,
               } as React.CSSProperties
             }
           >
@@ -176,5 +186,34 @@ function Track({ strip, scale }: { strip: Strip; scale: number }) {
         );
       })}
     </span>
+  );
+}
+
+/* The time axis: where the bars start, where the direct trip arrives and how
+ * long the longest option takes. The figures beside each row already say all
+ * of this; the axis is for reading the bars, so it is hidden from assistive
+ * technology rather than read out a second time. */
+function Axis({ direct, longest, scale }: { direct: number; longest: number; scale: number }) {
+  const at = (minutes: number) => (minutes / scale) * 100;
+  const directAt = at(direct);
+  const longestAt = at(longest);
+  // A label is about 12% of the row wide. Where the direct mark and the end
+  // would collide, the direct label turns to face left; where they would
+  // still collide, the end is not labelled - the last bar shows it.
+  const close = longestAt - directAt < 22;
+  const showLongest = longest - direct >= 1 && longestAt - directAt >= 12;
+  return (
+    <div className="detour-axis" aria-hidden="true">
+      <span style={{ left: 0 }}>0</span>
+      <span
+        className={`direct${close ? " end" : ""}`}
+        style={{ left: `${directAt}%` }}
+      >{`${Math.round(direct)} min direct`}</span>
+      {showLongest && (
+        <span className="end" style={{ left: `${longestAt}%` }}>
+          {`${Math.round(longest)} min`}
+        </span>
+      )}
+    </div>
   );
 }

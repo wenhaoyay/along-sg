@@ -1,8 +1,11 @@
 :root {
   --ink: #17231f;
   --ink-soft: #34443e;
-  --muted: #68766f;
-  --faint: #8d9893;
+  /* Every grey that carries text passes WCAG AA (4.5:1) on each light ground
+     it sits on, down to the page itself (#eceeed). --muted was 4.43:1 on
+     --surface-soft, --faint 2.98:1 on white. */
+  --muted: #626f68;
+  --faint: #666d6a;
   --green: #0f5b4f;
   --green-hover: #0b493f;
   --mint: #e8f5f0;
@@ -69,7 +72,7 @@
   --wash-strong: #edf7f2;
   --glyph-bg: #e5f2ed;
   --glyph-bg-alt: #e8ecea;
-  --placeholder: #8d9994;
+  --placeholder: #666d6a;
   --handle: #c9d0cd;
   --focus-ring: rgba(15, 91, 79, 0.3);
   --map-baseline: #687b74;
@@ -92,6 +95,9 @@
   --route-direct: #5b6661;
   --route-walk: #3b4743;
   --route-bus: var(--green);
+  --route-bus-ink: #fff;
+  /* Text on a solid --green fill. */
+  --on-green: #fff;
 }
 
 /* Dark mode. `data-theme` is stamped on <html> before first paint by the
@@ -100,14 +106,13 @@
    of being duplicated between a media query and an override.
    This app is a React SPA that does not render without JavaScript, so there is
    no no-JS case for a stylesheet-only fallback to serve.
-   The map tiles are a fixed light raster from OneMap, so they are inverted in
-   place - hue-rotated back so green stays green - while markers and route
-   lines sit in Leaflet's overlay panes and are left untouched. */
+   The map is not filtered: SpatialMap switches to OneMap's own Night basemap,
+   and markers and route lines take their colours from the tokens below. */
 :root[data-theme="dark"] {
   --ink: #e8efec;
   --ink-soft: #c3d0cb;
   --muted: #93a29c;
-  --faint: #75837d;
+  --faint: #899590;
   --green: #7fd3bf;
   --green-hover: #9fe0d0;
   --mint: #16302a;
@@ -143,7 +148,7 @@
   --wash-strong: #16302a;
   --glyph-bg: #16302a;
   --glyph-bg-alt: #222d2a;
-  --placeholder: #7b8a84;
+  --placeholder: #87958f;
   --handle: #3a4844;
   --focus-ring: rgba(127, 211, 191, 0.45);
   --map-baseline: #8b9a94;
@@ -163,6 +168,10 @@
   --route-direct: #a3b1ab;
   --route-walk: #d5e0db;
   --route-bus: var(--green);
+  /* The dark green is light enough that white on it is 1.75:1. */
+  --route-bus-ink: #0c1211;
+  /* White on the light dark-mode green is 1.75:1. */
+  --on-green: #0c1211;
 }
 
 .leaflet-tile-pane {
@@ -583,7 +592,7 @@ summary:focus-visible {
   height: 18px;
   display: inline-block;
   border: 2px solid rgba(255, 255, 255, 0.32);
-  border-top-color: white;
+  border-top-color: var(--on-green);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -702,8 +711,12 @@ summary:focus-visible {
   outline: 0;
   line-height: 1.35;
 }
+/* The chips are 32px to look like chips; a hit area of 44px is drawn around
+   each by .hit-slop's ::after. The row is a scroller, which clips whatever
+   overflows it, so it carries the slop's room as padding instead of margin. */
 .quick-needs {
-  margin-top: 10px;
+  margin-top: 4px;
+  padding: 6px 0;
   display: flex;
   flex-wrap: nowrap;
   gap: 6px;
@@ -720,6 +733,7 @@ summary:focus-visible {
 }
 .quick-needs button,
 .popular button {
+  position: relative;
   min-height: 32px;
   padding: 6px 10px;
   color: var(--ink-soft);
@@ -730,6 +744,14 @@ summary:focus-visible {
   transition:
     background 0.16s ease,
     color 0.16s ease;
+}
+.quick-needs button::after,
+.popular button::after,
+.mode-picker button::after,
+.detour-sort button::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
 }
 .quick-needs button:hover,
 .popular button:hover {
@@ -819,7 +841,7 @@ summary:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: white;
+  color: var(--on-green);
   background: var(--green);
   border: 0;
   border-radius: var(--r-md);
@@ -941,7 +963,8 @@ summary:focus-visible {
   margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  /* Rows 12px apart, so two rows of 44px hit areas meet without overlapping. */
+  gap: 12px 7px;
 }
 .popular button {
   background: var(--surface-soft);
@@ -1032,10 +1055,10 @@ summary:focus-visible {
 }
 .remove-selection {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   color: var(--muted);
@@ -1047,8 +1070,12 @@ summary:focus-visible {
   display: flex;
   gap: 4px;
 }
+/* 32px tall to the eye, 44px to a thumb (the ::after above). */
 .mode-picker button {
-  min-height: 27px;
+  position: relative;
+  min-width: 44px;
+  min-height: 32px;
+  justify-content: center;
   padding: 4px 8px;
   display: inline-flex;
   align-items: center;
@@ -1060,7 +1087,7 @@ summary:focus-visible {
   font-size: var(--t-micro);
 }
 .mode-picker button.active {
-  color: white;
+  color: var(--on-green);
   background: var(--green);
 }
 .mode-picker button:disabled {
@@ -1199,7 +1226,7 @@ summary:focus-visible {
   height: 29px;
   display: grid;
   place-items: center;
-  color: white;
+  color: var(--on-green);
   background: var(--green);
   border-radius: var(--r-sm);
   font-size: var(--t-micro);
@@ -1214,7 +1241,7 @@ summary:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: white;
+  color: var(--on-green);
   background: var(--green);
   border: 0;
   border-radius: var(--r-md);
@@ -1246,7 +1273,7 @@ summary:focus-visible {
   box-shadow: none;
 }
 .handoff .navigate-button.secondary:hover {
-  color: white;
+  color: var(--on-green);
   background: var(--green-hover);
 }
 .why-brief {
@@ -1382,7 +1409,7 @@ summary:focus-visible {
   color: var(--ink-soft);
   background: var(--elevated);
   border: 1px solid var(--line);
-  font-size: 10px;
+  font-size: var(--t-micro);
   font-style: normal;
   font-weight: 800;
   line-height: 15px;
@@ -1507,6 +1534,11 @@ summary:focus-visible {
   color: var(--muted) !important;
   background: var(--glass) !important;
   font-size: var(--t-micro) !important;
+}
+.leaflet-control-attribution .onemap-logo {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
 }
 .departure-controls {
   display: grid;
@@ -1741,6 +1773,10 @@ button.stop-number {
 .privacy-page p {
   color: var(--muted);
 }
+/* The browser's default link blue is 2.3:1 on the dark page. */
+.privacy-page section a {
+  color: var(--green);
+}
 
 /* The brand mark, or a glyph for what the place sells.
    Both branches occupy the same box so a list does not jitter between the
@@ -1895,8 +1931,13 @@ button.stop-number {
   flex-wrap: wrap;
   gap: 3px;
 }
+.detour-sort {
+  padding: 4px 0;
+  row-gap: 10px;
+}
 .detour-sort button {
-  min-height: 30px;
+  position: relative;
+  min-height: 32px;
   padding: 4px 8px;
   white-space: nowrap;
   color: var(--ink-soft);
@@ -1975,7 +2016,7 @@ button.detour-row:hover {
 .detour-track {
   position: relative;
   grid-column: 1 / -1;
-  height: 12px;
+  height: 14px;
 }
 /* Where the direct trip arrives, on every row: how far a bar runs past this
    line is the added time its figure quotes. */
@@ -1996,9 +2037,11 @@ button.detour-row:hover {
   display: grid;
   place-items: center;
   overflow: hidden;
-  color: #fff;
+  /* Ink chosen per line in lineColors.ts: white fails AA on the Circle,
+     Cross Island, Jurong Region, East West and LRT colours. */
+  color: var(--piece-ink, var(--route-bus-ink));
   border-radius: 2px;
-  font-size: 9px;
+  font-size: var(--t-micro);
   font-style: normal;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -2023,8 +2066,49 @@ button.detour-row:hover {
   background: repeating-linear-gradient(135deg, var(--ink-soft) 0 1.5px, transparent 1.5px 4.5px);
   box-shadow: inset 0 0 0 1px var(--ink-soft);
 }
-.detour-row.direct .piece {
+/* The direct trip is drawn faded. Its rides are mixed toward the panel rather
+   than made translucent, so their line codes stay at full contrast. */
+.detour-row.direct .piece:not(.ride) {
   opacity: 0.45;
+}
+.detour-row.direct .piece.ride {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--piece-color, var(--route-bus)) 45%, var(--surface));
+}
+/* Minutes along the bottom of the diagram: 0, where the direct trip arrives,
+   and the longest option. Inset like a row, so it lines up with the bars. */
+.detour-axis {
+  position: relative;
+  height: 15px;
+  margin: 2px 10px 0;
+  color: var(--muted);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  line-height: 15px;
+  white-space: nowrap;
+}
+.detour-axis span {
+  position: absolute;
+  top: 0;
+  padding-top: 1px;
+  border-left: 1px solid var(--line);
+  padding-left: 3px;
+}
+.detour-axis span.end {
+  padding-right: 3px;
+  padding-left: 0;
+  border-right: 1px solid var(--line);
+  border-left: 0;
+  transform: translateX(-100%);
+}
+.detour-axis span.direct {
+  color: var(--ink-soft);
+  border-left-style: dashed;
+  border-left-color: var(--ink-soft);
+}
+.detour-axis span.direct.end {
+  border-right-style: dashed;
+  border-right-color: var(--ink-soft);
 }
 .detour-trade {
   grid-column: 1 / -1;
@@ -2163,7 +2247,7 @@ button.detour-row:hover {
   background: var(--marker-bg);
   border: 2px solid var(--elevated);
   border-radius: 50%;
-  font-size: 10.5px;
+  font-size: var(--t-micro);
   font-weight: 800;
   transform: translateX(-50%);
 }
@@ -2335,8 +2419,14 @@ p.timeline-endpoint strong {
     width: 32px;
     height: 32px;
   }
+  /* Icons only on a phone, but the words stay as the links' names. */
   .icon-link span {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .theme-toggle {
     width: 36px;
@@ -2375,16 +2465,12 @@ p.timeline-endpoint strong {
   .recommendation {
     padding: 13px 19px calc(24px + env(safe-area-inset-bottom));
   }
+  /* A grabber bar says "drag me", and this sheet does not drag - its height
+     is set by the Map / Plan controls. Kept as the space it took, so the
+     sheet's top edge reads the same, without the false affordance. */
   .sheet-handle {
-    position: sticky;
-    z-index: 5;
-    top: 0;
-    width: 42px;
-    height: 5px;
-    margin: 8px auto 1px;
+    height: 14px;
     display: block;
-    background: var(--handle);
-    border-radius: var(--r-pill);
   }
   .planner-intro {
     margin-bottom: 16px;
@@ -2492,7 +2578,7 @@ p.timeline-endpoint strong {
   }
   .sheet-controls button[aria-pressed="true"] {
     background: var(--green);
-    color: white;
+    color: var(--on-green);
   }
   .planner.result-mode {
     height: var(--sheet-h);
