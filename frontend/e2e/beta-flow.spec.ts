@@ -254,10 +254,10 @@ async function commonRoutes(page: Page) {
 }
 
 async function resolveJourney(page: Page) {
-  await page.getByLabel("Origin").fill("chuachukang");
-  await page.getByRole("option").first().getByRole("button").click();
-  await page.getByLabel("Destination").fill("Fajar");
-  await page.getByRole("option").first().getByRole("button").click();
+  await page.getByLabel("From", { exact: true }).fill("chuachukang");
+  await page.getByRole("option").first().click();
+  await page.getByLabel("To", { exact: true }).fill("Fajar");
+  await page.getByRole("option").first().click();
   await expect(page.getByLabel("Location selected")).toHaveCount(2);
 }
 
@@ -424,7 +424,7 @@ test("journey swap and walking preference reach the optimizer", async ({ page })
   await page.goto("/");
   await resolveJourney(page);
   await page.getByRole("button", { name: "Reverse journey" }).click();
-  await expect(page.getByLabel("Origin", { exact: true })).toHaveValue("Fajar LRT Station");
+  await expect(page.getByLabel("From", { exact: true })).toHaveValue("Fajar LRT Station");
   await page.getByRole("button", { name: "Less walking", exact: true }).click();
   await expect(page.getByRole("button", { name: "Less walking", exact: true })).toHaveAttribute(
     "aria-pressed",
@@ -547,7 +547,7 @@ test("alternatives are drawn beside the plan, and say what they cost", async ({ 
 test("location autocomplete supports keyboard selection", async ({ page }) => {
   await commonRoutes(page);
   await page.goto("/");
-  const origin = page.getByLabel("Origin");
+  const origin = page.getByLabel("From", { exact: true });
   await origin.fill("chuachukang");
   await expect(page.getByRole("listbox")).toBeVisible();
   await origin.press("ArrowDown");

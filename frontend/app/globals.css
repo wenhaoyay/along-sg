@@ -625,7 +625,7 @@ summary:focus-visible {
   border-radius: var(--r-md);
   box-shadow: var(--panel-shadow);
 }
-.location-results button {
+.location-results [role="option"] {
   width: 100%;
   min-height: 55px;
   padding: 8px 9px;
@@ -637,9 +637,10 @@ summary:focus-visible {
   border: 0;
   border-radius: var(--r-sm);
   text-align: left;
+  cursor: pointer;
 }
-.location-results button:hover,
-.location-results button.active {
+.location-results [role="option"]:hover,
+.location-results [role="option"].active {
   background: var(--surface-soft);
 }
 .suggestion-icon {
@@ -2587,4 +2588,61 @@ p.timeline-endpoint strong {
   .detour-sort {
     width: 100%;
   }
+}
+
+/* The search button stays in reach. At 1440×900 it sat at y=1013, below the
+ * fold of the planner, behind the preference and departure controls. */
+.input-state .find-button {
+  position: sticky;
+  bottom: 12px;
+  z-index: 2;
+}
+
+/* Said once, quietly, in the app bar: the demo's minutes are estimates. */
+.sample-badge {
+  min-height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--warning) !important;
+  background: var(--warning-bg);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.notice.saved-run {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.share-plan {
+  min-height: 44px;
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-weight: 650;
+}
+.share-plan:hover {
+  background: var(--surface-hover);
+}
+/* Focus is moved to the heading for screen readers and the keyboard; it is
+ * not something to click, so it takes no ring. */
+.result-heading h1:focus {
+  outline: none;
+}
+.share-copied {
+  min-height: 0;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
 }

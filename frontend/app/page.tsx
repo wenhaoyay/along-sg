@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
@@ -32,6 +33,14 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { LogoMark } from "./components/Logo";
 import { EXAMPLES, placeName, type Example } from "./examples";
 import { laterMinutes, signed, travelMinutes } from "./components/journey/figures";
+import { clockTime } from "./components/journey/format";
+import { readTrip, tripQuery } from "./share";
+
+/* How long an example waits for the live answer before showing the saved run
+ * of it. A free host sleeps when idle and takes about a minute to wake; a
+ * reviewer's first click should not be that minute of spinner. */
+const SAVED_EXAMPLE_AFTER_MS = 2500;
+type SavedRun = { generatedAt: string; liveFailed: boolean };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 /* The planner's preference and the result's sort are one idea, so they share
@@ -136,16 +145,71 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
   const discoveryRef = useRef<HTMLDivElement>(null);
-  // Set by an example card: run the search once its fields have rendered.
+  // Set by an example card or a shared link: run the search once its fields
+  // have rendered.
   const pendingExample = useRef(false);
+  // Which example is running, so a saved run of it can stand in while a
+  // sleeping server wakes up.
+  const exampleRef = useRef<string | null>(null);
+  const [savedRun, setSavedRun] = useState<SavedRun | null>(null);
   const [previewExample, setPreviewExample] = useState<Example | null>(null);
+  // True when the server plans over the offline rail network with estimated
+  // minutes; said on screen so nobody reads them as a timetable.
+  const [sampleTimes, setSampleTimes] = useState(false);
+  // Results already shown, by link, so Back and Forward restore a plan
+  // instead of planning it again.
+  const visited = useRef(new Map<string, Result>());
 
   useEffect(() => {
     void fetch(`${API_BASE}/api/catalog/categories`)
       .then((response) => (response.ok ? response.json() : []))
       .then(setCategories)
       .catch(() => setCategories([]));
+    // Also wakes a sleeping host before the first search needs it.
+    void fetch(`${API_BASE}/health`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => setSampleTimes(Boolean(body?.onemap_mock)))
+      .catch(() => undefined);
   }, []);
+  // A shared link plans its trip on arrival. The page is a static export, so
+  // the address can only be read after hydration, once.
+  useEffect(() => {
+    const shared = readTrip(window.location.search);
+    if (!shared) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from the URL
+    setOrigin(shared.origin);
+    setDestination(shared.destination);
+    setNeed(shared.need);
+    setTripStyle(shared.style);
+    pendingExample.current = true;
+  }, []);
+  // Back from a result returns to the form; Forward brings the result back.
+  useEffect(() => {
+    function restore() {
+      const kept = visited.current.get(window.location.search);
+      if (kept) {
+        setResult(kept);
+        setSelectedKey("best_overall");
+      } else {
+        setResult(null);
+      }
+      setActiveStop(null);
+    }
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, []);
+  // Focus follows the answer: to its heading when one arrives, back to the
+  // search button when the journey is being edited. Without this the submit
+  // button unmounted under the keyboard and focus fell to the page body.
+  const hadResult = useRef(false);
+  useEffect(() => {
+    if (result && !hadResult.current) {
+      document.querySelector<HTMLElement>(".result-heading h1")?.focus();
+    } else if (!result && hadResult.current) {
+      document.querySelector<HTMLElement>(".find-button")?.focus();
+    }
+    hadResult.current = Boolean(result);
+  }, [result]);
   useEffect(() => {
     if (!loading) return;
     const timer = window.setTimeout(() => setLoadingSlow(true), 4500);
@@ -192,7 +256,32 @@ export default function Home() {
     setSelections([]);
     setPartial(null);
     setPreviewExample(null);
+    setTripStyle("balanced");
+    exampleRef.current = example.id;
     pendingExample.current = true;
+  }
+
+  /* While a search for an example is still out, show the saved run of it
+   * after a moment, said as such. The live answer replaces it on arrival. */
+  function standInForExample(controller: AbortController) {
+    const id = exampleRef.current;
+    exampleRef.current = null;
+    if (!id) return;
+    window.setTimeout(async () => {
+      if (searchRef.current !== controller || controller.signal.aborted) return;
+      try {
+        const response = await fetch(`/examples/${id}.json`);
+        if (!response.ok) return;
+        const saved = await response.json();
+        if (searchRef.current !== controller || controller.signal.aborted) return;
+        if (!saved?.optimize?.recommendations) return;
+        setResult(saved.optimize);
+        setSelectedKey("best_overall");
+        setSavedRun({ generatedAt: saved.generated_at, liveFailed: false });
+      } catch {
+        // No saved run: the spinner carries on, as it always did.
+      }
+    }, SAVED_EXAMPLE_AFTER_MS);
   }
 
   function beginSearch() {
@@ -279,19 +368,28 @@ export default function Home() {
         confirmed_discovery_places: confirmedDiscoveryPlaces,
       }),
     });
-    const body = await response.json();
+    const body = await readBody(response);
     signal.throwIfAborted();
     if (!response.ok) throw new Error(errorMessage(response.status, body));
     setIntent(interpreted);
-    setResult(body);
+    setResult(body as Result);
+    setSavedRun(null);
     const rank = STYLE_RANK[tripStyle];
     setRankBy(rank);
     const ranked =
-      rank === "recommended" ? [] : rankRoutedOptions(body.recommendations ?? {}, rank);
+      rank === "recommended" ? [] : rankRoutedOptions((body as Result).recommendations ?? {}, rank);
     setSelectedKey(ranked[0]?.[0] ?? "best_overall");
     setSheet("half");
     setPartial(null);
     setActiveStop(null);
+    // The plan becomes a link: shareable, and Back returns to the form. A
+    // structured (browsed) selection has no text to put in a link.
+    if (need.trim() && !selections.length) {
+      const query = tripQuery({ origin, destination, need: need.trim(), style: tripStyle });
+      visited.current.set(query, body as Result);
+      if (window.location.search !== query)
+        window.history.pushState(null, "", `${window.location.pathname}${query}`);
+    }
   }
 
   async function submit(event: FormEvent) {
@@ -301,8 +399,8 @@ export default function Home() {
     setConflict(null);
     setLoadingSlow(false);
     setSearchStage("discovery");
-    setLoading(true);
     const controller = beginSearch();
+    standInForExample(controller);
     try {
       departureValue();
       if (!origin || !destination)
@@ -322,13 +420,13 @@ export default function Home() {
           destination: context(destination),
         }),
       });
-      const body = await response.json();
+      const body = (await readBody(response)) as ParseResponse;
       controller.signal.throwIfAborted();
       if (!response.ok) throw new Error(errorMessage(response.status, body));
       if (body.journey_conflicts?.length) {
         setConflict(body.journey_conflicts[0]);
-        setPendingIntent(body.intent);
-        setClarification(body.clarification_question);
+        setPendingIntent(body.intent ?? null);
+        setClarification(body.clarification_question ?? null);
         return;
       }
       if (body.intent && body.unresolved_terms?.length) {
@@ -342,11 +440,23 @@ export default function Home() {
       if (body.clarification_question) setClarification(body.clarification_question);
       await optimize(body.intent, controller.signal);
     } catch (caught) {
-      if (!controller.signal.aborted)
-        setError(caught instanceof Error ? caught.message : "We couldn’t compare that journey.");
+      if (controller.signal.aborted) return;
+      const message = failureMessage(caught);
+      // A saved run already on screen stays, marked as not refreshed.
+      setSavedRun((saved) => (saved ? { ...saved, liveFailed: true } : saved));
+      setError(message);
     } finally {
       if (searchRef.current === controller) setLoading(false);
     }
+  }
+
+  /* Enter searches, as it does in every search box; Shift+Enter still breaks
+   * a line for a long list. It used to add a newline to a field that looks
+   * like a single-line search. */
+  function submitOnEnter(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    if (origin && destination && !loading) formRef.current?.requestSubmit();
   }
 
   function resolveConflict(action: "keep" | "change") {
@@ -441,6 +551,11 @@ export default function Home() {
   // The empty map shows an example journey rather than the whole island with
   // nothing on it; pointing at another example previews that one.
   const preview = !result && !origin && !destination ? (previewExample ?? EXAMPLES[0]) : null;
+  // A browsed selection has no text to put in a link, so it is not shareable.
+  const shareQuery =
+    result && origin && destination && need.trim() && !selections.length
+      ? tripQuery({ origin, destination, need: need.trim(), style: tripStyle })
+      : null;
 
   return (
     <main className={`app-shell ${result ? `has-result sheet-${sheet}` : "input-state"}`}>
@@ -450,11 +565,20 @@ export default function Home() {
           <strong>Along</strong>
         </a>
         <div>
+          {sampleTimes && (
+            <Link
+              className="sample-badge"
+              href="/privacy#demo"
+              title="Real lines and stations; the minutes are estimates"
+            >
+              Sample times
+            </Link>
+          )}
           <ThemeToggle />
-          <a className="icon-link" href="/privacy">
+          <Link className="icon-link" href="/privacy">
             <Info size={17} aria-hidden="true" />
             <span>Privacy</span>
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -509,8 +633,8 @@ export default function Home() {
                 <em>not out of the way.</em>
               </h1>
               <p>
-                Say what you need. Along finds the stop that adds the least time to a trip you are
-                already making by MRT or bus.
+                Say what you need. Along compares real stops along a trip you are already making by
+                MRT or bus, and shows what each one adds.
               </p>
             </div>
             {!origin && !destination && (
@@ -539,7 +663,6 @@ export default function Home() {
             <fieldset className="planner-controls" disabled={loading}>
               <div className="journey-fields">
                 <LocationField
-                  key={`origin-${origin?.label ?? "empty"}`}
                   label="From"
                   placeholder="Search starting point"
                   apiBase={API_BASE}
@@ -567,7 +690,6 @@ export default function Home() {
                   <ArrowDownUp size={16} aria-hidden="true" />
                 </button>
                 <LocationField
-                  key={`destination-${destination?.label ?? "empty"}`}
                   label="To"
                   placeholder="Search destination"
                   apiBase={API_BASE}
@@ -580,13 +702,13 @@ export default function Home() {
               </div>
 
               <label className="need-control">
-                <span>What do you need?</span>
+                <span>What do you need on the way?</span>
                 <div className="need-input-wrap">
                   <Search size={19} aria-hidden="true" />
                   <textarea
                     ref={needRef}
-                    aria-label="What do you need on the way?"
                     value={need}
+                    onKeyDown={submitOnEnter}
                     onChange={(event) => {
                       setNeed(event.target.value);
                       setPartial(null);
@@ -595,7 +717,7 @@ export default function Home() {
                     }}
                     placeholder="Mee pok, Molly Tea or printer ink"
                     rows={1}
-                    maxLength={500}
+                    maxLength={300}
                   />
                 </div>
               </label>
@@ -745,7 +867,7 @@ export default function Home() {
                 )}
                 {error && (
                   <div className="notice error" role="alert">
-                    <strong>One more thing</strong>
+                    <strong>That didn’t work</strong>
                     <p>{error}</p>
                   </div>
                 )}
@@ -767,12 +889,7 @@ export default function Home() {
                           try {
                             await optimize(partial.intent, controller.signal);
                           } catch (caught) {
-                            if (!controller.signal.aborted)
-                              setError(
-                                caught instanceof Error
-                                  ? caught.message
-                                  : "We couldn’t compare that journey.",
-                              );
+                            if (!controller.signal.aborted) setError(failureMessage(caught));
                           } finally {
                             if (searchRef.current === controller) setLoading(false);
                           }
@@ -872,6 +989,25 @@ export default function Home() {
           </form>
         )}
 
+        {/* One short sentence for screen readers when an answer arrives; the
+          panel itself is no longer a live region that re-read everything on
+          every bus-arrival refresh. */}
+        <p className="sr-only" role="status">
+          {result && selected
+            ? `${selected.stops.map((stop) => stop.display_name).join(" then ")}: ${signed(
+                travelMinutes(selected),
+              )} minutes extra travel${
+                selected.arrival_time ? `, arrive ${clockTime(selected.arrival_time)}` : ""
+              }.`
+            : ""}
+        </p>
+        {result && savedRun && (
+          <p className="notice saved-run" role="note">
+            {savedRun.liveFailed
+              ? `The live check didn’t come back, so this is a saved run of the example from ${savedDate(savedRun.generatedAt)}. Its clock times are from then.`
+              : `Showing a saved run of this example while the server wakes up; the live answer replaces it in a moment.`}
+          </p>
+        )}
         {result && selected && (
           <RecommendationPanel
             recommendation={selected}
@@ -898,9 +1034,13 @@ export default function Home() {
             onStopSelect={setActiveStop}
             onEdit={() => {
               setResult(null);
+              setSavedRun(null);
               setActiveStop(null);
               setSelectedKey("best_overall");
+              if (window.location.search)
+                window.history.pushState(null, "", window.location.pathname);
             }}
+            shareQuery={shareQuery}
             originLabel={origin?.label}
             destinationLabel={destination?.label}
           />
@@ -991,9 +1131,48 @@ function intentLabel(categories: CatalogCategory[], item: IntentErrand) {
     return `${label} · ${categoryName(categories, item.discovery_category)}`;
   return label;
 }
+type ParseResponse = {
+  status?: string;
+  intent?: Intent | null;
+  journey_conflicts?: Conflict[];
+  unresolved_terms?: string[];
+  clarification_question?: string | null;
+  detail?: unknown;
+};
+
+/* A body that is not JSON - a host's HTML error page, a cold start's
+ * placeholder - reads as no body, so the status decides the message. It used
+ * to throw a SyntaxError whose text ("Unexpected token '<'") reached the user. */
+async function readBody(response: Response): Promise<Record<string, unknown>> {
+  try {
+    const body: unknown = await response.json();
+    return body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function failureMessage(caught: unknown) {
+  // fetch rejects with a TypeError when the network or the server is gone.
+  if (caught instanceof TypeError)
+    return "We couldn’t reach Along just now. Check your connection and try again.";
+  return caught instanceof Error ? caught.message : "We couldn’t compare that journey.";
+}
+
+function savedDate(value: string) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat("en-SG", { day: "numeric", month: "short", year: "numeric" }).format(
+        date,
+      )
+    : "an earlier run";
+}
+
 function errorMessage(status: number, body: { detail?: unknown }) {
   if (status === 404) return "We couldn’t find a public-transport route for this journey.";
-  if (status === 429 || status === 503) return "Journey checks are busy. Try again shortly.";
+  if (status === 413) return "That request is too long. Shorten what you typed and try again.";
+  if (status === 429) return "Lots of searches just now. Wait a few seconds and try again.";
+  if (status === 503) return "Journey checks are busy. Try again shortly.";
   if (status === 504) return "The route check took too long. Please try again.";
   if (status === 422)
     return typeof body.detail === "string"

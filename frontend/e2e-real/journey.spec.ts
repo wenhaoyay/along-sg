@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
-async function choose(page: Page, label: "Origin" | "Destination", text: string, option: RegExp) {
+async function choose(page: Page, label: "From" | "To", text: string, option: RegExp) {
   const field = page.getByLabel(label, { exact: true });
   await field.click();
   await field.pressSequentially(text, { delay: 15 });
@@ -20,8 +20,8 @@ async function choose(page: Page, label: "Origin" | "Destination", text: string,
 }
 
 test("a typed request is planned end to end on the real network", async ({ page }) => {
-  await choose(page, "Origin", "Punggol", /Punggol/);
-  await choose(page, "Destination", "Orchard", /Orchard/);
+  await choose(page, "From", "Punggol", /Punggol/);
+  await choose(page, "To", "Orchard", /Orchard/);
   await page
     .getByLabel("What do you need on the way?")
     .fill("need to grab panadol and some groceries, prefer FairPrice");
@@ -38,8 +38,8 @@ test("a typed request is planned end to end on the real network", async ({ page 
 });
 
 test("a place that does not exist is the user's to fix, with a hint", async ({ page }) => {
-  await choose(page, "Origin", "Bishan", /Bishan/);
-  await page.getByLabel("Destination", { exact: true }).fill("zzqxv");
+  await choose(page, "From", "Bishan", /Bishan/);
+  await page.getByLabel("To", { exact: true }).fill("zzqxv");
   await page.getByLabel("What do you need on the way?").fill("groceries");
   // Caught at the field, against the real geocoder: a hint, and no request
   // that could only fail.
@@ -62,8 +62,8 @@ test("the API itself answers an unknown place with 422, not 502", async ({ reque
 });
 
 test("a greeting is not planned as an errand", async ({ page }) => {
-  await choose(page, "Origin", "Bishan", /Bishan/);
-  await choose(page, "Destination", "Bugis", /Bugis/);
+  await choose(page, "From", "Bishan", /Bishan/);
+  await choose(page, "To", "Bugis", /Bugis/);
   await page.getByLabel("What do you need on the way?").fill("hello");
   await page.getByRole("button", { name: "Find best stop" }).click();
   await expect(

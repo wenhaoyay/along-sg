@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Clock3,
   Footprints,
+  Share2,
   TrainFront,
 } from "lucide-react";
 import { boardingIsImminent, boardingKey, isBusStopCode, useBusArrivals } from "../useBusArrivals";
@@ -53,6 +54,9 @@ type Props = {
   // Required rather than defaulting to the frontend origin: deployments may
   // serve Next.js and FastAPI from different hosts.
   apiBase: string;
+  /** The plan as a query string (see share.ts), or null when it cannot be
+   *  shared - a browsed selection has no text to put in a link. */
+  shareQuery?: string | null;
 };
 
 export function RecommendationPanel({
@@ -71,6 +75,7 @@ export function RecommendationPanel({
   onStopSelect,
   originLabel,
   destinationLabel,
+  shareQuery,
 }: Props) {
   const primaryStop = recommendation.stops[0];
   const otherOptions = alternatives.filter(([key]) => key !== selectedKey);
@@ -137,7 +142,7 @@ export function RecommendationPanel({
   const arrivals = useBusArrivals(apiBase, boardings);
 
   return (
-    <section className="recommendation" aria-live="polite" data-testid="recommendation-sheet">
+    <section className="recommendation" data-testid="recommendation-sheet">
       <button className="edit-journey" type="button" onClick={onEdit}>
         <ArrowLeft size={15} aria-hidden="true" />
         Edit journey
@@ -154,7 +159,7 @@ export function RecommendationPanel({
           </summary>
           <p>{qualityExplanation(recommendation, routedCount)}</p>
         </details>
-        <h1>{primaryStop?.display_name ?? "Your best stop"}</h1>
+        <h1 tabIndex={-1}>{primaryStop?.display_name ?? "Your best stop"}</h1>
         {primaryStop && primaryStop.location_context !== primaryStop.display_name && (
           <p>{primaryStop.location_context}</p>
         )}
@@ -246,6 +251,7 @@ export function RecommendationPanel({
           ))}
         </nav>
       )}
+      {shareQuery && <ShareButton query={shareQuery} />}
 
       <details className="result-disclosure why-disclosure">
         <summary>
@@ -375,4 +381,35 @@ function relationshipCopy(item: Recommendation) {
   if (item.match_classification === "substitute")
     return `${relationship} It uses a similar kind of shop instead.`;
   return relationship;
+}
+
+/* The plan as a link (see share.ts): the phone's share sheet where there is
+ * one, the clipboard otherwise. */
+function ShareButton({ query }: { query: string }) {
+  const [copied, setCopied] = useState(false);
+  async function share() {
+    const url = `${window.location.origin}${window.location.pathname}${query}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Along: errands on the way", url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Dismissing the share sheet is not an error worth showing.
+    }
+  }
+  return (
+    <>
+      <button className="share-plan" type="button" onClick={share}>
+        <Share2 size={16} aria-hidden="true" />
+        Share this plan
+      </button>
+      <p className="share-copied" role="status">
+        {copied ? "Link copied" : ""}
+      </p>
+    </>
+  );
 }
