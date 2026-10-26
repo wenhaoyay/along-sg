@@ -111,6 +111,10 @@ export default function Home() {
   // Results already shown, by link, so Back and Forward restore a plan
   // instead of planning it again.
   const visited = useRef(new Map<string, Result>());
+  // Whether the server has answered at all. A saved run stands in only while
+  // it has not: a server that is awake but slow gives the live answer, rather
+  // than a saved one that is swapped out a second later.
+  const serverAwake = useRef(false);
 
   useEffect(() => {
     void fetch(`${API_BASE}/api/catalog/categories`)
@@ -119,7 +123,10 @@ export default function Home() {
       .catch(() => setCategories([]));
     // Also wakes a sleeping host before the first search needs it.
     void fetch(`${API_BASE}/health`)
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) => {
+        serverAwake.current = response.ok;
+        return response.ok ? response.json() : null;
+      })
       .then((body) => setSampleTimes(Boolean(body?.onemap_mock)))
       .catch(() => undefined);
   }, []);
@@ -211,13 +218,14 @@ export default function Home() {
     pendingExample.current = true;
   }
 
-  /* While a search for an example is still out, show the saved run of it
-   * after a moment, said as such. The live answer replaces it on arrival. */
+  /* While a sleeping server wakes, show the saved run of an example after a
+   * moment, said as such. The live answer replaces it on arrival. */
   function standInForExample(controller: AbortController) {
     const id = exampleRef.current;
     exampleRef.current = null;
     if (!id) return;
     window.setTimeout(async () => {
+      if (serverAwake.current) return;
       if (searchRef.current !== controller || controller.signal.aborted) return;
       try {
         const response = await fetch(`/examples/${id}.json`);

@@ -104,9 +104,10 @@ jobs:
       - name: Production build
         working-directory: frontend
         run: npm run build
-      - name: Install Playwright Chromium
+      # WebKit too: the accessibility checks also run as an iPhone.
+      - name: Install Playwright Chromium and WebKit
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
       - name: Playwright suite
         working-directory: frontend
         run: npm run test:e2e

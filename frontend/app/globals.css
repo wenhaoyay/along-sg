@@ -862,8 +862,10 @@ summary:focus-visible {
   box-shadow: 0 5px 14px color-mix(in srgb, var(--green) 17%, transparent);
   transform: translateY(1px);
 }
+/* Faded by colour, not opacity: the button is sticky, and a see-through one
+ * showed the controls scrolling underneath it. */
 .find-button:disabled {
-  opacity: 0.43;
+  background: color-mix(in srgb, var(--green) 42%, var(--surface));
   cursor: not-allowed;
   box-shadow: none;
 }
