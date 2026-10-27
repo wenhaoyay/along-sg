@@ -39,6 +39,16 @@ def test_substitute_says_what_it_stands_in_for():
     )
 
 
+def test_a_lone_pick_without_the_preferred_brand_names_it():
+    winner = candidate("without_preferred_brand", required=["groceries"])
+    winner.option.stops = ()
+    winner.ordered_stops = ()
+    prefs = OptimizationPreferences(preferred_brands=(("groceries", "FairPrice"),))
+    assert explain_best(winner, [winner], prefs) == (
+        "The only place we could route that covers everything you asked for, though it has no FairPrice."
+    )
+
+
 def test_alternative_uses_a_singular_place():
     option = candidate("partial_option", required=["groceries"], omitted=["post_office"])
     assert explain_alternative("partial_groceries", option, None, PREFS) == "Skips the post office."

@@ -129,6 +129,13 @@ def explain_best(
             others[key] = item
     rivals = list(others.values())
     if not rivals:
+        # Beside a "Not your preferred brand" label, say which brand.
+        missing = missing_preferred_brands(winner, preferences)
+        if missing:
+            return (
+                "The only place we could route that covers everything you asked for, "
+                f"though it has no {_join(missing)}."
+            )
         return "The only place we could route that covers everything you asked for."
 
     compared = len(rivals) + 1
