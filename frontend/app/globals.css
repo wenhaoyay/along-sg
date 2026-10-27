@@ -1118,21 +1118,7 @@ summary:focus-visible {
   font-size: var(--t-caption);
   font-weight: 700;
 }
-.result-context {
-  margin: 0 0 14px;
-  padding: 10px 11px;
-  color: var(--warning);
-  background: var(--warning-bg);
-  border-radius: var(--r-sm);
-  font-size: var(--t-micro);
-}
-.quality-note summary {
-  list-style: none;
-  cursor: pointer;
-}
-.quality-note summary::-webkit-details-marker {
-  display: none;
-}
+
 .quality-label {
   display: inline-flex;
   align-items: center;
@@ -1142,26 +1128,7 @@ summary:focus-visible {
   font-size: var(--t-label);
   font-weight: 700;
 }
-.quality-why {
-  margin-left: 2px;
-  padding: 1px 7px;
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: var(--r-pill);
-  font-size: var(--t-micro);
-  font-weight: 600;
-}
-.quality-note[open] .quality-why {
-  color: var(--ink);
-  border-color: var(--ink-soft);
-}
-.quality-note p {
-  margin: 4px 0 6px;
-  max-width: 34em;
-  color: var(--ink-soft);
-  font-size: var(--t-small);
-  line-height: 1.5;
-}
+
 .result-heading h1 {
   margin: 4px 0 0;
   font-family: var(--font-display), var(--font-sans), sans-serif;
@@ -1285,65 +1252,7 @@ summary:focus-visible {
   font-size: var(--t-caption);
   line-height: 1.5;
 }
-.result-disclosure {
-  margin-top: 12px;
-  border-top: 1px solid var(--line);
-}
-.result-disclosure + .result-disclosure {
-  margin-top: 0;
-}
-.result-disclosure summary {
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  list-style: none;
-  cursor: pointer;
-  font-size: var(--t-small);
-  font-weight: 700;
-}
-.result-disclosure summary::-webkit-details-marker {
-  display: none;
-}
-.result-disclosure summary svg {
-  color: var(--muted);
-  transition: transform 0.18s ease;
-}
-.result-disclosure[open] summary svg {
-  transform: rotate(180deg);
-}
-.result-disclosure summary small {
-  margin-left: 5px;
-  padding: 2px 6px;
-  color: var(--green);
-  background: var(--mint);
-  border-radius: var(--r-pill);
-  font-size: var(--t-micro);
-}
-.disclosure-body {
-  padding: 0 1px 13px;
-  animation: reveal 0.18s ease both;
-}
-.breakdown-list {
-  margin: 0;
-  padding: 11px 12px;
-  background: var(--surface-soft);
-  border-radius: var(--r-md);
-}
-.breakdown-list > div {
-  padding: 4px 0;
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-  font-size: var(--t-micro);
-}
-.breakdown-list .total {
-  margin-top: 5px;
-  padding-top: 9px;
-  color: var(--ink);
-  border-top: 1px solid var(--line);
-  font-weight: 750;
-}
+
 .precision-note {
   margin: 11px 0 0;
   display: flex;
@@ -1356,11 +1265,6 @@ summary:focus-visible {
   flex: 0 0 auto;
   margin-top: 1px;
 }
-.empty-result > span {
-  color: var(--green);
-  font-size: var(--t-meta);
-  font-weight: 800;
-}
 .empty-result h1 {
   margin: 6px 0 0;
   font-size: 28px;
@@ -1370,58 +1274,6 @@ summary:focus-visible {
   font-size: var(--t-small);
 }
 
-.map-key {
-  position: absolute;
-  z-index: 500;
-  bottom: 24px;
-  left: 449px;
-  padding: 8px 11px;
-  display: flex;
-  gap: 13px;
-  color: var(--ink-soft);
-  background: var(--glass);
-  border: 1px solid var(--glass-line);
-  border-radius: var(--r-md);
-  box-shadow: var(--control-shadow);
-  backdrop-filter: blur(12px);
-  font-size: var(--t-meta);
-}
-.map-key span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.map-key i {
-  width: 24px;
-  height: 5px;
-  border-radius: var(--r-pill);
-  background: linear-gradient(90deg, #9900aa 0 50%, #d42e12 50% 100%);
-}
-.map-key i.baseline {
-  height: 0;
-  background: none;
-  border-top: 3px dotted var(--route-direct);
-  border-radius: 0;
-}
-.map-key i.considered {
-  width: auto;
-  height: auto;
-  padding: 0 5px;
-  display: inline-grid;
-  place-items: center;
-  color: var(--ink-soft);
-  background: var(--elevated);
-  border: 1px solid var(--line);
-  font-size: var(--t-micro);
-  font-style: normal;
-  font-weight: 800;
-  line-height: 15px;
-}
-.map-preview-note {
-  margin: 0;
-  max-width: min(520px, calc(100vw - 480px));
-  color: var(--ink-soft);
-}
 .along-marker {
   display: grid;
   place-items: center;
@@ -1884,6 +1736,21 @@ button.stop-number {
   stroke: var(--route-direct);
   stroke-opacity: 0.8;
 }
+/* "Direct", on the dotted line itself: the map has no key. */
+.leaflet-tooltip.route-direct-label {
+  padding: 1px 7px;
+  color: var(--ink-soft);
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-pill);
+  box-shadow: none;
+  font:
+    700 var(--t-micro) / 1.5 var(--font-sans),
+    sans-serif;
+}
+.leaflet-tooltip.route-direct-label::before {
+  display: none;
+}
 .route-preview {
   stroke: var(--ink-soft);
   stroke-opacity: 0.45;
@@ -1921,13 +1788,6 @@ button.stop-number {
 .detour-head {
   display: grid;
   gap: 8px;
-}
-.detour-head h2,
-.section-title {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--t-title);
-  font-weight: 750;
 }
 .detour-sort {
   display: flex;
@@ -2065,9 +1925,12 @@ button.detour-row:hover {
   bottom: 5px;
   background: var(--line);
 }
+/* Time at a stop: an outlined block with a bag in it, so the bar needs no
+   key. The hatching it had made the bag unreadable. */
 .piece.stop {
-  background: repeating-linear-gradient(135deg, var(--ink-soft) 0 1.5px, transparent 1.5px 4.5px);
-  box-shadow: inset 0 0 0 1px var(--ink-soft);
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1.5px var(--ink-soft);
 }
 /* The direct trip is drawn faded. Its rides are mixed toward the panel rather
    than made translucent, so their line codes stay at full contrast. */
@@ -2078,91 +1941,14 @@ button.detour-row:hover {
   color: var(--ink);
   background: color-mix(in srgb, var(--piece-color, var(--route-bus)) 45%, var(--surface));
 }
-/* Minutes along the bottom of the diagram: 0, where the direct trip arrives,
-   and the longest option. Inset like a row, so it lines up with the bars. */
-.detour-axis {
-  position: relative;
-  height: 15px;
-  margin: 2px 10px 0;
-  color: var(--muted);
-  font-size: var(--t-micro);
-  font-variant-numeric: tabular-nums;
-  line-height: 15px;
-  white-space: nowrap;
-}
-.detour-axis span {
-  position: absolute;
-  top: 0;
-  padding-top: 1px;
-  border-left: 1px solid var(--line);
-  padding-left: 3px;
-}
-.detour-axis span.end {
-  padding-right: 3px;
-  padding-left: 0;
-  border-right: 1px solid var(--line);
-  border-left: 0;
-  transform: translateX(-100%);
-}
-.detour-axis span.direct {
-  color: var(--ink-soft);
-  border-left-style: dashed;
-  border-left-color: var(--ink-soft);
-}
-.detour-axis span.direct.end {
-  border-right-style: dashed;
-  border-right-color: var(--ink-soft);
-}
+
 .detour-trade {
   grid-column: 1 / -1;
   color: var(--muted);
   font-size: var(--t-meta);
   line-height: 1.4;
 }
-.detour-foot {
-  margin-top: 8px;
-}
-.detour-legend {
-  margin: 0;
-  padding: 0 2px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  list-style: none;
-  color: var(--muted);
-  font-size: var(--t-micro);
-}
-.detour-legend li {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.detour-legend i {
-  width: 14px;
-  height: 8px;
-  border-radius: 2px;
-}
-.detour-legend i.ride {
-  background: linear-gradient(90deg, #9900aa 0 50%, #d42e12 50% 100%);
-}
-.detour-legend i.walk {
-  height: 4px;
-  background: repeating-linear-gradient(90deg, var(--route-walk) 0 2px, transparent 2px 5px);
-}
-.detour-legend i.wait {
-  height: 4px;
-  background: var(--line);
-}
-.detour-legend i.stop {
-  background: repeating-linear-gradient(135deg, var(--ink-soft) 0 1.5px, transparent 1.5px 4.5px);
-  box-shadow: inset 0 0 0 1px var(--ink-soft);
-}
-.detour-legend i.direct {
-  width: 0;
-  height: 12px;
-  border-left: 1.5px dashed var(--ink-soft);
-  border-radius: 0;
-}
+
 .detour-more {
   margin-top: 6px;
   padding: 6px 2px;
@@ -2174,11 +1960,8 @@ button.detour-row:hover {
 }
 
 /* The timeline: clock, rail, step. */
-.section-title {
-  margin: 22px 0 8px;
-}
 .timeline {
-  margin: 0;
+  margin: 22px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -2405,12 +2188,6 @@ p.timeline-endpoint strong {
   .recommendation {
     padding: 23px 22px 25px;
   }
-  .map-key {
-    left: 415px;
-  }
-  .map-preview-note {
-    max-width: calc(100vw - 440px);
-  }
 }
 
 @media (max-width: 767px) {
@@ -2543,11 +2320,7 @@ p.timeline-endpoint strong {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
-  .map-key {
-    top: 68px;
-    bottom: auto;
-    left: 12px;
-  }
+
   .leaflet-control-zoom {
     margin-right: 12px !important;
     margin-bottom: calc(var(--sheet-h) + 12px) !important;
@@ -2613,9 +2386,7 @@ p.timeline-endpoint strong {
     flex: 0 0 auto;
     width: 232px;
   }
-  .map-preview-note {
-    display: none;
-  }
+
   .detour-sort {
     width: 100%;
   }

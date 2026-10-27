@@ -1,5 +1,3 @@
-import { type Result } from "./types";
-
 export function capitalise(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -33,18 +31,6 @@ export function dayIfNotToday(value: string, now = new Date()) {
     }).format(date);
   const label = day(new Date(value));
   return label === day(now) ? null : label;
-}
-
-/* Start and finish within a short walk of each other: "from home and back"
- * is a real trip, so it is labelled rather than refused. */
-export function isRoundTrip(result: Result) {
-  const a = result.origin.coordinate;
-  const b = result.destination.coordinate;
-  if (!a || !b) return false;
-  const kmPerDegree = 111.32;
-  const dx = (a.longitude - b.longitude) * kmPerDegree * Math.cos((a.latitude * Math.PI) / 180);
-  const dy = (a.latitude - b.latitude) * kmPerDegree;
-  return Math.hypot(dx, dy) < 0.3;
 }
 
 export function transferCopy(value: number) {

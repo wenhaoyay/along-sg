@@ -472,13 +472,8 @@ test("resolved journey produces a hub-first map recommendation", async ({ page }
     "href",
     /google\.com\/maps\/dir\/\?api=1&origin=.*travelmode=transit/,
   );
-  // The headline now carries an "extra travel" label of its own, so assert on
-  // the breakdown itself rather than on a phrase that appears in both places.
-  await expect(page.locator(".breakdown-list")).not.toBeVisible();
-  await page.getByText("How the 31 minutes add up").click();
-  await expect(page.locator(".breakdown-list")).toBeVisible();
-  await expect(page.locator(".breakdown-list")).toContainText("Extra travel");
-  await expect(page.getByText("Other options")).toHaveCount(0);
+  // The map has no key: the direct trip is labelled on its own line.
+  await expect(page.locator(".route-direct-label")).toHaveText("Direct");
   await expect(page.locator("body")).not.toContainText(
     /routing calls|provider latency|candidate count|best_match|hard constraints/i,
   );
@@ -868,8 +863,6 @@ test("the headline is extra travel, with the time in shops and the arrival besid
   await expect(page.locator(".result-impact > strong")).toContainText("extra travel");
   await expect(page.locator(".impact-caption")).toContainText("31 min later than going direct");
   await expect(page.locator(".impact-caption")).toContainText("including about 23 min in shops");
-  await page.getByText("How the 31 minutes add up").click();
-  await expect(page.locator(".breakdown-list .total")).toContainText("+31 min");
 });
 
 test("the theme button cycles auto, light and dark, and the choice survives a reload", async ({
@@ -1147,7 +1140,6 @@ test("the map shows every routed place that is not the plan", async ({ page }) =
   // One offered alternative plus three compared candidates. Before this the map
   // carried the winning stop and nothing else.
   await expect(page.locator(".along-marker.considered")).toHaveCount(4);
-  await expect(page.locator(".map-key")).toContainText("Other options");
   // Each carries its extra travel, so the map states the comparison.
   await expect(page.locator(".along-marker.considered").first()).toContainText(/^\+\d+$/);
 });
@@ -1168,7 +1160,7 @@ test("a compared row promotes its option, and states what it costs", async ({ pa
   // diagram shows four and folds the rest.
   const rows = page.locator(".detour-row.option");
   await expect(rows).toHaveCount(4);
-  await page.getByRole("button", { name: "Show all 5 routed options" }).click();
+  await page.getByRole("button", { name: "Show all 5", exact: true }).click();
   await expect(rows).toHaveCount(5);
   await expect(rows.filter({ hasText: "Bukit Panjang Plaza" })).toContainText("12 min more travel");
   await rows.filter({ hasText: "Bukit Panjang Plaza" }).click();
@@ -1199,7 +1191,7 @@ test("no weighting ever promotes an option that drops an errand", async ({ page 
     await page.getByRole("button", { name: label, exact: true }).click();
     await expect(planName(page)).not.toContainText("Half Errand Mall");
   }
-  await page.getByRole("button", { name: /Show all \d+ routed options/ }).click();
+  await page.getByRole("button", { name: /^Show all \d+$/ }).click();
   const half = page.locator(".detour-row.option").filter({ hasText: "Half Errand Mall" });
   await expect(half).toContainText("one errand only");
   await half.click();

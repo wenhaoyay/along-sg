@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ShoppingBag } from "lucide-react";
 import { inkOn } from "../../lineColors";
 import { clockTime } from "./format";
 import { RANK_LABELS, type RankKey, tradeoffCopy } from "./ranking";
@@ -20,11 +21,14 @@ type Props = {
   onHover?: (key: string | null) => void;
   rankBy: RankKey;
   onRankChange: (rank: RankKey) => void;
-  note: string;
 };
 
 /** The options as journeys on one time axis, with the direct trip as the
- *  yardstick. Picking a row makes it the plan. */
+ *  yardstick. Picking a row makes it the plan.
+ *
+ *  The bars name themselves - a ride carries its line's code, a stop a bag -
+ *  so there is no key, and no axis: the figure beside each row is the time,
+ *  and the dashed line is where the direct trip arrives. */
 export function DetourDiagram({
   result,
   rows,
@@ -34,7 +38,6 @@ export function DetourDiagram({
   onHover,
   rankBy,
   onRankChange,
-  note,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const direct = directStrip(result);
@@ -49,12 +52,13 @@ export function DetourDiagram({
   // length of a bar you were already reading.
   const scale = Math.max(direct.total, ...strips.map(([, , strip]) => strip.total)) * 1.02;
   const directAt = (direct.total / scale) * 100;
-  const longest = Math.max(direct.total, ...strips.map(([, , strip]) => strip.total));
 
   return (
     <section className="detour" aria-labelledby="detour-title">
       <div className="detour-head">
-        <h2 id="detour-title">Compared with going direct</h2>
+        <h2 id="detour-title" className="sr-only">
+          Compared with going direct
+        </h2>
         {rows.length > 1 && (
           <div className="detour-sort" role="group" aria-label="Sort options by">
             {(Object.keys(RANK_LABELS) as RankKey[]).map((key) => (
@@ -126,38 +130,11 @@ export function DetourDiagram({
           );
         })}
       </div>
-      <Axis direct={direct.total} longest={longest} scale={scale} />
-
-      <div className="detour-foot">
-        <ul className="detour-legend" aria-label="Diagram key">
-          <li>
-            <i className="ride" />
-            Train or bus
-          </li>
-          <li>
-            <i className="walk" />
-            Walk
-          </li>
-          <li>
-            <i className="wait" />
-            Wait or change
-          </li>
-          <li>
-            <i className="stop" />
-            At your stops
-          </li>
-          <li>
-            <i className="direct" />
-            Direct arrives
-          </li>
-        </ul>
-        {strips.length > VISIBLE_ROWS && (
-          <button type="button" className="detour-more" onClick={() => setExpanded(!expanded)}>
-            {expanded ? "Show fewer" : `Show all ${strips.length} routed options`}
-          </button>
-        )}
-        <p className="precision-note">{note}</p>
-      </div>
+      {strips.length > VISIBLE_ROWS && (
+        <button type="button" className="detour-more" onClick={() => setExpanded(!expanded)}>
+          {expanded ? "Show fewer" : `Show all ${strips.length}`}
+        </button>
+      )}
     </section>
   );
 }
@@ -182,38 +159,10 @@ function Track({ strip, scale }: { strip: Strip; scale: number }) {
             }
           >
             {piece.kind === "ride" && piece.code && width > 7 ? piece.code : null}
+            {piece.kind === "stop" && width > 5 ? <ShoppingBag size={11} /> : null}
           </i>
         );
       })}
     </span>
-  );
-}
-
-/* The time axis: where the bars start, where the direct trip arrives and how
- * long the longest option takes. The figures beside each row already say all
- * of this; the axis is for reading the bars, so it is hidden from assistive
- * technology rather than read out a second time. */
-function Axis({ direct, longest, scale }: { direct: number; longest: number; scale: number }) {
-  const at = (minutes: number) => (minutes / scale) * 100;
-  const directAt = at(direct);
-  const longestAt = at(longest);
-  // A label is about 12% of the row wide. Where the direct mark and the end
-  // would collide, the direct label turns to face left; where they would
-  // still collide, the end is not labelled - the last bar shows it.
-  const close = longestAt - directAt < 22;
-  const showLongest = longest - direct >= 1 && longestAt - directAt >= 12;
-  return (
-    <div className="detour-axis" aria-hidden="true">
-      <span style={{ left: 0 }}>0</span>
-      <span
-        className={`direct${close ? " end" : ""}`}
-        style={{ left: `${directAt}%` }}
-      >{`${Math.round(direct)} min direct`}</span>
-      {showLongest && (
-        <span className="end" style={{ left: `${longestAt}%` }}>
-          {`${Math.round(longest)} min`}
-        </span>
-      )}
-    </div>
   );
 }

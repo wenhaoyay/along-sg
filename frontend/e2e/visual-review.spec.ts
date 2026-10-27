@@ -111,7 +111,7 @@ test("capture the UI review states", async ({ page }, testInfo) => {
   await page.waitForTimeout(900);
   await shoot(page, output, "C-result");
 
-  await page.getByRole("button", { name: /Show all \d+ routed options/ }).click();
+  await page.getByRole("button", { name: /^Show all \d+$/ }).click();
   await page.locator(".detour").scrollIntoViewIfNeeded();
   await shoot(page, output, "D-compared-options");
 

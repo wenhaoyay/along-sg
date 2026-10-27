@@ -920,7 +920,6 @@ export default function Home() {
               <ArrowLeft size={15} aria-hidden="true" />
               Edit journey
             </button>
-            <span>Try another way</span>
             <h1>No easy match</h1>
             <p>
               {result.message ?? "Try a broader category or loosen a brand or time preference."}
@@ -958,29 +957,6 @@ export default function Home() {
           activeConsidered={activeConsidered}
           onStopSelect={setActiveStop}
         />
-        {preview && (
-          <p className="map-key map-preview-note" aria-live="polite">
-            Example: {placeName(preview.origin)} → {placeName(preview.destination)}, {preview.need}
-          </p>
-        )}
-        {selected && (
-          <div className="map-key" aria-label="Map route key">
-            <span>
-              <i className="baseline" />
-              Direct
-            </span>
-            <span>
-              <i className="recommended" />
-              Your route, by line
-            </span>
-            {comparedPoints.length > 0 && (
-              <span>
-                <i className="considered">+</i>
-                Other options
-              </span>
-            )}
-          </div>
-        )}
       </section>
     </main>
   );

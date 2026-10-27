@@ -4,7 +4,8 @@
  *
  *   cd backend
  *   .venv\Scripts\python.exe scripts\ingest_osm_pois.py --input data\singapore-osm-pois.json
- *   set SERVE_FRONTEND_DIR=..\frontend\out && .venv\Scripts\python.exe -m uvicorn app.main:app --port 8041
+ *   set SERVE_FRONTEND_DIR=..\frontend\out
+ *   .venv\Scripts\python.exe -m uvicorn app.main:app --port 8041
  *
  * then, from frontend/:
  *

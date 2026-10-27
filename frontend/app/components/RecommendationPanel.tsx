@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Check,
-  ChevronDown,
   Clock3,
   Footprints,
   Share2,
@@ -14,8 +13,8 @@ import {
 import { boardingIsImminent, boardingKey, isBusStopCode, useBusArrivals } from "../useBusArrivals";
 import type { Boarding } from "../useBusArrivals";
 import { type Recommendation, type Result } from "./journey/types";
-import { rankNote, comparedSummary, rankValue, type RankKey } from "./journey/ranking";
-import { metres, clockTime, isRoundTrip, transferCopy } from "./journey/format";
+import { rankValue, type RankKey } from "./journey/ranking";
+import { metres, clockTime, transferCopy } from "./journey/format";
 import { laterMinutes, shopMinutes, signed, travelMinutes } from "./journey/figures";
 import { WALKING_MODES, isRail } from "./journey/RideLegs";
 import { DetourDiagram } from "./journey/DetourDiagram";
@@ -78,11 +77,6 @@ export function RecommendationPanel({
   shareQuery,
 }: Props) {
   const primaryStop = recommendation.stops[0];
-  const otherOptions = alternatives.filter(([key]) => key !== selectedKey);
-  // Everything routed, the plan on screen included - the number the ranking
-  // note quotes has to be the size of the set being reordered.
-  const routedCount = otherOptions.length + compared.length + 1;
-  const roundTrip = isRoundTrip(result);
 
   /* Offered alternatives and compared candidates were two collapsed lists
    * under the Navigate button, where nobody opened them - and the comparison
@@ -107,14 +101,6 @@ export function RecommendationPanel({
       ([firstKey, first], [secondKey, second]) => order(firstKey, first) - order(secondKey, second),
     );
   }, [selectedKey, recommendation, alternatives, compared, rankBy]);
-  const note = [
-    compared.length
-      ? comparedSummary(compared, recommendation, otherOptions)
-      : rankNote("recommended", routedCount),
-    rankBy !== "recommended" ? rankNote(rankBy, routedCount) : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
 
   /* Only the bus legs of the plan on screen, and only while boarding is close
    * enough for "next in 4 min" to be about the bus you will actually catch. */
@@ -148,17 +134,15 @@ export function RecommendationPanel({
         Edit journey
       </button>
 
-      {result.message && <p className="result-context">{result.message}</p>}
-
+      {/* The outcome's message ("We couldn't fit everything comfortably")
+        and a "Why?" behind the label said again what the label and the
+        sentence under the figures say, and vaguely. The server's sentence
+        names the reason ("No pharmacy on the way is open..."). */}
       <div className="result-heading">
-        <details className="quality-note">
-          <summary className="quality-label">
-            <Check size={13} aria-hidden="true" />
-            {sentenceCase(recommendation.quality_label)}
-            <span className="quality-why">Why?</span>
-          </summary>
-          <p>{qualityExplanation(recommendation, routedCount)}</p>
-        </details>
+        <span className="quality-label">
+          <Check size={13} aria-hidden="true" />
+          {sentenceCase(recommendation.quality_label)}
+        </span>
         <h1 tabIndex={-1}>{primaryStop?.display_name ?? "Your best stop"}</h1>
         {primaryStop && primaryStop.location_context !== primaryStop.display_name && (
           <p>{primaryStop.location_context}</p>
@@ -193,10 +177,7 @@ export function RecommendationPanel({
           </span>
         </div>
       </div>
-      <p className="impact-caption">
-        {impactCaption(recommendation)}
-        {roundTrip && " A round trip: you start and finish at the same place."}
-      </p>
+      <p className="impact-caption">{impactCaption(recommendation)}</p>
       {/* The one sentence that explains the pick, written by the server from
         the options it actually routed, so it cannot claim a win the list
         below contradicts. */}
@@ -213,10 +194,11 @@ export function RecommendationPanel({
         onHover={onComparedHover}
         rankBy={rankBy}
         onRankChange={onRankChange}
-        note={note}
       />
 
-      <h2 className="section-title">Your plan</h2>
+      {/* Named for screen readers and anything reading the page's outline;
+        on screen the A-to-B timeline needs no heading. */}
+      <h2 className="sr-only">Your plan</h2>
       <Timeline
         recommendation={recommendation}
         originName={originLabel ?? result.origin.label}
@@ -226,10 +208,7 @@ export function RecommendationPanel({
         onStopSelect={onStopSelect}
       />
       {recommendation.time_dependent === false && (
-        <p className="precision-note">
-          Departure-time routing is not verified for this provider. Stop arrival times are
-          unavailable; this comparison is not a timetable promise.
-        </p>
+        <p className="precision-note">Times are estimates, not a timetable.</p>
       )}
 
       {primaryStop?.navigation_ready && (
@@ -252,66 +231,12 @@ export function RecommendationPanel({
         </nav>
       )}
       {shareQuery && <ShareButton query={shareQuery} />}
-
-      <details className="result-disclosure why-disclosure">
-        <summary>
-          <span>How the {Math.round(laterMinutes(recommendation))} minutes add up</span>
-          <ChevronDown size={18} aria-hidden="true" />
-        </summary>
-        <div className="disclosure-body">
-          <dl className="breakdown-list">
-            <div>
-              <dt>Extra travel</dt>
-              <dd>{signed(travelMinutes(recommendation))} min</dd>
-            </div>
-            {recommendation.detour_breakdown.dwell_allowances.map((item) => (
-              <div key={item.label}>
-                <dt>{shortDwellLabel(item.label)}</dt>
-                <dd>~{Math.round(item.minutes)} min</dd>
-              </div>
-            ))}
-            <div className="total">
-              <dt>Later than going direct</dt>
-              <dd>{signed(laterMinutes(recommendation))} min</dd>
-            </div>
-          </dl>
-          <p className="precision-note">
-            <Clock3 size={13} aria-hidden="true" />
-            {recommendation.detour_breakdown.precision_note}
-          </p>
-        </div>
-      </details>
     </section>
   );
 }
 
 function sentenceCase(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-}
-
-/* "EXACT MATCH" above the stop name raised the question of what had been
- * matched, and nothing answered it. The label stays; tapping it says what it
- * means, in the terms the ranking used. */
-function qualityExplanation(item: Recommendation, routed: number) {
-  const scope = routed > 1 ? `the ${routed} options we routed` : "the options we routed";
-  switch (item.match_classification) {
-    case "best_available":
-      return `Nothing fitted every preference, so this is the closest of ${scope}.`;
-    case "closest_exact":
-      return "It matches what you asked for, and is just above the detour you prefer.";
-    case "exceeds_limit":
-      return "It is over the limit you set. Nothing came in under it.";
-    case "exact_match":
-      return `It has the brand you prefer, and the best mix of extra travel, walking and changes of ${scope} that do.`;
-    case "without_preferred_brand":
-      return "Nothing with your preferred brand came out ahead, so this one does not have it.";
-    case "substitute":
-      return "It uses a similar kind of shop instead of the one you asked for.";
-    case "partial_option":
-      return "It covers only part of your request.";
-    default:
-      return `It has the best mix of extra travel, walking and changes of ${scope}, weighed with how sure we are of each place.`;
-  }
 }
 
 function impactCaption(item: Recommendation) {
@@ -354,10 +279,6 @@ function handoffLegs(
     legs.push({ label, href: mapsLink(points[index - 1].coordinate ?? undefined, to) });
   }
   return legs;
-}
-
-function shortDwellLabel(label: string) {
-  return label.replace(/^Estimated /i, "").replace(/ stop$/i, " stop");
 }
 
 function relationshipCopy(item: Recommendation) {

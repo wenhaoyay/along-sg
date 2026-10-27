@@ -232,14 +232,22 @@ export function SpatialMap({
             ? [origin.coordinate, destination.coordinate]
             : [];
       // A ghost of the direct trip: there to be compared with, not followed.
-      if (baselinePoints.length > 1)
-        L.polyline(latLngs(baselinePoints), {
+      // Beside a plan it is labelled on the line itself, instead of in a key.
+      if (baselinePoints.length > 1) {
+        const direct = L.polyline(latLngs(baselinePoints), {
           className: "route-direct",
           weight: 4,
           dashArray: "2 9",
           lineCap: "round",
           interactive: false,
         }).addTo(layer);
+        if (stops.length)
+          direct.bindTooltip("Direct", {
+            permanent: true,
+            direction: "center",
+            className: "route-direct-label",
+          });
+      }
 
       /* The plan, one path per leg: each ride in its line's colour over a
        * casing that lifts it off the basemap, walks as dots. A response
