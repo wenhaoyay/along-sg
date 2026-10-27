@@ -1,41 +1,51 @@
-# Private beta privacy note
+# Privacy
 
-## What the journey planner uses
+What the code does, stated so it can be checked. The in-app page is
+`frontend/app/privacy/page.tsx`.
 
-The planner sends the origin, destination and errand request to the beta server only to geocode the places, interpret the request and calculate a public-transport recommendation. Choosing **Use my current location** asks the browser for one foreground position at that moment. There is no background or continuous location tracking.
+## Journeys
 
-Journey inputs are processed for the current request. They are not copied into the analytics database, and the analytics endpoint rejects extra fields such as coordinates or free-form request text. The web server or hosting platform can still produce short-lived operational access logs; those are not used as journey history.
+The origin, destination and request text are sent to the server for one
+request, to place them, read the request and route the journey. They are not
+written to any database. **Current** reads one browser position when it is
+tapped, with no background tracking.
 
-## Anonymous product analytics
+## No analytics
 
-The browser creates a random UUID and retains it in local storage. It is not derived from a device fingerprint, name, email address, IP address or location. A new random session UUID is created for each browser session. The server records only the event type and, where relevant, a random search UUID, recommendation rank/key, parser type, bounded latency, feedback choice or feedback reason.
+The page sends no analytics events and creates no identifier. It stores only
+the theme choice in local storage.
 
-The beta records enough events to measure whether people understand the flow, receive a recommendation, choose it, open navigation, give feedback and return on another day. It does not require an account and does not store advertising identifiers.
+The server still has an analytics module from the private-beta period. It is
+**off by default** (`ANALYTICS_ENABLED=false`): its routes answer 404 and no
+analytics database is created. If an operator turns it on, it accepts only an
+allowlisted schema with no coordinates and no free text. It purges events
+older than `ANALYTICS_RETENTION_DAYS` every hour and caps the number of rows.
+Turning it on would also mean adding a client and rewriting this page and the
+in-app notice.
 
-## Retention and access
+## Logs and limits
 
-Analytics events are stored in a separate SQLite database and are deleted after 90 days by default; the period is configurable with `ANALYTICS_RETENTION_DAYS`. Access to the aggregate report requires the server-side `BETA_ADMIN_TOKEN`. OneMap and optional OpenAI credentials also remain server-side and must never use a `NEXT_PUBLIC_` name.
+The host keeps ordinary access logs. The application logs counts and timings,
+not journeys. Per-client rate limits are applied in memory and keep no
+record.
 
-For this private beta, the operator should limit report and backup access to the beta team, keep encrypted backups only as long as operationally required, and delete backups no later than the underlying 90-day event retention window. Removing the site data in the browser resets the anonymous identifier. Because there is no account or identity mapping, the app cannot reliably locate an individual’s events from their real-world identity.
+## Credentials
 
-## External navigation and data sources
+- **OneMap and LTA DataMall:** keys and the OneMap token stay on the server,
+  and are never named `NEXT_PUBLIC_`.
+- **Public demo:** runs with no credentials at all, using offline routing.
 
-Navigation opens only after an explicit click and is handled by the user’s selected external mapping service, whose privacy terms then apply. Public place data is derived from OpenStreetMap and remains attributed **© OpenStreetMap contributors, ODbL 1.0**. Public-transport routing and geocoding are supplied through the backend OneMap adapter.
+## Links out
 
-## Optional catalog-gap tracking
+The Google Maps buttons open only when tapped. They carry the coordinates of
+one leg each.
 
-V0.7.3 catalog-gap tracking is disabled by default. If the operator explicitly enables
-it, only a normalized unresolved need term and aggregate count are retained in process
-memory for the admin-only report. It never stores the journey, coordinates, IP address
-or arbitrary request history, and it is not written to the analytics database.
+## Data sources
 
-## Open-world provider calls
+Sources and licences are in [`data-sources.md`](data-sources.md):
 
-V0.7.4 keeps OneMap, TomTom, Geoapify, Tavily and optional OpenAI credentials server-side;
-none may use a `NEXT_PUBLIC_` name. Explicitly enabled discovery providers receive the
-specific need phrase and only bounded route-centre/corridor geography when relevance
-requires it—not identity, account data or the full journey sentence. Web evidence cannot
-enter optimisation until a separate source grounds it to real Singapore coordinates.
-Proprietary provider responses use a five-minute in-memory cache and are not persisted.
-Raw needs remain excluded from the analytics database; opt-in aggregate gap telemetry
-retains the earlier safeguards.
+- OpenStreetMap (ODbL)
+- data.gov.sg / HSA (Singapore Open Data Licence)
+- OneMap / SLA
+- LTA DataMall
+- Wikimedia Commons, for logos

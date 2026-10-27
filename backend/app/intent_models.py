@@ -44,7 +44,8 @@ class RecommendationClassification(StrEnum):
     EXACT_MATCH = "exact_match"
     CLOSEST_EXACT = "closest_exact"
     BEST_AVAILABLE = "best_available"
-    EASIER_ALTERNATIVE = "easier_alternative"
+    WITHOUT_PREFERRED_BRAND = "without_preferred_brand"
+    SUBSTITUTE = "substitute"
     PARTIAL_OPTION = "partial_option"
     EXCEEDS_LIMIT = "exceeds_limit"
 
@@ -59,6 +60,18 @@ class IntentErrand(BaseModel):
     discovery_concept: str | None = Field(default=None, min_length=1, max_length=80)
     open_need: OpenNeed | None = None
     discovery_category: str | None = Field(default=None, min_length=2, max_length=64)
+    # Brands the person ruled out ("fast food but not McDonald's"). Their
+    # stores never count towards this errand, or any other in the trip.
+    excluded_brands: list[str] = Field(default_factory=list, max_length=5)
+    # Any one of these is preferred ("Starbucks or Toast Box"). The errand is
+    # still planned for its category; this keeps the "or" for ranking later.
+    brand_options: list[str] = Field(default_factory=list, max_length=4)
+    # How, not what: "takeaway" for "tapau" / "da bao" on a food errand.
+    modifiers: list[str] = Field(default_factory=list, max_length=4)
+    # The narrower thing asked for when the catalog only has a broader
+    # category ("post office" is planned as parcel, "ATM" as banking), so a
+    # dedicated category can take it over later.
+    requested_concept: str | None = Field(default=None, min_length=2, max_length=64)
 
     @model_validator(mode="after")
     def hard_brand_cannot_allow_substitution(self) -> "IntentErrand":
@@ -66,6 +79,12 @@ class IntentErrand(BaseModel):
             raise ValueError("An exact required brand cannot allow substitutes")
         if self.exact_brand and self.preferred_brand:
             raise ValueError("Use either exact_brand or preferred_brand, not both")
+        excluded = {brand.casefold() for brand in self.excluded_brands}
+        if any(
+            brand and brand.casefold() in excluded
+            for brand in (self.exact_brand, self.preferred_brand)
+        ):
+            raise ValueError("A brand cannot be both asked for and excluded")
         if self.exact_place and (self.exact_brand or self.preferred_brand):
             raise ValueError("Use either exact_place or a brand preference")
         if self.category.startswith("open_") and self.open_need is None:
@@ -146,12 +165,24 @@ class IntentParseDiagnostics(BaseModel):
     correction_applied: bool = False
 
 
+class SpellingCorrection(BaseModel):
+    typed: str
+    understood_as: str
+
+
 class IntentParseResponse(BaseModel):
     status: IntentStatus
     intent: IntentV1 | None = None
     unresolved_terms: list[str] = Field(default_factory=list)
     clarification_question: str | None = None
     diagnostics: IntentParseDiagnostics
+    # Words read as a near spelling of a catalog term ("panadl" -> "panadol").
+    # The intent's confidence is lowered when there are any, so the page can
+    # ask "did you mean ...?" before trusting the plan.
+    spelling_corrections: list[SpellingCorrection] = Field(default_factory=list)
+    # Plain sentences about how the request was read: an excluded brand, an
+    # "or" kept as a preference, a concept planned as a broader category.
+    notes: list[str] = Field(default_factory=list)
     journey_mentions: list[JourneyMention] = Field(default_factory=list)
     journey_conflicts: list[JourneyConflict] = Field(default_factory=list)
 

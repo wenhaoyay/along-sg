@@ -10,7 +10,9 @@ from app.main import create_app
 
 
 def test_parse_preview_metrics_and_intent_optimization(tmp_path: Path):
-    app = create_app(Settings(onemap_mock=True, database_path=tmp_path / "intent.db"))
+    app = create_app(Settings(
+        onemap_mock=True, database_path=tmp_path / "intent.db", expose_diagnostics=True,
+    ))
     with TestClient(app) as client:
         parsed = client.post(
             "/api/intent/parse",
@@ -34,9 +36,12 @@ def test_parse_preview_metrics_and_intent_optimization(tmp_path: Path):
         assert body["intent"]["schema_version"] == "1.0"
         assert body["errands"] == ["groceries", "pharmacy"]
         assert body["diagnostics"]["routing_call_count"] <= 12
+        # Offered answers are full matches; places that were only compared
+        # (offered=false) keep their own honest classification.
         assert all(
             rec["match_classification"] == "best_match"
             for rec in body["recommendations"].values()
+            if rec["offered"]
         )
 
         metrics = client.get("/api/intent/metrics").json()
@@ -47,7 +52,9 @@ def test_parse_preview_metrics_and_intent_optimization(tmp_path: Path):
 def test_optional_errand_can_be_omitted_but_required_errand_is_never_relaxed(
     tmp_path: Path,
 ):
-    app = create_app(Settings(onemap_mock=True, database_path=tmp_path / "partial.db"))
+    app = create_app(Settings(
+        onemap_mock=True, database_path=tmp_path / "partial.db", expose_diagnostics=True,
+    ))
     payload = {
         "origin": {"query": "Punggol MRT"},
         "destination": {"query": "Orchard MRT"},

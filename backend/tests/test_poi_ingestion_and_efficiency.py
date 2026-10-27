@@ -23,14 +23,14 @@ DESTINATION = Coordinate(1.3043, 103.8322)
 
 
 def test_taxonomy_normalizes_aliases_brands_and_hierarchical_categories() -> None:
-    assert normalize_categories(["Fried Chicken", "ATM"]) == ("fried_chicken", "banking")
+    # An ATM is its own category now (a two-minute stop, not a bank queue).
+    assert normalize_categories(["Fried Chicken", "ATM"]) == ("fried_chicken", "atm")
     assert canonical_brand("Kentucky Fried Chicken") == ("kfc", "KFC")
     assert infer_categories({"amenity": "fast_food", "brand": "KFC"}) == (
         "fast_food", "fried_chicken"
     )
-    assert infer_categories({"amenity": "cafe", "cuisine": "bubble_tea"}) == (
-        "bubble_tea", "coffee"
-    )
+    # Cuisine is read before amenity=cafe: a bubble tea cafe is not coffee.
+    assert infer_categories({"amenity": "cafe", "cuisine": "bubble_tea"}) == ("bubble_tea",)
 
 
 def test_osm_ingestion_consolidates_mall_deduplicates_and_excludes_closed(tmp_path) -> None:

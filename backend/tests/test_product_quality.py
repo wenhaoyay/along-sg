@@ -84,7 +84,8 @@ def test_consumer_labels_and_detour_breakdown_never_leak_raw_ids(tmp_path: Path)
     assert response.status_code == 200
     body = response.json()
     recommendation = body["recommendations"]["best_overall"]
-    assert recommendation["detour_breakdown"]["dwell_minutes"] == 30
+    from app.config import DwellTimes
+    assert recommendation["detour_breakdown"]["dwell_minutes"] == DwellTimes().groceries + DwellTimes().pharmacy
     assert recommendation["detour_breakdown"]["total_incremental_minutes"] == recommendation["incremental_detour_minutes"]
     consumer_json = json.dumps(body["recommendations"]).casefold()
     assert all(raw not in consumer_json for raw in ("node/", "way/", "relation/", "hub_id", "source_id"))

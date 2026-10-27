@@ -1,0 +1,781 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-10-23",
+  "source": {
+    "publisher": "Along (hand-curated)",
+    "method": "Areas and landmarks a person names as a place to go, which the shop catalogue cannot answer. Coordinates marked 'osm' are the building centroid from the 2026-09-09 OpenStreetMap capture; 'curated' ones are the landmark's centre, checked by hand against the map.",
+    "attribution": "Coordinates marked 'osm': (c) OpenStreetMap contributors",
+    "licence": "ODbL 1.0 for coordinates taken from OpenStreetMap"
+  },
+  "landmark_count": 54,
+  "landmarks": [
+    {
+      "id": "landmark-sentosa",
+      "canonical_name": "Sentosa",
+      "entity_type": "area",
+      "latitude": 1.2494,
+      "longitude": 103.8303,
+      "subtitle": "Island resort",
+      "aliases": [
+        "Sentosa",
+        "Sentosa Island",
+        "Sentosa Singapore"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-resorts-world-sentosa",
+      "canonical_name": "Resorts World Sentosa",
+      "entity_type": "landmark",
+      "latitude": 1.2565,
+      "longitude": 103.8201,
+      "subtitle": "Sentosa",
+      "aliases": [
+        "Resorts World Sentosa",
+        "Resort World Sentosa",
+        "RWS",
+        "Universal Studios",
+        "Universal Studios Singapore",
+        "USS",
+        "S.E.A. Aquarium"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-changi-airport",
+      "canonical_name": "Changi Airport",
+      "entity_type": "airport",
+      "latitude": 1.3592,
+      "longitude": 103.9894,
+      "subtitle": "Terminals 1-4 and Jewel",
+      "aliases": [
+        "Changi",
+        "Singapore Changi Airport",
+        "Changi Airport Singapore",
+        "Airport",
+        "Singapore airport"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-changi-t1",
+      "canonical_name": "Changi Airport Terminal 1",
+      "entity_type": "airport_terminal",
+      "latitude": 1.3627,
+      "longitude": 103.9911,
+      "subtitle": "Changi Airport",
+      "aliases": [
+        "T1",
+        "Terminal 1",
+        "Changi T1",
+        "Changi Terminal 1",
+        "Changi Airport T1",
+        "Changi Airport Terminal 1",
+        "Airport T1"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-changi-t2",
+      "canonical_name": "Changi Airport Terminal 2",
+      "entity_type": "airport_terminal",
+      "latitude": 1.3538,
+      "longitude": 103.9905,
+      "subtitle": "Changi Airport",
+      "aliases": [
+        "T2",
+        "Terminal 2",
+        "Changi T2",
+        "Changi Terminal 2",
+        "Changi Airport T2",
+        "Changi Airport Terminal 2",
+        "Airport T2"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-changi-t3",
+      "canonical_name": "Changi Airport Terminal 3",
+      "entity_type": "airport_terminal",
+      "latitude": 1.3546,
+      "longitude": 103.9851,
+      "subtitle": "Changi Airport",
+      "aliases": [
+        "T3",
+        "Terminal 3",
+        "Changi T3",
+        "Changi Terminal 3",
+        "Changi Airport T3",
+        "Changi Airport Terminal 3",
+        "Airport T3"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-changi-t4",
+      "canonical_name": "Changi Airport Terminal 4",
+      "entity_type": "airport_terminal",
+      "latitude": 1.3383,
+      "longitude": 103.9832,
+      "subtitle": "Changi Airport, reached by shuttle bus",
+      "aliases": [
+        "T4",
+        "Terminal 4",
+        "Changi T4",
+        "Changi Terminal 4",
+        "Changi Airport T4",
+        "Changi Airport Terminal 4",
+        "Airport T4"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-jewel-changi",
+      "canonical_name": "Jewel Changi Airport",
+      "entity_type": "mall",
+      "latitude": 1.3602,
+      "longitude": 103.9897,
+      "subtitle": "Changi Airport",
+      "aliases": [
+        "Jewel",
+        "Jewel Changi",
+        "Jewel Changi Airport",
+        "Jewel Airport",
+        "Rain Vortex"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-changi-village",
+      "canonical_name": "Changi Village",
+      "entity_type": "area",
+      "latitude": 1.3889,
+      "longitude": 103.988,
+      "subtitle": "Changi Point",
+      "aliases": [
+        "Changi Village",
+        "Changi Village Hawker Centre",
+        "Changi Point Ferry Terminal"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-harbourfront-centre",
+      "canonical_name": "HarbourFront Centre",
+      "entity_type": "mall",
+      "latitude": 1.2644,
+      "longitude": 103.8205,
+      "subtitle": "HarbourFront",
+      "aliases": [
+        "HarbourFront Centre",
+        "Harbourfront Center",
+        "Harbour Front Centre",
+        "Singapore Cruise Centre",
+        "HarbourFront Ferry Terminal"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-vivocity",
+      "canonical_name": "VivoCity",
+      "entity_type": "mall",
+      "latitude": 1.2644,
+      "longitude": 103.8221,
+      "subtitle": "HarbourFront",
+      "aliases": [
+        "VivoCity",
+        "Vivo City",
+        "Vivo"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-orchard-road",
+      "canonical_name": "Orchard Road",
+      "entity_type": "area",
+      "latitude": 1.3048,
+      "longitude": 103.8318,
+      "subtitle": "Shopping street",
+      "aliases": [
+        "Orchard Road",
+        "Orchard Rd",
+        "Orchard shopping belt"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-ion-orchard",
+      "canonical_name": "ION Orchard",
+      "entity_type": "mall",
+      "latitude": 1.304,
+      "longitude": 103.832,
+      "subtitle": "Orchard",
+      "aliases": [
+        "ION Orchard",
+        "ION",
+        "Ion Orchard Mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-ngee-ann-city",
+      "canonical_name": "Ngee Ann City",
+      "entity_type": "mall",
+      "latitude": 1.3026,
+      "longitude": 103.8347,
+      "subtitle": "Orchard",
+      "aliases": [
+        "Ngee Ann City",
+        "Takashimaya",
+        "Takashimaya Shopping Centre"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-marina-bay-sands",
+      "canonical_name": "Marina Bay Sands",
+      "entity_type": "landmark",
+      "latitude": 1.2834,
+      "longitude": 103.8607,
+      "subtitle": "Marina Bay",
+      "aliases": [
+        "Marina Bay Sands",
+        "MBS",
+        "Sands",
+        "The Shoppes",
+        "The Shoppes at Marina Bay Sands",
+        "Sands Expo"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-gardens-by-the-bay",
+      "canonical_name": "Gardens by the Bay",
+      "entity_type": "landmark",
+      "latitude": 1.2816,
+      "longitude": 103.8636,
+      "subtitle": "Marina Bay",
+      "aliases": [
+        "Gardens by the Bay",
+        "GBTB",
+        "Supertree Grove",
+        "Cloud Forest",
+        "Flower Dome"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-marina-bay",
+      "canonical_name": "Marina Bay",
+      "entity_type": "area",
+      "latitude": 1.2823,
+      "longitude": 103.8585,
+      "subtitle": "Waterfront",
+      "aliases": [
+        "Marina Bay",
+        "Marina Bay waterfront",
+        "Marina Bay area"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-merlion-park",
+      "canonical_name": "Merlion Park",
+      "entity_type": "landmark",
+      "latitude": 1.2868,
+      "longitude": 103.8545,
+      "subtitle": "Marina Bay",
+      "aliases": [
+        "Merlion",
+        "Merlion Park"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-suntec-city",
+      "canonical_name": "Suntec City",
+      "entity_type": "mall",
+      "latitude": 1.295,
+      "longitude": 103.8579,
+      "subtitle": "Marina Centre",
+      "aliases": [
+        "Suntec City",
+        "Suntec",
+        "Suntec City Mall",
+        "Suntec Convention Centre"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-raffles-city",
+      "canonical_name": "Raffles City Shopping Centre",
+      "entity_type": "mall",
+      "latitude": 1.2939,
+      "longitude": 103.8534,
+      "subtitle": "City Hall",
+      "aliases": [
+        "Raffles City",
+        "Raffles City Shopping Centre"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-nus",
+      "canonical_name": "National University of Singapore",
+      "entity_type": "university",
+      "latitude": 1.2966,
+      "longitude": 103.7764,
+      "subtitle": "Kent Ridge campus",
+      "aliases": [
+        "NUS",
+        "National University of Singapore",
+        "NUS Kent Ridge",
+        "Kent Ridge campus",
+        "NUS campus",
+        "NUS University Town",
+        "UTown"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-ntu",
+      "canonical_name": "Nanyang Technological University",
+      "entity_type": "university",
+      "latitude": 1.3483,
+      "longitude": 103.6831,
+      "subtitle": "Jurong West campus",
+      "aliases": [
+        "NTU",
+        "Nanyang Technological University",
+        "NTU campus",
+        "Nanyang Tech"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-smu",
+      "canonical_name": "Singapore Management University",
+      "entity_type": "university",
+      "latitude": 1.2963,
+      "longitude": 103.8502,
+      "subtitle": "Bras Basah campus",
+      "aliases": [
+        "SMU",
+        "Singapore Management University",
+        "SMU campus"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-sutd",
+      "canonical_name": "Singapore University of Technology and Design",
+      "entity_type": "university",
+      "latitude": 1.3413,
+      "longitude": 103.9638,
+      "subtitle": "Upper Changi",
+      "aliases": [
+        "SUTD",
+        "Singapore University of Technology and Design"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-nex",
+      "canonical_name": "NEX",
+      "entity_type": "mall",
+      "latitude": 1.3505,
+      "longitude": 103.8723,
+      "subtitle": "Serangoon",
+      "aliases": [
+        "NEX",
+        "NEX Serangoon",
+        "NEX mall",
+        "Nex Shopping Mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-jurong-point",
+      "canonical_name": "Jurong Point",
+      "entity_type": "mall",
+      "latitude": 1.3396,
+      "longitude": 103.7058,
+      "subtitle": "Boon Lay",
+      "aliases": [
+        "Jurong Point",
+        "Jurong Point Shopping Centre"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-jem",
+      "canonical_name": "JEM",
+      "entity_type": "mall",
+      "latitude": 1.3331,
+      "longitude": 103.7434,
+      "subtitle": "Jurong East",
+      "aliases": [
+        "JEM",
+        "Jem mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-westgate",
+      "canonical_name": "Westgate",
+      "entity_type": "mall",
+      "latitude": 1.3342,
+      "longitude": 103.7429,
+      "subtitle": "Jurong East",
+      "aliases": [
+        "Westgate",
+        "Westgate mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-imm",
+      "canonical_name": "IMM",
+      "entity_type": "mall",
+      "latitude": 1.3348,
+      "longitude": 103.7466,
+      "subtitle": "Jurong East",
+      "aliases": [
+        "IMM",
+        "IMM Building"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-tampines-mall",
+      "canonical_name": "Tampines Mall",
+      "entity_type": "mall",
+      "latitude": 1.3525,
+      "longitude": 103.9447,
+      "subtitle": "Tampines",
+      "aliases": [
+        "Tampines Mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-waterway-point",
+      "canonical_name": "Waterway Point",
+      "entity_type": "mall",
+      "latitude": 1.4065,
+      "longitude": 103.9022,
+      "subtitle": "Punggol",
+      "aliases": [
+        "Waterway Point"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-northpoint-city",
+      "canonical_name": "Northpoint City",
+      "entity_type": "mall",
+      "latitude": 1.4282,
+      "longitude": 103.8362,
+      "subtitle": "Yishun",
+      "aliases": [
+        "Northpoint City",
+        "Northpoint",
+        "Northpoint Shopping Centre"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-causeway-point",
+      "canonical_name": "Causeway Point",
+      "entity_type": "mall",
+      "latitude": 1.4361,
+      "longitude": 103.786,
+      "subtitle": "Woodlands",
+      "aliases": [
+        "Causeway Point",
+        "CWP"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-plaza-singapura",
+      "canonical_name": "Plaza Singapura",
+      "entity_type": "mall",
+      "latitude": 1.3005,
+      "longitude": 103.8452,
+      "subtitle": "Dhoby Ghaut",
+      "aliases": [
+        "Plaza Singapura",
+        "Plaza Sing"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-bugis-junction",
+      "canonical_name": "Bugis Junction",
+      "entity_type": "mall",
+      "latitude": 1.2998,
+      "longitude": 103.8559,
+      "subtitle": "Bugis",
+      "aliases": [
+        "Bugis Junction"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-junction-8",
+      "canonical_name": "Junction 8",
+      "entity_type": "mall",
+      "latitude": 1.3506,
+      "longitude": 103.8487,
+      "subtitle": "Bishan",
+      "aliases": [
+        "Junction 8",
+        "J8",
+        "Junction Eight"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-toa-payoh-hdb-hub",
+      "canonical_name": "HDB Hub",
+      "entity_type": "mall",
+      "latitude": 1.332,
+      "longitude": 103.8485,
+      "subtitle": "Toa Payoh",
+      "aliases": [
+        "HDB Hub",
+        "Toa Payoh HDB Hub",
+        "Toa Payoh Hub"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-lot-one",
+      "canonical_name": "Lot One Shoppers' Mall",
+      "entity_type": "mall",
+      "latitude": 1.3852,
+      "longitude": 103.745,
+      "subtitle": "Choa Chu Kang",
+      "aliases": [
+        "Lot One",
+        "Lot 1",
+        "Lot One Shoppers' Mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-parkway-parade",
+      "canonical_name": "Parkway Parade",
+      "entity_type": "mall",
+      "latitude": 1.3014,
+      "longitude": 103.9053,
+      "subtitle": "Marine Parade",
+      "aliases": [
+        "Parkway Parade"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-bedok-mall",
+      "canonical_name": "Bedok Mall",
+      "entity_type": "mall",
+      "latitude": 1.3248,
+      "longitude": 103.9293,
+      "subtitle": "Bedok",
+      "aliases": [
+        "Bedok Mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-changi-city-point",
+      "canonical_name": "Changi City Point",
+      "entity_type": "mall",
+      "latitude": 1.334,
+      "longitude": 103.9631,
+      "subtitle": "Expo",
+      "aliases": [
+        "Changi City Point"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-compass-one",
+      "canonical_name": "Compass One",
+      "entity_type": "mall",
+      "latitude": 1.392,
+      "longitude": 103.895,
+      "subtitle": "Sengkang",
+      "aliases": [
+        "Compass One",
+        "Compass Point"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-hougang-mall",
+      "canonical_name": "Hougang Mall",
+      "entity_type": "mall",
+      "latitude": 1.3724,
+      "longitude": 103.8937,
+      "subtitle": "Hougang",
+      "aliases": [
+        "Hougang Mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-the-clementi-mall",
+      "canonical_name": "The Clementi Mall",
+      "entity_type": "mall",
+      "latitude": 1.315,
+      "longitude": 103.7642,
+      "subtitle": "Clementi",
+      "aliases": [
+        "The Clementi Mall",
+        "Clementi Mall"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-the-star-vista",
+      "canonical_name": "The Star Vista",
+      "entity_type": "mall",
+      "latitude": 1.308,
+      "longitude": 103.7884,
+      "subtitle": "Buona Vista",
+      "aliases": [
+        "The Star Vista",
+        "Star Vista"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-city-square-mall",
+      "canonical_name": "City Square Mall",
+      "entity_type": "mall",
+      "latitude": 1.3114,
+      "longitude": 103.8566,
+      "subtitle": "Farrer Park",
+      "aliases": [
+        "City Square Mall",
+        "City Square"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-marina-square",
+      "canonical_name": "Marina Square",
+      "entity_type": "mall",
+      "latitude": 1.2913,
+      "longitude": 103.8575,
+      "subtitle": "Marina Centre",
+      "aliases": [
+        "Marina Square"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-mustafa-centre",
+      "canonical_name": "Mustafa Centre",
+      "entity_type": "mall",
+      "latitude": 1.3101,
+      "longitude": 103.8553,
+      "subtitle": "Little India",
+      "aliases": [
+        "Mustafa",
+        "Mustafa Centre",
+        "Mustafa Center"
+      ],
+      "coordinate_source": "osm"
+    },
+    {
+      "id": "landmark-singapore-zoo",
+      "canonical_name": "Singapore Zoo",
+      "entity_type": "landmark",
+      "latitude": 1.4043,
+      "longitude": 103.793,
+      "subtitle": "Mandai",
+      "aliases": [
+        "Singapore Zoo",
+        "Zoo",
+        "Mandai Zoo",
+        "Mandai Wildlife Reserve",
+        "Night Safari",
+        "River Wonders",
+        "Bird Paradise"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-botanic-gardens",
+      "canonical_name": "Singapore Botanic Gardens",
+      "entity_type": "landmark",
+      "latitude": 1.3138,
+      "longitude": 103.8159,
+      "subtitle": "Tanglin",
+      "aliases": [
+        "Botanic Gardens",
+        "Singapore Botanic Gardens",
+        "Botanical Gardens"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-sports-hub",
+      "canonical_name": "Singapore Sports Hub",
+      "entity_type": "landmark",
+      "latitude": 1.304,
+      "longitude": 103.8746,
+      "subtitle": "Kallang",
+      "aliases": [
+        "Sports Hub",
+        "Singapore Sports Hub",
+        "National Stadium",
+        "Kallang Wave Mall"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-singapore-expo",
+      "canonical_name": "Singapore Expo",
+      "entity_type": "landmark",
+      "latitude": 1.3352,
+      "longitude": 103.9584,
+      "subtitle": "Expo",
+      "aliases": [
+        "Singapore Expo",
+        "Expo Hall"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-east-coast-park",
+      "canonical_name": "East Coast Park",
+      "entity_type": "landmark",
+      "latitude": 1.3008,
+      "longitude": 103.9122,
+      "subtitle": "Marine Parade",
+      "aliases": [
+        "East Coast Park",
+        "ECP"
+      ],
+      "coordinate_source": "curated"
+    },
+    {
+      "id": "landmark-science-centre",
+      "canonical_name": "Science Centre Singapore",
+      "entity_type": "landmark",
+      "latitude": 1.333,
+      "longitude": 103.7357,
+      "subtitle": "Jurong East",
+      "aliases": [
+        "Science Centre",
+        "Science Centre Singapore",
+        "Snow City"
+      ],
+      "coordinate_source": "curated"
+    }
+  ]
+}

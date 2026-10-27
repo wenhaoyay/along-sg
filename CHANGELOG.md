@@ -2,6 +2,168 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.12.0 - Fewer words, same facts
+
+Every tagline, helper line and secondary label was cut, under one rule: a
+line on screen is a fact about this trip, an action or a warning. Where a
+screen needed a line to make sense, the layout changed instead. On the same
+stubbed journey the input screen went from 68 words to 9, and a result from
+187 to 130, counting what is not a button, link or field.
+
+**A false sentence, fixed first**
+
+- **A fallback says why it is one.** Before about 9:30 every pharmacy between
+  Punggol and Orchard is shut, so the headline example falls back to
+  groceries, and its sentence read "covers everything you asked for" beside
+  "skips pharmacy". It now reads "No pharmacy on the way is open when you'd
+  get there, so this covers the supermarket only". It names a closure only
+  when every full match was dropped for it. A substitute gets its own
+  sentence, and a lone pick without the preferred brand names the brand.
+- **The real-catalogue tests run at a fixed hour** (10:00 on the next
+  weekday), plus one at 8:00 for the case above. They used to plan for "now",
+  so their answers changed with the hour of the run.
+
+**The input screen**
+
+- "What do you need on the way?" is the page's heading and first field. The
+  tagline and the paragraph under it are gone, and the whole form fits the
+  first screen at 1280×800 and on a phone.
+- The examples sit under the field with a play mark, without the "Try one"
+  heading. "Browse categories" is a "More" chip pinned to the end of the
+  quick choices.
+- The form's "Best overall / Faster / Less walking" control is gone. The
+  result's sort has the same words, the request text sets the weights ("in a
+  rush", "minimal walking"), and the same words meant two things in two
+  places. Share links no longer carry `style`.
+- Leave now / later is two small buttons beside the From label, and the
+  time field appears only for "Later". "Current" is a locate icon in the
+  field.
+
+**The result**
+
+- The label is a plain tag; the "Why?" behind it, the yellow outcome
+  notice and the "How the N minutes add up" box are gone. Each repeated
+  something already on screen.
+- The diagram labels itself: rides carry line codes, stops a bag. The key,
+  the colliding time axis and the note under it are gone. The map labels
+  "Direct" on the line itself, instead of in a key.
+- "Leave" and "Arrive" under A and B, and "Listed open · hours can change"
+  beside a green dot, are gone; hours warnings stay.
+
+**Elsewhere**
+
+- Browse: back, search and the "1/2" count are one row. The title, the
+  instructions, "Popular" and the ink caveat are gone.
+- Messages lose their titles ("A quick check", "That didn't work").
+- The header's theme and privacy controls are icons at every width.
+
+**Keeping it so**
+
+- `e2e/copy-budget.spec.ts` counts the visible words outside controls on
+  the input screen and a result. It fails past a budget, or if the form no
+  longer fits the first screen.
+- `frontend/CLAUDE.md` states the rule for anyone, person or agent, adding
+  to the UI.
+- README pictures retaken. `scripts/capture-readme.mjs` now leaves at 10:00
+  on the next weekday through the page's own control, so a capture matches
+  the README at any hour.
+
+## 0.11.0 - Every claim checkable
+
+A devil's-advocate review tried the demo the way a reviewer would. In the
+headline example, the pick's "why this wins" said it had the lowest time,
+walking and changes, while the option listed under it was quicker and walked
+less. The headline figure was mostly time in shops. "Not McDonald's" sent you
+to McDonald's. Editing a chosen place wiped it. This release makes every
+figure and sentence on screen true of the comparison behind it, and makes the
+demo something a stranger can open.
+
+**What the app claims**
+
+- **"Why this wins" is written from the comparison.** It names the quicker
+  rival and the real reason the pick still ranks first (a preferred brand,
+  one building, fewer changes, less walking). It claims "least extra travel"
+  only when that is true. `services/explain.py`.
+- **Extra travel leads; time in shops is said beside it.** The headline, the
+  row figures, the map pins and the breakdown read one set of figures:
+  extra travel, time in shops, and how much later than direct.
+  `journey/figures.ts`, `docs/ranking.md`.
+- **Labels say what they mean.**
+  - Every row: "no FairPrice", "substitute: convenience store",
+    "skips pharmacy", "over your limit".
+  - On the pick: "Not your preferred brand", "Substitute". These replace
+    "Easier alternative", which also appeared beside "5 min more travel".
+- **Limits mean travel.** "Max 5 minutes detour" no longer fails on the 8
+  minutes spent buying bubble tea.
+- **"If convenient" stays optional.** The only partial plan offered keeps the
+  errand you needed.
+
+**What it finds**
+
+- **Two-stop plans beside the origin are found.** Jurong East to Changi, "KFC
+  and bubble tea", now picks Koi Express then JEM (+3.8 min), not Bugis
+  Junction.
+- **Places listed as closed when you arrive are skipped.**
+- **Realistic time at stops.** An ATM is 2 min and a supermarket 15. ATMs and
+  post offices are categories of their own.
+- **Place data:**
+  - NEX is in the right place, and the three invented seed malls are gone.
+  - 55 duplicate mall names are merged.
+  - 134 pharmacies are added from the HSA register (data.gov.sg), plus
+    SingPost post offices.
+  - Places are named from their tags ("UOB ATM", not "ATM or bank").
+  - "Sentosa" and "Changi" find the place, not a shop.
+- **Requests:**
+  - Negation: "not McDonald's", "Guardian not Watsons".
+  - Typos ("panadl"), Singlish (kopi, tapau, makan) and Chinese (牛奶, 奶茶).
+  - Clock times ("before 7pm").
+  - Words the parser cannot read are always reported back, never dropped.
+  - Held-out phrasings: 96%.
+- **Pruning measured.** `tools/compare_exhaustive.py`: the deployed pick
+  matches an unpruned search on 18 of 20 journeys, and the misses are within
+  1.6 min.
+
+**Using it**
+
+- **Editing.** Changing a chosen place keeps what you type. Enter searches,
+  and the search button stays on screen.
+- **Plans are links.** Back returns to the form, and "Share this plan" uses
+  the share sheet or the clipboard.
+- **Google Maps.** It gets the plan one leg at a time instead of dropping
+  everything after the stop.
+- **Failures are sentences.** No more "Unexpected token '<'"; a dropped
+  connection says so.
+- **Accessibility.** Inputs are named by their visible labels, focus follows
+  the answer, and a single status sentence announces it.
+- **Honesty about the demo.**
+  - "Sample times" in the app bar whenever the routing is offline.
+  - The privacy page matches the code: no analytics.
+  - MIT licence, with the data licences noted.
+
+**Running it**
+
+- **Free hosting.** The image is non-root with the catalogue baked in, the
+  dependencies are pinned, and `render.yaml` targets Render's free plan.
+  `docs/deploy.md` has the steps.
+- **Waking up.** Saved runs of the three examples appear while a sleeping
+  instance wakes, labelled as saved.
+- **Faster.** Candidate selection runs off the event loop with cached hubs:
+  ten concurrent plans take about 0.5 s each, down from 3.4 s, and `/health`
+  stays responsive.
+- **Protected.** Per-client rate limits, request size limits, timeouts on
+  both plan routes, and naive datetimes read as Singapore time instead of a
+  500.
+
+**Code**
+
+- **`Optimizer.optimize` split into stages:** generate, budget, price, choose
+  and report. Behaviour is unchanged.
+- **Tests:**
+  - Test files are named by behaviour.
+  - Golden journeys run on the real catalogue.
+  - New suites for the parser and the planner's editing, sharing and
+    failure cases.
+
 ## 0.10.0 - Showing the detour
 
 A design review found that the product's one idea, the cost of a detour measured against the

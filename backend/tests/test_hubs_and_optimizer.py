@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.config import Settings
+from app.config import DwellTimes, Settings
 from app.main import create_app
 from app.services.candidates import generate_candidates
 
@@ -15,7 +15,13 @@ def test_two_errand_generation_includes_consolidated_hubs(repository) -> None:
     separate = [candidate for candidate in candidates if len(candidate.stops) == 2]
 
     assert consolidated
-    assert separate
+    # A pair only exists when neither building holds both errands; a mall that
+    # has both is an option on its own and is never padded with a second stop.
+    assert all(
+        not {"groceries", "pharmacy"}.issubset(stop.categories)
+        for candidate in separate
+        for stop in candidate.stops
+    )
     assert all(len(candidate.stops) == 1 for candidate in consolidated)
     assert all(
         {"groceries", "pharmacy"}.issubset(candidate.stops[0].categories)
@@ -29,6 +35,7 @@ def test_hub_is_returned_once_with_both_matching_outlets(tmp_path: Path) -> None
         database_path=tmp_path / "optimize.db",
         max_candidates=8,
         max_straight_line_detour_km=20,
+        expose_diagnostics=True,
     )
     app = create_app(settings)
     with TestClient(app) as client:
@@ -59,7 +66,8 @@ def test_hub_is_returned_once_with_both_matching_outlets(tmp_path: Path) -> None
     assert any(item["consolidated"] for item in body["recommendations"].values())
 
     for recommendation in body["recommendations"].values():
-        assert recommendation["dwell_minutes"] == 30
+        # The configured groceries + pharmacy allowances, not a literal.
+        assert recommendation["dwell_minutes"] == DwellTimes().groceries + DwellTimes().pharmacy
         assert recommendation["routed_segment_count"] >= 2
         assert recommendation["stop_relationship"]
         assert recommendation["explanation"]

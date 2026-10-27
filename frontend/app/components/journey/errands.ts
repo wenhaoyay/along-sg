@@ -59,23 +59,24 @@ export const STATUS_WORD: Record<string, string> = {
   unknown: "hours not confirmed",
 };
 
-/** One note for the stop's hours, however many shops it names. */
+/** One warning for the stop's hours, however many shops it names - or none
+ *  when every shop is listed open, which the green dot beside each already
+ *  says. */
 export function hoursSummary(lines: ErrandLine[]): string | null {
   if (!lines.length) return null;
   const statuses = new Set(lines.map((line) => line.status));
   if (statuses.size === 1) {
     const [status] = statuses;
-    if (status === "open") return "Listed open when you arrive · hours can change";
-    if (status === "closed") return "Listed closed when you arrive · check before travelling";
-    if (status === "closing_soon") return "May close before you finish · check before travelling";
-    return "Opening hours not confirmed · check before travelling";
+    if (status === "open") return null;
+    if (status === "closed") return "Listed closed when you arrive";
+    if (status === "closing_soon") return "May close before you finish";
+    return "Opening hours not confirmed";
   }
   // A closed shop is the more urgent fact, so a mixed stop leads with it.
   const closing = lines
     .filter((line) => line.status === "closed" || line.status === "closing_soon")
     .map((line) => line.shop);
-  if (closing.length)
-    return `${closing.join(" and ")} may be closed when you arrive · check before travelling`;
+  if (closing.length) return `${closing.join(" and ")} may be closed when you arrive`;
   const unconfirmed = lines.filter((line) => line.status !== "open").map((line) => line.shop);
-  return `Hours not confirmed for ${unconfirmed.join(" and ")} · check before travelling`;
+  return `Hours not confirmed for ${unconfirmed.join(" and ")}`;
 }

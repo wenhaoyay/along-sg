@@ -1,14 +1,39 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
+from app.domain import SINGAPORE_TZ
 from app.intent_models import IntentV1
 from app.discovery_models import OpenNeed
+
+
+# Request bounds. Public endpoints echo some of these strings back, so every
+# one is capped well below the body size limit (app.ops).
+MAX_LOCATION_QUERY_CHARS = 120
+MAX_ERRAND_CHARS = 120
+MAX_ERRANDS = 2
+MAX_NEED_TEXT_CHARS = 300
+# A departure this far in the past is a stale form or a wrong clock, not a plan.
+DEPARTURE_PAST_TOLERANCE = timedelta(minutes=5)
+
+
+def to_singapore_time(value: datetime | None) -> datetime | None:
+    """Every request time in Asia/Singapore; a naive time is taken as SGT.
+
+    The optimizer compares request times with provider times, which are
+    aware; a naive one raised a TypeError there and keyed the route cache by
+    the server's own timezone.
+    """
+    if value is None:
+        return None
+    if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+        return value.replace(tzinfo=SINGAPORE_TZ)
+    return value.astimezone(SINGAPORE_TZ)
 
 
 class CoordinateModel(BaseModel):
@@ -17,7 +42,7 @@ class CoordinateModel(BaseModel):
 
 
 class LocationInput(BaseModel):
-    query: str | None = Field(default=None, min_length=2, max_length=160)
+    query: str | None = Field(default=None, min_length=2, max_length=MAX_LOCATION_QUERY_CHARS)
     coordinate: CoordinateModel | None = None
 
     @model_validator(mode="after")
@@ -32,13 +57,23 @@ class JourneyRequest(BaseModel):
     destination: LocationInput
     departure: datetime | None = None
 
+    @field_validator("departure")
+    @classmethod
+    def departure_in_singapore_time(cls, value: datetime | None) -> datetime | None:
+        departure = to_singapore_time(value)
+        if departure is not None and departure < datetime.now(SINGAPORE_TZ) - DEPARTURE_PAST_TOLERANCE:
+            raise ValueError("Departure is in the past. Choose a future time, or leave it out to go now.")
+        return departure
+
 
 class OptimizeRequest(JourneyRequest):
-    errands: list[str] = Field(min_length=1, max_length=2)
+    errands: list[Annotated[str, StringConstraints(min_length=1, max_length=MAX_ERRAND_CHARS)]] = Field(
+        min_length=1, max_length=MAX_ERRANDS,
+    )
 
 
 class IntentParseRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=500)
+    text: str = Field(min_length=1, max_length=MAX_NEED_TEXT_CHARS)
     correction: bool = False
     origin: "ResolvedLocationContext | None" = None
     destination: "ResolvedLocationContext | None" = None
@@ -59,6 +94,21 @@ class ConfirmedDiscoveryPlace(BaseModel):
 class IntentOptimizeRequest(JourneyRequest):
     intent: IntentV1
     confirmed_discovery_places: list[ConfirmedDiscoveryPlace] = Field(default_factory=list, max_length=2)
+
+    @model_validator(mode="after")
+    def arrival_by_in_singapore_time(self) -> "IntentOptimizeRequest":
+        preferences = self.intent.preferences
+        arrival_by = to_singapore_time(preferences.arrival_by)
+        if arrival_by is not preferences.arrival_by:
+            self.intent = self.intent.model_copy(update={
+                "preferences": preferences.model_copy(update={"arrival_by": arrival_by}),
+            })
+        return self
+
+
+class SubstitutionResponse(BaseModel):
+    requested: str
+    substitute: str
 
 
 class CoordinateResponse(BaseModel):
@@ -223,6 +273,14 @@ class RecommendationResponse(BaseModel):
     stop_relationship: str
     explanation: str
     why_this_wins: str
+    # Extra time moving (trains, buses, walking) compared with going direct,
+    # without time in shops. The figure the options differ by.
+    incremental_travel_minutes: float = 0
+    # What a partial or substitute option leaves out or swaps, and which
+    # preferred brands it lacks, so the page can say so in words.
+    omitted_categories: list[str] = Field(default_factory=list)
+    substituted_categories: list[SubstitutionResponse] = Field(default_factory=list)
+    missing_preferred_brands: list[str] = Field(default_factory=list)
     match_classification: str = "best_match"
     quality_label: str = "Best option"
     hard_constraints_satisfied: bool = True
@@ -258,7 +316,7 @@ class NearMissResponse(BaseModel):
     substitute_category: str
     stop_name: str
     approximate_straight_line_detour_km: float
-    match_classification: str = "easier_alternative"
+    match_classification: str = "substitute"
     explanation: str
 
 

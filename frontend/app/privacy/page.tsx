@@ -1,74 +1,70 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
+export const metadata: Metadata = {
+  title: "Privacy and data sources · Along",
+  description:
+    "What Along does with a journey you plan, and where its places and routes come from.",
+};
+
+/* Written to match the code, and kept that way: an earlier version described
+ * an analytics identifier and event log that the page never sent. */
 export default function PrivacyPage() {
   return (
     <main className="privacy-page">
-      <Link href="/">← Back to Along the Way</Link>
-      <p className="eyebrow">Private beta privacy</p>
-      <h1>What the beta uses and keeps</h1>
+      <Link href="/">← Back to Along</Link>
+      <h1>Privacy and data sources</h1>
       <section>
-        <h2>Journey locations</h2>
+        <h2>Your journey</h2>
         <p>
-          Origin and destination are sent to the journey backend and OneMap to calculate the
-          requested route. Current location is used only after you tap the button. The app does not
-          track location in the background and does not copy exact coordinates into analytics
-          events.
-        </p>
-        <h2>Anonymous analytics</h2>
-        <p>
-          Your browser creates a random identifier stored locally. It is not based on a fingerprint,
-          account, device information or personal details. We record workflow events, recommendation
-          choice, broad feedback, parse method and timing so the beta can measure comprehension and
-          usefulness.
+          The start, destination and what you type are sent to Along’s server to find places and
+          work out the route. They are used for that one request and are not saved. Your current
+          location is read only when you tap Current, once, and never in the background.
         </p>
         <h2>What is not collected</h2>
         <p>
-          No account, name, email, advertising identifier, continuous location trail or permanent
-          exact-location history is required. Natural-language request text is used to interpret the
-          current search but is not stored in the general analytics event table.
+          There is no account, no analytics, no tracking identifier and no advertising. The only
+          thing kept in your browser is your light or dark theme choice. The hosting platform keeps
+          short-lived server logs, as any website’s host does; Along does not use them to build a
+          history of trips.
         </p>
-        <h2>Retention and access</h2>
+        <h2>Links to Google Maps</h2>
         <p>
-          Anonymous beta events are retained for 90 days by default, then deleted during
-          analytics-store initialization. Access to aggregate reporting requires a server-side admin
-          token. Backups, if enabled by the beta operator, follow the same retention window.
+          The directions buttons open Google Maps only when you tap them. The coordinates of that
+          leg go to Google in the link, under Google’s own privacy terms.
         </p>
         <h2>Where the data comes from</h2>
         <p>
-          Places, opening hours and shop categories come from{" "}
+          Places, shop categories and opening hours come from{" "}
           <a
             href="https://www.openstreetmap.org/copyright"
             target="_blank"
             rel="noopener noreferrer"
           >
-            OpenStreetMap
-          </a>{" "}
-          contributors, under the Open Database Licence. Routing and the base map come from{" "}
+            © OpenStreetMap contributors
+          </a>
+          , under the Open Database Licence. Pharmacies are checked against the Health Sciences
+          Authority’s register of retail pharmacies on{" "}
+          <a href="https://data.gov.sg/" target="_blank" rel="noopener noreferrer">
+            data.gov.sg
+          </a>
+          , under the Singapore Open Data Licence. The base map and place search come from{" "}
           <a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">
             OneMap
           </a>{" "}
-          and the Singapore Land Authority. Bus arrival times, stops and timetables come from{" "}
-          <a href="https://datamall.lta.gov.sg/" target="_blank" rel="noopener noreferrer">
-            LTA DataMall
-          </a>{" "}
-          under the Singapore Open Data Licence. Brand-logo metadata comes from{" "}
-          <a href="https://www.wikidata.org/" target="_blank" rel="noopener noreferrer">
-            Wikidata
-          </a>
-          , and available logo files are loaded directly by your browser from{" "}
+          and the Singapore Land Authority, and the rail network from the Land Transport Authority’s
+          station codes. Brand logos are loaded by your browser from{" "}
           <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">
             Wikimedia Commons
           </a>
-          . AlongSG does not locally host those logo image files, so displaying one causes the
-          browser to contact Wikimedia in the normal way for an external image request. Each Commons
-          file has its own licensing and attribution terms. Where no usable logo is available, or a
-          logo fails to load, the app draws a symbol for what the place sells instead.
+          , each under its own licence; where there is none, a symbol is drawn instead.
         </p>
-        <h2>External navigation</h2>
+        <h2 id="demo">Travel times in this demo</h2>
         <p>
-          Navigation opens only after you choose it. The selected stop coordinates are then sent to
-          the external map service in the navigation link and are subject to that service’s privacy
-          terms.
+          This public demo plans over Singapore’s real rail network with estimated times, so it
+          works without any account or key. Lines, stations, interchanges and stop counts are real;
+          the minutes are estimates, and buses are shown only as unnamed feeder legs. It is a
+          portfolio project, not a timetable: check a live service before you travel.
         </p>
       </section>
     </main>

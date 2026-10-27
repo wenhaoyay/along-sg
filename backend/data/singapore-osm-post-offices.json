@@ -1,0 +1,1022 @@
+{
+ "version": 0.6,
+ "generator": "Overpass API 0.7.62.11 87bfad18",
+ "osm3s": {
+  "timestamp_osm_base": "2026-10-23T06:08:36Z",
+  "timestamp_areas_base": "2026-10-23T02:05:05Z",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 369129869,
+   "lat": 1.392736,
+   "lon": 103.8939962,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Sengkang Community Hub",
+    "addr:housenumber": "2",
+    "addr:postcode": "545025",
+    "addr:street": "Sengkang Square",
+    "addr:unit": "#03-01",
+    "amenity": "post_office",
+    "branch": "Sengkang Central",
+    "level": "2",
+    "name": "Sengkang Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 512047011,
+   "lat": 1.3000678,
+   "lon": 103.8406505,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "1",
+    "addr:postcode": "239518",
+    "addr:street": "Killiney Road",
+    "amenity": "post_office",
+    "branch": "Killiney Road",
+    "name": "Killiney Road Post Office",
+    "opening_hours": "Mo-Fr 08:30-17:00; Sa 08:30-13:00",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "website": "https://www.singpost.com/",
+    "wheelchair": "limited"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1029132197,
+   "lat": 1.3402902,
+   "lon": 103.7062311,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Jurong Point Shopping Centre",
+    "addr:housenumber": "1",
+    "addr:postcode": "648886",
+    "addr:street": "Jurong West Central 2",
+    "addr:unit": "#02-41B",
+    "amenity": "post_office",
+    "branch": "Jurong Point",
+    "name": "Singapore Post",
+    "opening_hours": "Mo-Sa 10:30-19:00",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1315774092,
+   "lat": 1.3273451,
+   "lon": 103.9337867,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "218",
+    "addr:postcode": "460218",
+    "addr:street": "Bedok North Street 1",
+    "addr:unit": "#01-49",
+    "amenity": "post_office",
+    "branch": "Bedok Central",
+    "name": "Bedok Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1346561437,
+   "lat": 1.3406864,
+   "lon": 103.7717416,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Bukit Timah Community Club",
+    "addr:housenumber": "20",
+    "addr:postcode": "596569",
+    "addr:street": "Toh Yi Drive",
+    "addr:unit": "#01-05",
+    "amenity": "post_office",
+    "branch": "Bukit Timah",
+    "name": "Bukit Timah Post Office",
+    "operator": "Singapore Post"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1743938501,
+   "lat": 1.3502597,
+   "lon": 103.749041,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "West Mall",
+    "addr:housenumber": "1",
+    "addr:postcode": "658713",
+    "addr:street": "Bukit Batok Central Link",
+    "addr:unit": "#05-09",
+    "amenity": "post_office",
+    "branch": "Bukit Batok Central",
+    "name": "Bukit Batok Central Post Office",
+    "operator": "Singapore Post",
+    "source": "Bing"
+   }
+  },
+  {
+   "type": "node",
+   "id": 1852391131,
+   "lat": 1.3210721,
+   "lon": 103.7429498,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "38",
+    "addr:postcode": "600038",
+    "addr:street": "Teban Gardens Road",
+    "addr:unit": "#01-316",
+    "amenity": "post_office",
+    "branch": "Teban Garden",
+    "name": "Teban Gardens Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3019438562,
+   "lat": 1.3055932,
+   "lon": 103.823137,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "56",
+    "addr:postcode": "247964",
+    "addr:street": "Tanglin Road",
+    "amenity": "post_office",
+    "branch": "Tanglin",
+    "name": "Tanglin Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3038835669,
+   "lat": 1.2831455,
+   "lon": 103.8162319,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "165",
+    "addr:postcode": "150165",
+    "addr:street": "Bukit Merah Central",
+    "addr:unit": "#01-3689",
+    "amenity": "post_office",
+    "branch": "Bukit Merah Central",
+    "name": "Bukit Merah Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3101559694,
+   "lat": 1.3512914,
+   "lon": 103.8360914,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Thomson Community Club",
+    "addr:housenumber": "194",
+    "addr:postcode": "574339",
+    "addr:street": "Thomson Road",
+    "addr:unit": "#01-02",
+    "amenity": "post_office",
+    "name": "Thomson Road Post Office",
+    "opening_hours": "Mo,Tu,Th,Fr 09:30-18:00; We 09:30-20:00; Sa 09:30-16:00; PH,Su closed",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3101559695,
+   "lat": 1.3498186,
+   "lon": 103.8504456,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Bishan Community Club",
+    "addr:housenumber": "51",
+    "addr:postcode": "579799",
+    "addr:street": "Bishan Street 13",
+    "addr:unit": "#01-03",
+    "amenity": "post_office",
+    "branch": "Bishan",
+    "name": "Bishan Post Office",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3101559696,
+   "lat": 1.3420405,
+   "lon": 103.8489979,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "203",
+    "addr:postcode": "310203",
+    "addr:street": "Toa Payoh North",
+    "addr:unit": "#01-1117/1119",
+    "amenity": "post_office",
+    "branch": "Toa Payoh North",
+    "name": "Toa Payoh North Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3101563328,
+   "lat": 1.3327564,
+   "lon": 103.8476464,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "HDB Hub (Biz Two)",
+    "addr:housenumber": "520",
+    "addr:postcode": "310520",
+    "addr:street": "Lorong 6 Toa Payoh",
+    "addr:unit": "#02-55",
+    "amenity": "post_office",
+    "branch": "Toa Payoh Central",
+    "name": "Toa Payoh Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3101563729,
+   "lat": 1.3193057,
+   "lon": 103.8423075,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Revenue House",
+    "addr:housenumber": "55",
+    "addr:postcode": "307987",
+    "addr:street": "Newton Road",
+    "addr:unit": "#01-02",
+    "amenity": "post_office",
+    "branch": "Novena",
+    "name": "Novena Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3105725788,
+   "lat": 1.3538627,
+   "lon": 103.8723813,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "261",
+    "addr:postcode": "550261",
+    "addr:street": "Serangoon Central Drive",
+    "addr:unit": "#01-05/07",
+    "amenity": "post_office",
+    "branch": "Serangoon Central",
+    "name": "Serangoon Central Post Office",
+    "opening_hours": "Mo-Fr 08:30-17:00; Sa 08:30-13:00; Su,PH off",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3106549816,
+   "lat": 1.372258,
+   "lon": 103.8936688,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Hougang Mall",
+    "addr:housenumber": "90",
+    "addr:postcode": "538766",
+    "addr:street": "Hougang Avenue 10",
+    "addr:unit": "#04-15A",
+    "amenity": "post_office",
+    "branch": "Hougang Central",
+    "level": "3",
+    "name": "Hougang Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "operator:wikipedia": "en:Singapore Post"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3439181323,
+   "lat": 1.3103391,
+   "lon": 103.789086,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "21",
+    "addr:postcode": "270021",
+    "addr:street": "Ghim Moh Road",
+    "addr:unit": "#01-225",
+    "amenity": "post_office",
+    "branch": "Ghim Moh Estate",
+    "name": "Ghim Moh Estate Post Office",
+    "operator": "Singapore Post"
+   }
+  },
+  {
+   "type": "node",
+   "id": 3439216689,
+   "lat": 1.2914903,
+   "lon": 103.7714709,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "396",
+    "addr:postcode": "118733",
+    "addr:street": "Pasir Panjang Road",
+    "amenity": "post_office",
+    "branch": "Pasir Panjang",
+    "name": "Pasir Panjang Post Office",
+    "name:zh": "巴西班让邮局",
+    "operator": "Singpost"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4231243408,
+   "lat": 1.3391341,
+   "lon": 103.8774438,
+   "tags": {
+    "addr:housenumber": "Blk 60 #05-01",
+    "addr:postcode": "367822",
+    "addr:street": "Mount Vernon Road",
+    "amenity": "post_office",
+    "name": "Mount Vernon Camp, Gurkha Contingent"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4502154293,
+   "lat": 1.3190441,
+   "lon": 103.860798,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "101",
+    "addr:postcode": "322101",
+    "addr:street": "Towner Road",
+    "addr:unit": "#01-204/206",
+    "amenity": "post_office",
+    "check_date": "2024-05-17",
+    "name": "Towner Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "payment:cash": "yes",
+    "payment:credit_cards": "yes",
+    "payment:debit_cards": "yes",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4559461777,
+   "lat": 1.2749526,
+   "lon": 103.8425767,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Tanjong Pagar Plaza",
+    "addr:housenumber": "1",
+    "addr:postcode": "082001",
+    "addr:street": "Tanjong Pagar Road",
+    "addr:unit": "#01-25",
+    "amenity": "post_office",
+    "name": "Tanjong Pagar Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "operator:wikipedia": "en:Singapore Post"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583782800,
+   "lat": 1.2832103,
+   "lon": 103.8522068,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Ocean Financial Centre",
+    "addr:housenumber": "10",
+    "addr:postcode": "049315",
+    "addr:street": "Collyer Quay",
+    "addr:unit": "#B1-11",
+    "amenity": "post_office",
+    "branch": "Raffles Place",
+    "name": "Raffles Place Post Office",
+    "opening_hours": "Mo-Fr 08:30-18:00; Sa-Su off",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "operator:wikipedia": "en:Singapore Post",
+    "website": "https://www.singpost.com/"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583782801,
+   "lat": 1.304324,
+   "lon": 103.8316677,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "ION Orchard",
+    "addr:housenumber": "2",
+    "addr:postcode": "238801",
+    "addr:street": "Orchard Turn",
+    "addr:unit": "#B2 -62",
+    "amenity": "post_office",
+    "branch": "Orchard Road",
+    "name": "Orchard Road Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "limited"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583782805,
+   "lat": 1.3246364,
+   "lon": 103.8570374,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "Whampoa Community Club",
+    "addr:housenumber": "300",
+    "addr:postcode": "327737",
+    "addr:street": "Whampoa Drive",
+    "amenity": "post_office",
+    "name": "Whampoa Post Office",
+    "opening_hours": "Mo-Sa 09:00-13:00; Su,PH off",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583782806,
+   "lat": 1.2856895,
+   "lon": 103.8304889,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "28",
+    "addr:postcode": "163028",
+    "addr:street": "Tiong Bahru Road",
+    "addr:unit": "#01-141/147",
+    "amenity": "post_office",
+    "name": "Tiong Bahru Post Office",
+    "name:zh": "中峇鲁邮局",
+    "operator": "Singapore Post",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783411,
+   "lat": 1.3325622,
+   "lon": 103.867097,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "6",
+    "addr:postcode": "358361",
+    "addr:street": "Potong Pasir Avenue 2",
+    "addr:unit": "#02-01",
+    "amenity": "post_office",
+    "branch": "Potong Pasir",
+    "name": "Potong Pasir Post Office",
+    "opening_hours": "Mo-Fr 09:30-18:00; Sa 09:30-14:00",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783412,
+   "lat": 1.3284321,
+   "lon": 103.8713256,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "70",
+    "addr:postcode": "348475",
+    "addr:street": "MacPherson Road",
+    "amenity": "post_office",
+    "branch": "Macpherson Road",
+    "check_date": "2023-07-16",
+    "name": "Macpherson Road Post Office",
+    "opening_hours": "Mo-Fr 08:30-17:00; Sa 08:30-13:00",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783425,
+   "lat": 1.3030744,
+   "lon": 103.8970533,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "373",
+    "addr:postcode": "437130",
+    "addr:street": "Tanjong Katong Road",
+    "amenity": "post_office",
+    "branch": "Katong",
+    "name": "Katong Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783460,
+   "lat": 1.3498597,
+   "lon": 103.7252886,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "492",
+    "addr:postcode": "640492",
+    "addr:street": "Jurong West Street 41",
+    "addr:unit": "#01-42",
+    "amenity": "post_office",
+    "branch": "Jurong West",
+    "name": "Jurong West Post Office",
+    "operator": "Singapore Post",
+    "wheelchair": "limited"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783509,
+   "lat": 1.3132665,
+   "lon": 103.8823099,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "447",
+    "addr:postcode": "389406",
+    "addr:street": "Geylang Road",
+    "amenity": "post_office",
+    "branch": "Geylang",
+    "name": "Geylang Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783510,
+   "lat": 1.3200786,
+   "lon": 103.8867134,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "119",
+    "addr:postcode": "380119",
+    "addr:street": "Aljunied Avenue 2",
+    "addr:unit": "#01-22",
+    "amenity": "post_office",
+    "name": "Geylang East Post Office",
+    "name:ja": "ゲイラン東郵便局",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "source": "Kaart Ground Survey 2017"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783513,
+   "lat": 1.3109755,
+   "lon": 103.8567196,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "City Square Mall",
+    "addr:housenumber": "180",
+    "addr:postcode": "208539",
+    "addr:street": "Kitchener Road",
+    "addr:unit": "#B2-33",
+    "amenity": "post_office",
+    "branch": "City Square",
+    "level": "-2",
+    "name": "City Square Post Office",
+    "opening_hours": "Mo-Su 10:00-19:00; Su,PH off",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "phone": "+65 6841 2000",
+    "website": "https://www.singpost.com/"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783557,
+   "lat": 1.3531901,
+   "lon": 103.943481,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housename": "CPF Tampines Building",
+    "addr:housenumber": "1",
+    "addr:postcode": "529508",
+    "addr:street": "Tampines Central 5",
+    "addr:unit": "#01-03",
+    "amenity": "post_office",
+    "branch": "Tampines Central",
+    "name": "Tampines Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783558,
+   "lat": 1.3317913,
+   "lon": 103.947621,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "350",
+    "addr:postcode": "469538",
+    "addr:street": "Bedok Road",
+    "amenity": "post_office",
+    "branch": "Simpang Bedok",
+    "name": "Simpang Bedok Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783559,
+   "lat": 1.3132709,
+   "lon": 103.9299881,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "10",
+    "addr:postcode": "456532",
+    "addr:street": "Palm Avenue",
+    "amenity": "post_office",
+    "branch": "Siglap",
+    "name": "Siglap Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783563,
+   "lat": 1.393474,
+   "lon": 103.9136267,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "80",
+    "addr:postcode": "828815",
+    "addr:street": "Punggol Field",
+    "addr:unit": "#B1-01",
+    "amenity": "post_office",
+    "branch": "Punggol",
+    "name": "Punggol Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783566,
+   "lat": 1.3729457,
+   "lon": 103.8460766,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "727",
+    "addr:postcode": "560727",
+    "addr:street": "Ang Mo Kio Avenue 6",
+    "addr:unit": "#01-4246",
+    "amenity": "post_office",
+    "branch": "Ang Mo Kio Central",
+    "name": "Ang Mo Kio Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783573,
+   "lat": 1.4452,
+   "lon": 103.8194635,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "2",
+    "addr:postcode": "757632",
+    "addr:street": "Sembawang Crescent",
+    "addr:unit": "#02-05/06",
+    "amenity": "post_office",
+    "branch": "Sembawang",
+    "name": "Sembawang Post Office",
+    "operator": "Singapore Post"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783605,
+   "lat": 1.3042998,
+   "lon": 103.7634099,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "727",
+    "addr:postcode": "120727",
+    "addr:street": "Clementi West Street 2",
+    "addr:unit": "#01-286",
+    "amenity": "post_office",
+    "branch": "Clementi West",
+    "name": "Clementi West Post Office",
+    "opening_hours": "Mo-Fr 08:30-17:00; Sa 08:00-13:00; Su,PH off",
+    "operator": "Singapore Post"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783606,
+   "lat": 1.3849633,
+   "lon": 103.7455594,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "309",
+    "addr:postcode": "680309",
+    "addr:street": "Choa Chu Kang Avenue 4",
+    "addr:unit": "#01-03",
+    "amenity": "post_office",
+    "branch": "Choa Chu Kang Central",
+    "name": "Choa Chu Kang Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783607,
+   "lat": 1.3792303,
+   "lon": 103.7591582,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "10",
+    "addr:postcode": "689379",
+    "addr:street": "Choa Chu Kang Road Track 10",
+    "amenity": "post_office",
+    "branch": "Bukit Panjang",
+    "name": "Bukit Panjang Post Office",
+    "opening_hours": "Mo-Fr 08:30-17:00; Sa 08:30-13:00",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "website": "https://www.singpost.com/"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783611,
+   "lat": 1.4300191,
+   "lon": 103.836235,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "51",
+    "addr:postcode": "768794",
+    "addr:street": "Yishun Central 1",
+    "addr:unit": "#01-09",
+    "amenity": "post_office",
+    "branch": "Yishun Central",
+    "name": "Yishun Central Post Office",
+    "operator": "Singapore Post",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4583783612,
+   "lat": 1.4347424,
+   "lon": 103.786677,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "900",
+    "addr:postcode": "730900",
+    "addr:street": "South Woodlands Drive",
+    "addr:unit": "#03-05/06",
+    "amenity": "post_office",
+    "branch": "Woodlands Central",
+    "name": "Woodlands Central Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4613526994,
+   "lat": 1.3015189,
+   "lon": 103.9065991,
+   "tags": {
+    "amenity": "post_office",
+    "name": "Singapore Post",
+    "name:en": "Singapore Post",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 4726288261,
+   "lat": 1.3057796,
+   "lon": 103.759244,
+   "tags": {
+    "amenity": "post_office",
+    "name": "UPS",
+    "source": "Kaart Ground Survey 2017"
+   }
+  },
+  {
+   "type": "node",
+   "id": 6164083692,
+   "lat": 1.3036547,
+   "lon": 103.8324238,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:housenumber": "#B2-62",
+    "addr:postcode": "238801",
+    "addr:street": "ION Orchard",
+    "amenity": "post_office",
+    "level": "-2",
+    "name": "Orchard Post Office",
+    "opening_hours": "Mo-Su 10:30-20:00",
+    "operator": "Singapore Post Limited",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "node",
+   "id": 6752644988,
+   "lat": 1.4400645,
+   "lon": 103.8395543,
+   "tags": {
+    "amenity": "post_office",
+    "name": "Post"
+   }
+  },
+  {
+   "type": "node",
+   "id": 8642592336,
+   "lat": 1.2793792,
+   "lon": 103.85048,
+   "tags": {
+    "amenity": "post_office",
+    "level": "0",
+    "name": "Priority Mail Express"
+   }
+  },
+  {
+   "type": "node",
+   "id": 10810945947,
+   "lat": 1.376695,
+   "lon": 103.954957,
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:housenumber": "1",
+    "addr:postcode": "519599",
+    "addr:street": "Pasir Ris Close",
+    "amenity": "post_office",
+    "level": "0",
+    "name": "Singapore Post",
+    "opening_hours": "Mo-Fr 09:30-18:00; Sa 09:30-15:00; Su,PH off",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "website": "https://www.singpost.com/"
+   }
+  },
+  {
+   "type": "way",
+   "id": 305882755,
+   "center": {
+    "lat": 1.3638792,
+    "lon": 103.8665223
+   },
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "54",
+    "addr:postcode": "555950",
+    "addr:street": "Serangoon Garden Way",
+    "amenity": "post_office",
+    "branch": "Serangoon Garden",
+    "building": "yes",
+    "name": "Serangoon Garden Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531"
+   }
+  },
+  {
+   "type": "way",
+   "id": 305932576,
+   "center": {
+    "lat": 1.3632912,
+    "lon": 103.8877355
+   },
+   "tags": {
+    "addr:city": "Singapore",
+    "addr:country": "SG",
+    "addr:housenumber": "1",
+    "addr:postcode": "547809",
+    "addr:street": "Lim Ah Pin Road",
+    "amenity": "post_office",
+    "branch": "Lim Ah Pin Road",
+    "building": "yes",
+    "name": "Lim Ah Pin Road Post Office",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "source": "Kaart Ground Survey 2017",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 451944935,
+   "center": {
+    "lat": 1.3544762,
+    "lon": 103.8780055
+   },
+   "tags": {
+    "amenity": "post_office",
+    "building": "yes",
+    "name": "Upper Serangoon Post Office"
+   }
+  },
+  {
+   "type": "way",
+   "id": 746050896,
+   "center": {
+    "lat": 1.3007334,
+    "lon": 103.9056839
+   },
+   "tags": {
+    "amenity": "post_office",
+    "indoor": "room",
+    "level": "-1",
+    "name": "Singapore Post",
+    "operator": "Singapore Post",
+    "operator:wikidata": "Q4049531",
+    "room": "shop"
+   }
+  }
+ ],
+ "capture_metadata": {
+  "captured_at": "2026-10-23T06:10:33.295059+00:00",
+  "source": "OpenStreetMap via Overpass API",
+  "scope": "Singapore only, amenity=post_office",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "license_url": "https://www.openstreetmap.org/copyright",
+  "query": "[out:json][timeout:120];\narea[\"ISO3166-1\"=\"SG\"][admin_level=2]->.sg;\n(\n  nwr(area.sg)[amenity=post_office];\n);\nout center tags;",
+  "endpoint": "https://overpass-api.de/api/interpreter"
+ }
+}

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.analytics import AnalyticsRepository
 from app.config import Settings
 from app.main import create_app
+from app.ops import OpsSettings
 from app.schemas import AnalyticsEventRequest, AnalyticsEventType
 
 
@@ -79,7 +80,7 @@ def test_admin_report_is_token_protected(tmp_path: Path):
         database_path=tmp_path / "poi.db",
         analytics_database_path=tmp_path / "analytics.db",
         beta_admin_token="test-admin-token",
-    ))
+    ), OpsSettings(analytics_enabled=True))
     user, session = str(uuid4()), str(uuid4())
     payload = {
         "event_id": str(uuid4()), "anonymous_user_id": user,

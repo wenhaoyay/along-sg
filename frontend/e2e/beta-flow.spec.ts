@@ -76,7 +76,8 @@ const recommendation = {
   total_duration_minutes: 37,
   total_walking_distance_m: 510,
   total_transfers: 0,
-  incremental_detour_minutes: 8,
+  incremental_detour_minutes: 31,
+  incremental_travel_minutes: 8,
   incremental_walking_distance_m: 180,
   incremental_transfers: 0,
   stop_relationship: "same_mall",
@@ -253,10 +254,10 @@ async function commonRoutes(page: Page) {
 }
 
 async function resolveJourney(page: Page) {
-  await page.getByLabel("Origin").fill("chuachukang");
-  await page.getByRole("option").first().getByRole("button").click();
-  await page.getByLabel("Destination").fill("Fajar");
-  await page.getByRole("option").first().getByRole("button").click();
+  await page.getByLabel("From", { exact: true }).fill("chuachukang");
+  await page.getByRole("option").first().click();
+  await page.getByLabel("To", { exact: true }).fill("Fajar");
+  await page.getByRole("option").first().click();
   await expect(page.getByLabel("Location selected")).toHaveCount(2);
 }
 
@@ -274,12 +275,14 @@ test("partial requests require consent and mobile sheets resize", async ({ page,
   await resolveJourney(page);
   await page.getByLabel("What do you need on the way?").fill("KFC and shoe repair");
   await page.getByRole("button", { name: "Find best stop" }).click();
-  await expect(page.getByText("We found part of your request")).toBeVisible();
+  await expect(page.locator(".notice")).toContainText("No match for “shoe repair”.");
   expect(calls).toBe(0);
-  await page.getByRole("button", { name: "Continue with matched errands" }).click();
+  await page.getByRole("button", { name: /^Continue with / }).click();
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
   expect(calls).toBe(1);
-  await expect(page.locator(".impact-caption")).toContainText(/min extra travel/);
+  await expect(page.locator(".impact-caption")).toContainText(
+    /later than going direct, including about \d+ min in shops/,
+  );
   await expect(page.getByText(/hours not confirmed/i).first()).toBeVisible();
   if (isMobile) {
     await page.getByRole("button", { name: "Map", exact: true }).click();
@@ -363,9 +366,8 @@ test("failed discovery offers explicit related searches without claiming stock",
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "Browse categories" }).click();
+  await page.getByRole("button", { name: "More categories" }).click();
   await page.getByLabel("Search brands, shops or categories").fill("printer ink");
-  await expect(page.getByText(/check cartridge compatibility/)).toBeVisible();
   await page.getByRole("button", { name: "Search printer supplies" }).click();
   await expect(page.getByLabel("Search brands, shops or categories")).toHaveValue(
     "printer supplies",
@@ -395,7 +397,9 @@ test("failed comparison can be retried without reentering the journey", async ({
   expect(calls).toBe(2);
 });
 
-test("journey swap and walking preference reach the optimizer", async ({ page }) => {
+test("a journey swap reaches the optimizer, and the form adds no weighting of its own", async ({
+  page,
+}) => {
   await commonRoutes(page);
   await page.route("**/api/intent/parse", (route) =>
     route.fulfill({
@@ -421,17 +425,17 @@ test("journey swap and walking preference reach the optimizer", async ({ page })
   await page.goto("/");
   await resolveJourney(page);
   await page.getByRole("button", { name: "Reverse journey" }).click();
-  await expect(page.getByLabel("Origin", { exact: true })).toHaveValue("Fajar LRT Station");
-  await page.getByRole("button", { name: "Less walking", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Less walking", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(page.getByLabel("From", { exact: true })).toHaveValue("Fajar LRT Station");
+  // "Faster" and "Less walking" are the result's sort now; the request's own
+  // preferences go through untouched.
+  await expect(page.getByRole("button", { name: "Less walking", exact: true })).toHaveCount(0);
   await page.getByLabel("What do you need on the way?").fill("KFC");
   await page.getByRole("button", { name: "Find best stop" }).click();
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
   expect(submitted?.origin.coordinate.latitude).toBe(fajar.coordinate.latitude);
-  expect(submitted?.intent.preferences.walking_tolerance).toBe("minimal");
+  expect(submitted?.intent.preferences.walking_tolerance).toBe(
+    intent.preferences.walking_tolerance,
+  );
 });
 
 test("resolved journey produces a hub-first map recommendation", async ({ page }) => {
@@ -463,14 +467,14 @@ test("resolved journey produces a hub-first map recommendation", async ({ page }
   await expect(errands.nth(0)).toContainText("Fried chicken");
   await expect(errands.nth(0)).toContainText("KFC");
   await expect(errands.nth(1)).toContainText("KOI Thé");
-  await expect(page.getByRole("button", { name: "Open in Google Maps" })).toBeVisible();
-  // The headline now carries an "extra travel" label of its own, so assert on
-  // the breakdown itself rather than on a phrase that appears in both places.
-  await expect(page.locator(".breakdown-list")).not.toBeVisible();
-  await page.getByText("How the +8 min adds up").click();
-  await expect(page.locator(".breakdown-list")).toBeVisible();
-  await expect(page.locator(".breakdown-list")).toContainText("Extra travel");
-  await expect(page.getByText("Other options")).toHaveCount(0);
+  // Handed over one leg at a time: Google Maps takes no stop on a transit route.
+  await expect(page.getByRole("link", { name: /^Directions to / })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Then on to / })).toHaveAttribute(
+    "href",
+    /google\.com\/maps\/dir\/\?api=1&origin=.*travelmode=transit/,
+  );
+  // The map has no key: the direct trip is labelled on its own line.
+  await expect(page.locator(".route-direct-label")).toHaveText("Direct");
   await expect(page.locator("body")).not.toContainText(
     /routing calls|provider latency|candidate count|best_match|hard constraints/i,
   );
@@ -539,7 +543,7 @@ test("alternatives are drawn beside the plan, and say what they cost", async ({ 
 test("location autocomplete supports keyboard selection", async ({ page }) => {
   await commonRoutes(page);
   await page.goto("/");
-  const origin = page.getByLabel("Origin");
+  const origin = page.getByLabel("From", { exact: true });
   await origin.fill("chuachukang");
   await expect(page.getByRole("listbox")).toBeVisible();
   await origin.press("ArrowDown");
@@ -584,7 +588,7 @@ test("destination conflict blocks optimization until a user chooses", async ({ p
   await resolveJourney(page);
   await page.getByLabel("What do you need on the way?").fill("bubble tea then go Orchard MRT");
   await page.getByRole("button", { name: /Find best stop/ }).click();
-  await expect(page.getByText("Your journey changed")).toBeVisible();
+  await expect(page.locator(".notice.conflict")).toBeVisible();
   await expect(page.getByRole("button", { name: "Keep Fajar LRT Station" })).toBeVisible();
   expect(optimizeCalls).toBe(0);
 });
@@ -611,7 +615,7 @@ test("non-errands are explained and the structured catalog is live", async ({ pa
   await page.getByLabel("What do you need on the way?").fill("I like cats");
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByText(/couldn't find an errand/)).toBeVisible();
-  await page.getByRole("button", { name: /Browse categories/ }).click();
+  await page.getByRole("button", { name: /More categories/ }).click();
   await page.getByLabel("Search brands, shops or categories").fill("Japanese");
   await expect(page.getByText("Sakura Independent Kitchen")).toBeVisible();
   await page.getByRole("listbox").getByRole("option").click();
@@ -620,7 +624,10 @@ test("non-errands are explained and the structured catalog is live", async ({ pa
 
 test("privacy notice remains available without an account", async ({ page }) => {
   await page.goto("/privacy");
-  await expect(page.getByRole("heading", { name: "What the beta uses and keeps" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Privacy and data sources" })).toBeVisible();
+  // It must not describe tracking the app does not do.
+  await expect(page.getByText(/no analytics, no tracking identifier/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "© OpenStreetMap contributors" })).toBeVisible();
 });
 
 test("discovery shows a dish concept and evidenced place", async ({ page }) => {
@@ -652,7 +659,7 @@ test("discovery shows a dish concept and evidenced place", async ({ page }) => {
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: /Browse categories/ }).click();
+  await page.getByRole("button", { name: /More categories/ }).click();
   await page.getByLabel("Search brands, shops or categories").fill("mee pok");
   await expect(page.getByText("Dish · 1 matching place")).toBeVisible();
   await expect(page.getByText("Ah Hoe Mee Pok")).toBeVisible();
@@ -742,7 +749,7 @@ test("product discovery labels category matches without claiming stock", async (
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: /Browse categories/ }).click();
+  await page.getByRole("button", { name: /More categories/ }).click();
   await page.getByLabel("Search brands, shops or categories").fill("Panadol");
   await expect(page.getByText("Stock not guaranteed")).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/in stock|available now/i);
@@ -824,7 +831,7 @@ test("a mixed hours stop names the shop that is not confirmed", async ({ page })
   await expect(page.locator(".errand-lines .status-dot.open")).toHaveCount(1);
 });
 
-test("the headline is the time added, with travel and dwell broken out beneath", async ({
+test("the headline is extra travel, with the time in shops and the arrival beside it", async ({
   page,
 }) => {
   await commonRoutes(page);
@@ -850,14 +857,13 @@ test("the headline is the time added, with travel and dwell broken out beneath",
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
 
-  // The headline is what the traveller lives with - the time added
-  // (incremental_detour_minutes, 8 in this fixture) and, when known, the
-  // arrival. Extra travel and dwell are broken out beneath it, because extra
-  // travel is what differs between options.
+  // Extra travel leads, because it is what differs between options; how much
+  // later you arrive, and the time in shops that makes up the rest, sit right
+  // beside it. One set of figures: 8 travel + 23 in shops = 31 later.
   await expect(page.locator(".result-impact > strong")).toContainText("+8");
-  await expect(page.locator(".result-impact > strong")).toContainText("later than going direct");
-  await expect(page.locator(".impact-caption")).toContainText("8 min extra travel");
-  await expect(page.locator(".impact-caption")).toContainText("~23 min at your stops");
+  await expect(page.locator(".result-impact > strong")).toContainText("extra travel");
+  await expect(page.locator(".impact-caption")).toContainText("31 min later than going direct");
+  await expect(page.locator(".impact-caption")).toContainText("including about 23 min in shops");
 });
 
 test("the theme button cycles auto, light and dark, and the choice survives a reload", async ({
@@ -1135,7 +1141,6 @@ test("the map shows every routed place that is not the plan", async ({ page }) =
   // One offered alternative plus three compared candidates. Before this the map
   // carried the winning stop and nothing else.
   await expect(page.locator(".along-marker.considered")).toHaveCount(4);
-  await expect(page.locator(".map-key")).toContainText("Other options");
   // Each carries its extra travel, so the map states the comparison.
   await expect(page.locator(".along-marker.considered").first()).toContainText(/^\+\d+$/);
 });
@@ -1145,9 +1150,9 @@ test("a compared place can be picked off the map", async ({ page }) => {
   await expect(planName(page)).toContainText("Lot One");
   // Whichever dot this is, the plan must become the place it names.
   const dot = page.locator(".along-marker.considered").first();
-  const label = (await dot.getAttribute("aria-label")) ?? "";
+  const place = (await dot.getAttribute("data-place")) ?? "";
   await dot.click({ force: true });
-  await expect(planName(page)).toContainText(label.replace(/^Pick /, ""));
+  await expect(planName(page)).toContainText(place);
 });
 
 test("a compared row promotes its option, and states what it costs", async ({ page }) => {
@@ -1156,7 +1161,7 @@ test("a compared row promotes its option, and states what it costs", async ({ pa
   // diagram shows four and folds the rest.
   const rows = page.locator(".detour-row.option");
   await expect(rows).toHaveCount(4);
-  await page.getByRole("button", { name: "Show all 5 routed options" }).click();
+  await page.getByRole("button", { name: "Show all 5", exact: true }).click();
   await expect(rows).toHaveCount(5);
   await expect(rows.filter({ hasText: "Bukit Panjang Plaza" })).toContainText("12 min more travel");
   await rows.filter({ hasText: "Bukit Panjang Plaza" }).click();
@@ -1187,7 +1192,7 @@ test("no weighting ever promotes an option that drops an errand", async ({ page 
     await page.getByRole("button", { name: label, exact: true }).click();
     await expect(planName(page)).not.toContainText("Half Errand Mall");
   }
-  await page.getByRole("button", { name: /Show all \d+ routed options/ }).click();
+  await page.getByRole("button", { name: /^Show all \d+$/ }).click();
   const half = page.locator(".detour-row.option").filter({ hasText: "Half Errand Mall" });
   await expect(half).toContainText("one errand only");
   await half.click();
@@ -1212,14 +1217,14 @@ test("an alternative that differs only in dwell does not claim less travel", asy
   const dwellOnly = {
     ...result,
     recommendations: {
-      // 8 min of extra travel plus 23 min of dwell. The shared fixture carries
-      // 8 in `incremental_detour_minutes` too, which cannot be right and is
-      // what let this pass either way; stated consistently here.
-      best_overall: { ...recommendation, incremental_detour_minutes: 31 },
-      easier_alternative: {
+      // 8 min of extra travel plus 23 min of dwell.
+      best_overall: recommendation,
+      substitute: {
         ...walkingAlternative,
-        quality_label: "Easier option",
-        match_classification: "easier_alternative",
+        quality_label: "Substitute",
+        match_classification: "substitute",
+        substituted_categories: [{ requested: "bubble_tea", substitute: "coffee" }],
+        incremental_travel_minutes: 8,
         // Identical travel, one fewer shop to stand in: 8 + 8 rather than
         // 8 + 23. The only honest thing to say about it is nothing.
         detour_breakdown: { ...recommendation.detour_breakdown, dwell_minutes: 8 },
@@ -1256,7 +1261,7 @@ test("an alternative that differs only in dwell does not claim less travel", asy
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByTestId("recommendation-sheet")).toBeVisible();
   const row = page.locator(".detour-row.option").filter({ hasText: "Hillion Mall" });
-  await expect(row).toContainText("easier alternative");
+  await expect(row).toContainText("substitute: coffee");
   expect((await row.allTextContents()).join(" ")).not.toMatch(/less travel/i);
 });
 

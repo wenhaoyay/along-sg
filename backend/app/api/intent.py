@@ -46,7 +46,11 @@ def register(app: FastAPI, app_settings: Settings) -> None:
     async def parse_intent(payload: IntentParseRequest, request: Request):
         parser: IntentParserService = request.app.state.intent_parser
         provider: MapProvider = request.app.state.provider
-        references = extract_journey_references(payload.text)
+        # "go to the post office" names an errand, not a new destination.
+        references = tuple(
+            reference for reference in extract_journey_references(payload.text)
+            if not parser.deterministic.names_errand(reference.text)
+        )
         mentions: list[JourneyMention] = []
         conflicts: list[JourneyConflict] = []
         for reference in references:
@@ -95,8 +99,12 @@ def register(app: FastAPI, app_settings: Settings) -> None:
                 journey_conflicts=conflicts,
             )
         parsed = await parser.parse(errand_text, correction=payload.correction)
+        first_parse = parsed
         resolver: NeedResolver = request.app.state.need_resolver
-        open_needs = resolver.parse_open_needs(errand_text)
+        # Discovery splits the same cleaned text the parser read: a time,
+        # "strictly" or "not McDonald's" is never a need of its own.
+        prepared = parser.deterministic.prepare(errand_text)
+        open_needs = resolver.parse_open_needs(prepared.discovery_text)
         parsed_count = len(parsed.intent.required_errands + parsed.intent.optional_errands) if parsed.intent else 0
         # More clauses than errands is only a sign of something missed when a
         # clause is one the parser did not understand: "milk and eggs" is two
@@ -145,6 +153,7 @@ def register(app: FastAPI, app_settings: Settings) -> None:
                     intent=IntentV1(
                         original_text=errand_text, required_errands=required,
                         optional_errands=optional, parse_method=ParseMethod.DETERMINISTIC,
+                        preferences=parser.deterministic.preferences_for(errand_text),
                         confidence=min((0.9 if item.places else 0.7) for item in discoveries),
                     ),
                     unresolved_terms=unresolved_terms,
@@ -179,6 +188,10 @@ def register(app: FastAPI, app_settings: Settings) -> None:
         return parsed.model_copy(update={
             "status": status, "clarification_question": question,
             "journey_mentions": mentions, "journey_conflicts": conflicts,
+            # Words in another script that nothing could represent are said,
+            # whichever path produced the plan.
+            "unresolved_terms": list(dict.fromkeys([*parsed.unresolved_terms, *prepared.not_understood])),
+            "spelling_corrections": parsed.spelling_corrections or first_parse.spelling_corrections,
         })
 
     @app.get("/api/intent/metrics", response_model=IntentMetricsSnapshot)

@@ -1,0 +1,4 @@
+# Along is a public demo: the pages may be indexed, the API may not.
+User-agent: *
+Allow: /
+Disallow: /api/

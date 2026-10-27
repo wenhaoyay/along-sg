@@ -148,7 +148,7 @@ async def main() -> None:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     default_name = "v05-benchmark-live.json" if args.live else "v05-benchmark-mock.json"
-    report = await run(args.live, args.output or ROOT / "docs" / default_name)
+    report = await run(args.live, args.output or ROOT / "docs" / "archive" / default_name)
     print(json.dumps(report, indent=2, ensure_ascii=True))
 
 

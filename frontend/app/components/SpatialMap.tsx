@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { lineColor } from "../lineColors";
 import type { Coordinate, ResolvedLocation } from "./LocationField";
 import type { Leg } from "./journey/types";
+import { signed } from "./journey/figures";
 
 type Stop = { display_name: string; coordinate: Coordinate };
 
@@ -25,6 +26,28 @@ const currentScheme = (): "light" | "dark" =>
 
 // One breakpoint for the whole app: from here down the planner is a sheet.
 export const COMPACT_MAX_WIDTH = 767;
+
+/* OneMap's own attribution, as its documentation publishes it for Leaflet
+ * (onemap.gov.sg/docs/maps, resources/code-attr.txt): its terms require the
+ * logo and this wording wherever the basemap is shown. The logo has an empty
+ * alt because the link beside it already says "OneMap". */
+const ONEMAP_ATTRIBUTION =
+  '<img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" alt="" class="onemap-logo" width="20" height="20"/>&nbsp;<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a>&nbsp;&copy;&nbsp;contributors&nbsp;&#124;&nbsp;<a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a>';
+/* The places themselves - malls, shops, stations - come from OpenStreetMap,
+ * whose licence (ODbL) asks for this credit wherever the data is shown. */
+const OSM_ATTRIBUTION =
+  'Places &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors';
+
+/* On a phone the result sheet covers the lower half of the map, so a route has
+ * to be framed in the top half - which for a trip along the south coast means
+ * the map centre sits well south of Singapore. With the island's own bounds as
+ * the limit, Leaflet refused that pan and left the route under the sheet. The
+ * south edge leaves room for it. Read again on resize and rotation: a tablet
+ * turned to portrait crosses the breakpoint without reloading. */
+const maxBoundsFor = (compact: boolean): [[number, number], [number, number]] => [
+  [compact ? 0.9 : 1.144, 103.535],
+  [1.494, 104.502],
+];
 
 /** A candidate that was routed and lost. Drawn so the map can show the
  *  comparison it made rather than a single line to be taken on trust. */
@@ -85,6 +108,7 @@ export function SpatialMap({
   const selectionRef = useRef(activeStop);
   const tileRef = useRef<import("leaflet").TileLayer | null>(null);
   const framingRef = useRef<(animate: boolean) => void>(() => {});
+  const settleTimerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     selectionRef.current = activeStop;
@@ -137,23 +161,14 @@ export function SpatialMap({
           zoomControl: false,
           attributionControl: true,
         }).setView([1.3521, 103.8198], 12);
-        /* On a phone the result sheet covers the lower half of the map, so a
-         * route has to be framed in the top half - which for a trip along the
-         * south coast means the map centre sits well south of Singapore. With
-         * the island's own bounds as the limit, Leaflet refused that pan and
-         * left the route under the sheet. The south edge leaves room for it. */
-        const compactLayout = window.innerWidth <= COMPACT_MAX_WIDTH;
-        mapRef.current.setMaxBounds([
-          [compactLayout ? 0.9 : 1.144, 103.535],
-          [1.494, 104.502],
-        ]);
+        mapRef.current.setMaxBounds(maxBoundsFor(window.innerWidth <= COMPACT_MAX_WIDTH));
         tileRef.current = L.tileLayer(BASEMAP[currentScheme()], {
           detectRetina: true,
           minZoom: 11,
           maxZoom: 19,
-          attribution:
-            '<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a> © contributors | <a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a>',
+          attribution: ONEMAP_ATTRIBUTION,
         }).addTo(mapRef.current);
+        mapRef.current.attributionControl.addAttribution(OSM_ATTRIBUTION);
         /* OneMap's tiles at zoom 11-12 carry a printed "INSET - Not to Scale"
          * box for Pedra Branca in the sea off East Coast, which reads as a
          * glitch on an interactive map. From zoom 13 the tiles are clean, so
@@ -217,14 +232,22 @@ export function SpatialMap({
             ? [origin.coordinate, destination.coordinate]
             : [];
       // A ghost of the direct trip: there to be compared with, not followed.
-      if (baselinePoints.length > 1)
-        L.polyline(latLngs(baselinePoints), {
+      // Beside a plan it is labelled on the line itself, instead of in a key.
+      if (baselinePoints.length > 1) {
+        const direct = L.polyline(latLngs(baselinePoints), {
           className: "route-direct",
           weight: 4,
           dashArray: "2 9",
           lineCap: "round",
           interactive: false,
         }).addTo(layer);
+        if (stops.length)
+          direct.bindTooltip("Direct", {
+            permanent: true,
+            direction: "center",
+            className: "route-direct-label",
+          });
+      }
 
       /* The plan, one path per leg: each ride in its line's colour over a
        * casing that lifts it off the basemap, walks as dots. A response
@@ -306,17 +329,38 @@ export function SpatialMap({
        * than a flash. Capped, because a dozen compared places should not take
        * a second and a half to finish arriving. */
       let landOrder = 0;
-      const marker = (coordinate: Coordinate, kind: string, label: string, glyph: string) =>
-        L.marker([coordinate.latitude, coordinate.longitude], {
+      /* Leaflet makes every marker a Tab stop by default, and a divIcon's
+       * accessible name is its text - so the plan was announced as "A", "1",
+       * "B" and each compared place as "+4". The plan's markers keep their
+       * Tab stop (focus opens the same tooltip a pointer does) under a real
+       * name; compared places are not focusable at all, because the diagram
+       * in the panel is the keyboard path to the same choice. */
+      const marker = (
+        coordinate: Coordinate,
+        kind: string,
+        label: string,
+        glyph: string,
+        name: string,
+        focusable = true,
+      ) => {
+        const item = L.marker([coordinate.latitude, coordinate.longitude], {
+          keyboard: focusable,
           icon: L.divIcon({
             className: `along-marker ${kind}`,
-            html: `<span style="--land-delay:${Math.min(landOrder++ * 32, 360)}ms">${glyph}</span>`,
+            html: `<span style="--land-delay:${Math.min(landOrder++ * 32, 360)}ms" aria-hidden="true">${glyph}</span>`,
             iconSize: [30, 30],
             iconAnchor: [15, 15],
           }),
         })
           .bindTooltip(label, { direction: "top", offset: [0, -12] })
           .addTo(layer);
+        const element = item.getElement();
+        if (element) {
+          if (!focusable) element.setAttribute("role", "img");
+          element.setAttribute("aria-label", name);
+        }
+        return item;
+      };
       allMarkersRef.current = [];
 
       if (preview) {
@@ -330,12 +374,19 @@ export function SpatialMap({
           interactive: false,
         }).addTo(layer);
         allMarkersRef.current.push(
-          marker(preview.origin.coordinate, "origin preview", preview.origin.label, "A"),
+          marker(
+            preview.origin.coordinate,
+            "origin preview",
+            preview.origin.label,
+            "A",
+            `Example start: ${preview.origin.label}`,
+          ),
           marker(
             preview.destination.coordinate,
             "destination preview",
             preview.destination.label,
             "B",
+            `Example destination: ${preview.destination.label}`,
           ),
         );
       }
@@ -344,35 +395,41 @@ export function SpatialMap({
       // cover the stop that won. Each carries its extra travel, so the map
       // states the comparison rather than scattering anonymous dots.
       consideredRef.current = considered.map((option) => {
-        const minutes = Math.round(option.extra_transport_minutes);
+        const minutes = signed(option.extra_transport_minutes);
         const label = option.secondary
           ? option.display_name
-          : `${option.display_name} · +${minutes} min travel · tap to pick`;
+          : `${option.display_name} · ${minutes} min travel · tap to pick`;
         const item = marker(
           option.coordinate,
           option.secondary ? "considered secondary" : "considered",
           label,
-          option.secondary ? "" : `+${minutes}`,
+          option.secondary ? "" : minutes,
+          option.secondary
+            ? `Also compared: ${option.display_name}`
+            : `Also compared: ${option.display_name}, ${minutes} min travel`,
+          false,
         );
         const element = item.getElement();
         if (element) {
           element.dataset.comparedKey = option.key;
+          element.dataset.place = option.display_name;
           element.classList.toggle("highlighted", option.key === activeConsidered);
-          // Announced, but not focusable: the comparison in the panel is the
-          // keyboard path to the same action, and a dozen tab stops scattered
-          // over a map is not one.
-          element.setAttribute("aria-label", `Pick ${option.display_name}`);
         }
         item.on("click", () => onConsideredSelect?.(option.key));
         return item;
       });
       if (origin)
-        allMarkersRef.current.push(marker(origin.coordinate, "origin", origin.label, "A"));
+        allMarkersRef.current.push(
+          marker(origin.coordinate, "origin", origin.label, "A", `Start: ${origin.label}`),
+        );
       markersRef.current = stops.map((stop, index) => {
-        const item = marker(stop.coordinate, "stop", stop.display_name, `${index + 1}`);
-        item
-          .getElement()
-          ?.setAttribute("aria-label", `Show stop ${index + 1}: ${stop.display_name}`);
+        const item = marker(
+          stop.coordinate,
+          "stop",
+          stop.display_name,
+          `${index + 1}`,
+          `Stop ${index + 1}: ${stop.display_name}`,
+        );
         item.getElement()?.classList.toggle("selected-stop", index === selectionRef.current);
         item.on("click", () => onStopSelect?.(index));
         return item;
@@ -380,7 +437,13 @@ export function SpatialMap({
 
       if (destination)
         allMarkersRef.current.push(
-          marker(destination.coordinate, "destination", destination.label, "B"),
+          marker(
+            destination.coordinate,
+            "destination",
+            destination.label,
+            "B",
+            `Destination: ${destination.label}`,
+          ),
         );
       allMarkersRef.current.push(...markersRef.current, ...consideredRef.current);
       spreadColliding(mapRef.current, allMarkersRef.current);
@@ -431,13 +494,15 @@ export function SpatialMap({
         else map.fitBounds(bounds, options);
       };
       framingRef.current(true);
-      window.setTimeout(() => {
+      window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = window.setTimeout(() => {
         mapRef.current?.invalidateSize();
         spreadColliding(mapRef.current, allMarkersRef.current);
       }, 50);
     });
     return () => {
       cancelled = true;
+      window.clearTimeout(settleTimerRef.current);
     };
     // `activeConsidered` is deliberately absent: highlighting is handled by the
     // effect above, and rebuilding every layer on hover would refit the map.
@@ -454,6 +519,24 @@ export function SpatialMap({
     onStopSelect,
     onConsideredSelect,
   ]);
+
+  // The pan limit depends on which layout is showing, which can change
+  // without a reload: a resized window, a rotated tablet.
+  useEffect(() => {
+    let compact = window.innerWidth <= COMPACT_MAX_WIDTH;
+    const onResize = () => {
+      const next = window.innerWidth <= COMPACT_MAX_WIDTH;
+      if (next === compact) return;
+      compact = next;
+      mapRef.current?.setMaxBounds(maxBoundsFor(compact));
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, []);
 
   useEffect(
     () => () => {

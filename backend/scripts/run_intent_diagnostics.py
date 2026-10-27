@@ -36,7 +36,7 @@ def location_input(label: str) -> dict:
 
 
 def main() -> None:
-    app = create_app(Settings(onemap_mock=True))
+    app = create_app(Settings(onemap_mock=True, expose_diagnostics=True))
     results = []
     with TestClient(app) as client:
         for case_id, origin, destination, prompt in CASES:

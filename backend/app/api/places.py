@@ -43,7 +43,7 @@ from app.api.responses import (
 
 def register(app: FastAPI, app_settings: Settings) -> None:
     @app.get("/api/geocode", response_model=GeocodeResponse)
-    async def geocode(request: Request, q: str = Query(min_length=2, max_length=160), limit: int = Query(default=6, ge=1, le=10)):
+    async def geocode(request: Request, q: str = Query(min_length=2, max_length=120), limit: int = Query(default=6, ge=1, le=10)):
         resolver: LocationResolver = request.app.state.location_resolver
         try:
             matches = await resolver.resolve(q, limit=limit)

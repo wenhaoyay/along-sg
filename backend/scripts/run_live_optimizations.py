@@ -20,7 +20,7 @@ from app.providers.onemap import OneMapProvider
 from app.services.optimizer import Optimizer
 
 
-REPORT_PATH = Path(__file__).resolve().parents[2] / "docs" / "live-optimization-diagnostic.md"
+REPORT_PATH = Path(__file__).resolve().parents[2] / "docs" / "archive" / "live-optimization-diagnostic.md"
 SINGAPORE_TZ = ZoneInfo("Asia/Singapore")
 
 

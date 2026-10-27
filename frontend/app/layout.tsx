@@ -4,7 +4,7 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
 import { ServiceWorker } from "./ServiceWorker";
-import { THEME_BOOTSTRAP } from "./theme";
+import { THEME_BOOTSTRAP, THEME_COLOR } from "./theme";
 
 /* The stylesheet was written for Inter and Inter was never loaded - no
    next/font import, no @font-face, no link tag - so Windows rendered Segoe UI
@@ -27,14 +27,36 @@ const display = Bricolage_Grotesque({
   display: "swap",
 });
 
+const TITLE = "Along — errands on the way";
+const DESCRIPTION =
+  "Fit one or two errands into a Singapore public-transport journey with less detour.";
+
+/* Where the site lives, for the absolute URLs that link previews need (the
+ * og:image above all). Read at build time: set NEXT_PUBLIC_SITE_URL when the
+ * deploy has its own domain. */
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://along-sg.onrender.com";
+
 export const metadata: Metadata = {
-  title: "Along — errands on the way",
-  description: "Fit one or two errands into a Singapore public-transport journey with less detour.",
-  manifest: "/manifest.webmanifest",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
   applicationName: "Along",
   appleWebApp: { capable: true, title: "Along", statusBarStyle: "default" },
+  // The image is app/opengraph-image.png, a real Punggol to Orchard result;
+  // Next adds og:image and its size from the file.
+  openGraph: {
+    type: "website",
+    siteName: "Along",
+    title: TITLE,
+    description: DESCRIPTION,
+    locale: "en_SG",
+  },
+  // X falls back to og:image for the picture.
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
@@ -46,10 +68,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   // The planner is a bottom sheet over a full-bleed map, so the browser chrome
-  // should tint to the page ground rather than to the brand green.
+  // should tint to the page ground rather than to the brand green. The same
+  // two values drive the manifest and the theme switch.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eceeed" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c1211" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLOR.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLOR.dark },
   ],
 };
 

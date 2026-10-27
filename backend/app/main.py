@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +19,12 @@ from app.api.responses import (  # noqa: F401
 )
 from app.config import Settings
 from app.db import HubRepository
+from app.ops import (
+    BodySizeLimitMiddleware,
+    OpsSettings,
+    RateLimitMiddleware,
+    TokenBucketLimiter,
+)
 from app.providers.base import MapProvider
 from app.providers.datamall import (
     BusArrivalProvider,
@@ -38,6 +45,17 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 # httpx's INFO request line includes the full URL. Some upstream APIs require
 # credentials in query parameters, so never allow that logger to emit at INFO.
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logger = logging.getLogger("along")
+
+
+async def purge_analytics_periodically(analytics: AnalyticsRepository, interval_seconds: float) -> None:
+    """Apply retention and the row cap while the process runs, not only at boot."""
+    while True:
+        await asyncio.sleep(interval_seconds)
+        try:
+            await asyncio.to_thread(analytics.purge)
+        except Exception:  # A failed purge must not end the loop.
+            logger.exception("analytics_purge_failed")
 
 
 def build_bus_arrival_provider(settings: Settings) -> BusArrivalProvider:
@@ -72,18 +90,28 @@ def build_provider(settings: Settings) -> MapProvider:
     )
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, ops: OpsSettings | None = None) -> FastAPI:
     app_settings = settings or Settings.from_env()
+    ops_settings = ops or OpsSettings.from_env()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         repository = HubRepository(app_settings.database_path)
         repository.initialize()
-        analytics = AnalyticsRepository(
-            app_settings.analytics_database_path,
-            app_settings.analytics_retention_days,
-        )
-        analytics.initialize()
+        # Disabled by default: the shipped frontend sends no events, so a
+        # public demo keeps no store and its routes answer 404.
+        analytics = None
+        purge_task = None
+        if ops_settings.analytics_enabled:
+            analytics = AnalyticsRepository(
+                app_settings.analytics_database_path,
+                app_settings.analytics_retention_days,
+                max_rows=ops_settings.analytics_max_rows,
+            )
+            analytics.initialize()
+            purge_task = asyncio.create_task(purge_analytics_periodically(
+                analytics, ops_settings.analytics_purge_interval_seconds,
+            ))
         provider = build_provider(app_settings)
         live_place_provider = (
             TomTomPlaceSearchProvider(
@@ -128,6 +156,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             else None
         )
         app.state.settings = app_settings
+        app.state.ops = ops_settings
         app.state.repository = repository
         app.state.analytics = analytics
         app.state.provider = provider
@@ -172,6 +201,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app_settings.routing_concurrency,
         )
         yield
+        if purge_task is not None:
+            purge_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await purge_task
         await app.state.bus_arrival_provider.close()
         close = getattr(provider, "close", None)
         if close is not None:
@@ -189,9 +222,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Along API",
-        version="0.10.0",
+        version="0.12.0",
         lifespan=lifespan,
     )
+    # Starlette runs the last added outermost: CORS wraps the guards so a 413
+    # or 429 still carries CORS headers, and the size check runs before the
+    # rate limiter spends a token on a request that will be refused anyway.
+    if ops_settings.rate_limit_enabled:
+        app.add_middleware(
+            RateLimitMiddleware,
+            limiter=TokenBucketLimiter(
+                ops_settings.rate_limits, ops_settings.rate_limit_max_clients,
+            ),
+        )
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=ops_settings.max_request_body_bytes)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(app_settings.cors_allowed_origins),

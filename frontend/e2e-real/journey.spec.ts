@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
-async function choose(page: Page, label: "Origin" | "Destination", text: string, option: RegExp) {
+async function choose(page: Page, label: "From" | "To", text: string, option: RegExp) {
   const field = page.getByLabel(label, { exact: true });
   await field.click();
   await field.pressSequentially(text, { delay: 15 });
@@ -20,8 +20,8 @@ async function choose(page: Page, label: "Origin" | "Destination", text: string,
 }
 
 test("a typed request is planned end to end on the real network", async ({ page }) => {
-  await choose(page, "Origin", "Punggol", /Punggol/);
-  await choose(page, "Destination", "Orchard", /Orchard/);
+  await choose(page, "From", "Punggol", /Punggol/);
+  await choose(page, "To", "Orchard", /Orchard/);
   await page
     .getByLabel("What do you need on the way?")
     .fill("need to grab panadol and some groceries, prefer FairPrice");
@@ -32,12 +32,14 @@ test("a typed request is planned end to end on the real network", async ({ page 
   // The route rides the North East Line out of Punggol - a real line, not
   // one picked by hashing the trip distance.
   await expect(planner.getByText("NE line").first()).toBeVisible();
-  await expect(planner.locator(".impact-caption")).toContainText(/min extra travel/);
+  await expect(planner.locator(".impact-caption")).toContainText(
+    /later than going direct, including about \d+ min in shops/,
+  );
 });
 
 test("a place that does not exist is the user's to fix, with a hint", async ({ page }) => {
-  await choose(page, "Origin", "Bishan", /Bishan/);
-  await page.getByLabel("Destination", { exact: true }).fill("zzqxv");
+  await choose(page, "From", "Bishan", /Bishan/);
+  await page.getByLabel("To", { exact: true }).fill("zzqxv");
   await page.getByLabel("What do you need on the way?").fill("groceries");
   // Caught at the field, against the real geocoder: a hint, and no request
   // that could only fail.
@@ -60,8 +62,8 @@ test("the API itself answers an unknown place with 422, not 502", async ({ reque
 });
 
 test("a greeting is not planned as an errand", async ({ page }) => {
-  await choose(page, "Origin", "Bishan", /Bishan/);
-  await choose(page, "Destination", "Bugis", /Bugis/);
+  await choose(page, "From", "Bishan", /Bishan/);
+  await choose(page, "To", "Bugis", /Bugis/);
   await page.getByLabel("What do you need on the way?").fill("hello");
   await page.getByRole("button", { name: "Find best stop" }).click();
   await expect(
@@ -104,7 +106,7 @@ test("the timeline's clock times run in order and end at the headline arrival", 
 }) => {
   await page.getByRole("button", { name: /Punggol.*Orchard/ }).click();
   const planner = page.locator("#planner");
-  const headline = planner.locator(".result-impact em");
+  const headline = planner.locator(".result-arrival");
   await expect(headline).toHaveText(/^arrive \d/, { timeout: 30_000 });
   const clocks = (await planner.locator(".timeline-clock").allTextContents()).filter(Boolean);
   const minutes = clocks.map((clock) => {
@@ -113,5 +115,5 @@ test("the timeline's clock times run in order and end at the headline arrival", 
   });
   for (let index = 1; index < minutes.length; index += 1)
     expect(minutes[index]).toBeGreaterThanOrEqual(minutes[index - 1]);
-  expect(`arrive ${clocks[clocks.length - 1]}`).toBe(await headline.textContent());
+  expect(`arrive ${clocks[clocks.length - 1]}`).toBe((await headline.textContent())?.trim());
 });

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+import threading
+from collections import OrderedDict
+from dataclasses import dataclass, replace
 from itertools import product, permutations
 
 from app.db import HubRepository
@@ -75,6 +77,11 @@ def generate_candidates_from_hubs(
     seen: set[tuple[int, int]] = set()
     for first_hub, second_hub in product(first_hubs, second_hubs):
         if first_hub.id == second_hub.id:
+            continue
+        # A hub that has both errands is already an option on its own, and
+        # adding a second building to it only adds a stop. Pairs like that
+        # filled routing slots that a genuinely separate pair needed.
+        if {first, second}.issubset(first_hub.categories) or {first, second}.issubset(second_hub.categories):
             continue
         ids = tuple(sorted((first_hub.id, second_hub.id)))
         if ids in seen:
@@ -155,13 +162,108 @@ def _point_segment_distance_km(point: Coordinate, start: Coordinate, end: Coordi
     return math.hypot(px - (ax + fraction * dx), py - (ay + fraction * dy))
 
 
+# Segments per bounding box in the geometry index below.
+_GEOMETRY_CHUNK = 8
+_GEOMETRY_INDEX_MAX_ENTRIES = 32
+_geometry_index_lock = threading.Lock()
+# id(geometry) -> (geometry, chunk boxes, per-point memo). The entry holds the
+# geometry itself, so its id cannot be reused by another object while cached.
+_geometry_index: OrderedDict[
+    int,
+    tuple[
+        tuple[Coordinate, ...],
+        tuple[tuple[float, float, float, float, float, int, int], ...],
+        dict[tuple[float, float], float],
+    ],
+] = OrderedDict()
+
+
+def _indexed_geometry(
+    geometry: tuple[Coordinate, ...],
+) -> tuple[tuple[tuple[float, float, float, float, float, int, int], ...], dict[tuple[float, float], float]]:
+    key = id(geometry)
+    with _geometry_index_lock:
+        entry = _geometry_index.get(key)
+        if entry is not None and entry[0] is geometry:
+            _geometry_index.move_to_end(key)
+            return entry[1], entry[2]
+    chunks = []
+    for start in range(0, len(geometry) - 1, _GEOMETRY_CHUNK):
+        end = min(start + _GEOMETRY_CHUNK, len(geometry) - 1)
+        latitudes = [item.latitude for item in geometry[start:end + 1]]
+        longitudes = [item.longitude for item in geometry[start:end + 1]]
+        widest = max(abs(min(latitudes)), abs(max(latitudes)))
+        chunks.append((
+            min(latitudes), max(latitudes), min(longitudes), max(longitudes),
+            math.cos(math.radians(widest)), start, end,
+        ))
+    built = (tuple(chunks), {})
+    with _geometry_index_lock:
+        _geometry_index[key] = (geometry, *built)
+        while len(_geometry_index) > _GEOMETRY_INDEX_MAX_ENTRIES:
+            _geometry_index.popitem(last=False)
+    return built
+
+
 def distance_to_geometry_km(point: Coordinate, geometry: tuple[Coordinate, ...]) -> float:
+    """Exact minimum of `_point_segment_distance_km` over every segment.
+
+    Exact, not approximate: a candidate's corridor test and its network rank
+    both read this value, so a simplified polyline could move the answer.
+    Speed comes from skipping segments that cannot be nearest. Segments are
+    boxed in runs of eight; a box's distance, scaled with the smallest
+    longitude factor any of its segments could use, is a lower bound on every
+    segment inside it, so boxes are visited nearest first and the scan stops
+    at the first box no closer than the best segment found. The result for a
+    point is memoised per geometry, which ranking asks for repeatedly.
+    """
     if len(geometry) < 2:
         return float("inf")
-    return min(
-        _point_segment_distance_km(point, geometry[index], geometry[index + 1])
-        for index in range(len(geometry) - 1)
-    )
+    if not isinstance(geometry, tuple):
+        # Only an immutable geometry may be indexed by identity.
+        return min(
+            _point_segment_distance_km(point, geometry[index], geometry[index + 1])
+            for index in range(len(geometry) - 1)
+        )
+    chunks, memo = _indexed_geometry(geometry)
+    latitude, longitude = point.latitude, point.longitude
+    memo_key = (latitude, longitude)
+    known = memo.get(memo_key)
+    if known is not None:
+        return known
+    point_cos = math.cos(math.radians(abs(latitude)))
+    bounds = []
+    for low_lat, high_lat, low_lon, high_lon, chunk_cos, start, end in chunks:
+        delta_lat = low_lat - latitude if latitude < low_lat else (
+            latitude - high_lat if latitude > high_lat else 0.0
+        )
+        delta_lon = low_lon - longitude if longitude < low_lon else (
+            longitude - high_lon if longitude > high_lon else 0.0
+        )
+        scale_x = 111.32 * min(chunk_cos, point_cos)
+        # Squared, and shaved by a part in a billion against rounding.
+        bound = ((delta_lon * scale_x) ** 2 + (delta_lat * 110.57) ** 2) * (1 - 1e-9)
+        bounds.append((bound, start, end))
+    bounds.sort()
+    best = float("inf")
+    best_squared = float("inf")
+    for bound, start, end in bounds:
+        if bound >= best_squared:
+            break
+        for index in range(start, end):
+            distance = _point_segment_distance_km(point, geometry[index], geometry[index + 1])
+            if distance < best:
+                best = distance
+                best_squared = distance * distance
+    memo[memo_key] = best
+    return best
+
+
+def _hub_access_km(hub: Hub, geometry: tuple[Coordinate, ...]) -> float:
+    """One hub's share of `transit_access_rank_km`: leaving the route there and back, plus the walk to its station."""
+    leave = 2 * distance_to_geometry_km(hub.coordinate, geometry) if geometry else 0.0
+    walk = (hub.transport_node_distance_m / 1000) if hub.transport_node_distance_m is not None else 1.0
+    return leave + walk
 
 
 def _coverage_rank(
@@ -249,8 +351,15 @@ def staged_candidate_pipeline(
             hub.id: hub for hub in ranked_hubs
             if set(categories).issubset(hub.categories)
         }
+        # Hubs that hold only one of the errands are chosen by how cheaply the
+        # network reaches them, not by coverage: sorted coverage-first, malls
+        # holding both filled every slot, and the single-errand shop beside the
+        # origin that made the best two-stop plan was never considered.
         for category in categories:
-            matches = [hub for hub in ranked_hubs if category in hub.categories]
+            matches = sorted(
+                (hub for hub in ranked_hubs if category in hub.categories and hub.id not in selected_by_id),
+                key=lambda hub: (_hub_access_km(hub, geometry), hub.id),
+            )
             selected_by_id.update({hub.id: hub for hub in matches[:max_hubs_per_category]})
         selected_hubs = list(selected_by_id.values())
 
@@ -301,6 +410,44 @@ def staged_candidate_pipeline(
         approximate_detour_candidate_count=len(pruned),
         baseline_geometry_point_count=len(geometry),
     )
+
+
+def exclude_brand_stores(hubs: list[Hub], excluded_brands: frozenset[str]) -> list[Hub]:
+    """The hubs without the stores of brands the person ruled out.
+
+    A hub's categories come from its stores, so a mall whose only fast food
+    is a McDonald's stops qualifying for fast food once McDonald's is
+    excluded, and a hub with nothing else left is dropped.
+    """
+    if not excluded_brands:
+        return hubs
+    kept: list[Hub] = []
+    for hub in hubs:
+        stores = tuple(store for store in hub.stores if store.canonical_brand not in excluded_brands)
+        if len(stores) == len(hub.stores):
+            kept.append(hub)
+        elif stores:
+            kept.append(replace(hub, stores=stores))
+    return kept
+
+
+class BrandExcludingRepository:
+    """A repository view whose hub lookups leave out excluded brands' stores.
+
+    Wrapped around the optimizer's repository for one request, so candidate
+    generation, its fallbacks and its near misses all see the same filtered
+    hubs without each taking a new argument.
+    """
+
+    def __init__(self, repository: HubRepository, excluded_brands: frozenset[str]):
+        self._repository = repository
+        self.excluded_brands = excluded_brands
+
+    def find_for_categories(self, categories: tuple[str, ...]) -> list[Hub]:
+        return exclude_brand_stores(self._repository.find_for_categories(categories), self.excluded_brands)
+
+    def __getattr__(self, name: str):
+        return getattr(self._repository, name)
 
 
 def option_satisfies_exact_brands(

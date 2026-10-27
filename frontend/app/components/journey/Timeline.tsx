@@ -124,12 +124,14 @@ function Row({
         <span className="timeline-rail" aria-hidden="true">
           <b>{item.role === "origin" ? "A" : "B"}</b>
         </span>
+        {/* The clock and the A/B mark say leave and arrive on screen; the
+          words stay for a screen reader. A day shows only when it is not today. */}
         <p className="timeline-endpoint">
           <strong>{item.name}</strong>
-          <span className="timeline-meta">
-            {item.role === "origin" ? "Leave" : "Arrive"}
-            {item.time && dayIfNotToday(item.time) ? ` ${dayIfNotToday(item.time)}` : ""}
-          </span>
+          <span className="sr-only">{item.role === "origin" ? ", leave" : ", arrive"}</span>
+          {item.time && dayIfNotToday(item.time) ? (
+            <span className="timeline-meta">{dayIfNotToday(item.time)}</span>
+          ) : null}
         </p>
       </li>
     );

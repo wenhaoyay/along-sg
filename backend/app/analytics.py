@@ -1,20 +1,33 @@
 from __future__ import annotations
 
 import sqlite3
-from collections import Counter, defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from statistics import median
 
 from app.schemas import AnalyticsEventRequest, AnalyticsReportResponse
 
 
 class AnalyticsRepository:
-    """Minimal anonymous beta telemetry store; location data is not accepted."""
+    """Minimal anonymous beta telemetry store; location data is not accepted.
 
-    def __init__(self, path: Path, retention_days: int = 90):
+    Bounded three ways: events older than the retention window are deleted,
+    the table never keeps more than `max_rows` (oldest go first), and both
+    rules run at startup, every `purge_every_inserts` events, and on the
+    app's purge timer - not only when the process restarts.
+    """
+
+    def __init__(
+        self,
+        path: Path,
+        retention_days: int = 90,
+        max_rows: int = 100_000,
+        purge_every_inserts: int = 500,
+    ):
         self.path = path
         self.retention_days = max(1, retention_days)
+        self.max_rows = max(1, max_rows)
+        self.purge_every_inserts = max(1, purge_every_inserts)
+        self._inserts_since_purge = 0
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path)
@@ -48,10 +61,26 @@ class AnalyticsRepository:
                     ON analytics_events(event_type);
                 """
             )
-            cutoff = (datetime.now(UTC) - timedelta(days=self.retention_days)).isoformat()
-            connection.execute(
+        self.purge()
+
+    def purge(self, now: datetime | None = None) -> int:
+        """Delete expired events, then the oldest beyond the row cap."""
+        cutoff = ((now or datetime.now(UTC)) - timedelta(days=self.retention_days)).isoformat()
+        with self._connect() as connection:
+            expired = connection.execute(
                 "DELETE FROM analytics_events WHERE occurred_at < ?", (cutoff,)
-            )
+            ).rowcount
+            excess = connection.execute(
+                """
+                DELETE FROM analytics_events WHERE rowid IN (
+                    SELECT rowid FROM analytics_events
+                    ORDER BY occurred_at DESC, rowid DESC LIMIT -1 OFFSET ?
+                )
+                """,
+                (self.max_rows,),
+            ).rowcount
+        self._inserts_since_purge = 0
+        return expired + excess
 
     def record(self, event: AnalyticsEventRequest) -> bool:
         with self._connect() as connection:
@@ -72,105 +101,118 @@ class AnalyticsRepository:
                     event.feedback_reason, event.parse_method, event.latency_ms,
                 ),
             )
-            return cursor.rowcount == 1
+            accepted = cursor.rowcount == 1
+        if accepted:
+            self._inserts_since_purge += 1
+            if self._inserts_since_purge >= self.purge_every_inserts:
+                self.purge()
+        return accepted
 
     def report(self, now: datetime | None = None) -> AnalyticsReportResponse:
+        """Aggregated in SQL: the report never loads the event rows themselves."""
         current = now or datetime.now(UTC)
-        with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM analytics_events ORDER BY occurred_at"
-            ).fetchall()
-        counts = Counter(row["event_type"] for row in rows)
-        users = {row["anonymous_user_id"] for row in rows}
-        def search_ids(event_type: str) -> set[str]:
-            return {
-                row["search_id"]
-                for row in rows
-                if row["event_type"] == event_type and row["search_id"]
-            }
-
-        started_searches = search_ids("search_started")
-        completed_searches = search_ids("optimization_completed")
-        searches = len(started_searches) or counts["search_started"]
-        completions = len(completed_searches) or counts["optimization_completed"]
-        selections = [row for row in rows if row["event_type"] == "recommendation_selected"]
-        alternatives = [row for row in rows if row["event_type"] == "alternative_selected"]
-        selected_searches = {
-            row["search_id"] for row in selections if row["search_id"]
-        }
-        latencies = sorted(
-            float(row["latency_ms"])
-            for row in rows
-            if row["event_type"] == "optimization_completed" and row["latency_ms"] is not None
-        )
-        feedback = Counter(
-            row["feedback_value"]
-            for row in rows
-            if row["event_type"] == "feedback_submitted" and row["feedback_value"]
-        )
-        reasons = Counter(
-            row["feedback_reason"]
-            for row in rows
-            if row["event_type"] == "feedback_submitted" and row["feedback_reason"]
-        )
-        user_days: dict[str, set[str]] = defaultdict(set)
-        for row in rows:
-            user_days[row["anonymous_user_id"]].add(row["occurred_at"][:10])
         today = current.date()
         seven_day_cutoff = today - timedelta(days=6)
-        active_one_day = {
-            row["anonymous_user_id"] for row in rows
-            if datetime.fromisoformat(row["occurred_at"]).date() == today
-        }
-        active_seven_day = {
-            row["anonymous_user_id"] for row in rows
-            if datetime.fromisoformat(row["occurred_at"]).date() >= seven_day_cutoff
-        }
-        returning_users = sum(len(days) >= 2 for days in user_days.values())
+        day = "substr(occurred_at, 1, 10)"
+        latency_rows = (
+            "FROM analytics_events WHERE event_type='optimization_completed' "
+            "AND latency_ms IS NOT NULL"
+        )
+        with self._connect() as connection:
+            def scalar(query: str, parameters: tuple = ()) -> int:
+                return int(connection.execute(query, parameters).fetchone()[0] or 0)
+
+            def distinct_searches(event_type: str, extra: str = "") -> int:
+                return scalar(
+                    "SELECT COUNT(DISTINCT search_id) FROM analytics_events "
+                    f"WHERE event_type=? AND search_id IS NOT NULL {extra}",
+                    (event_type,),
+                )
+
+            def latency_at(index: int) -> float:
+                return float(connection.execute(
+                    f"SELECT latency_ms {latency_rows} ORDER BY latency_ms LIMIT 1 OFFSET ?",
+                    (index,),
+                ).fetchone()[0])
+
+            counts = {
+                row[0]: int(row[1]) for row in connection.execute(
+                    "SELECT event_type, COUNT(*) FROM analytics_events GROUP BY event_type"
+                )
+            }
+            users = scalar("SELECT COUNT(DISTINCT anonymous_user_id) FROM analytics_events")
+            searches = distinct_searches("search_started") or counts.get("search_started", 0)
+            completions = (
+                distinct_searches("optimization_completed")
+                or counts.get("optimization_completed", 0)
+            )
+            corrected = distinct_searches("interpretation_corrected")
+            no_result = distinct_searches("no_convenient_option")
+            navigated = distinct_searches("navigation_clicked")
+            rank_one = distinct_searches("recommendation_selected", "AND recommendation_rank=1")
+            selected_searches = distinct_searches("recommendation_selected")
+            alternative_searches = distinct_searches("alternative_selected")
+            feedback = {
+                row[0]: int(row[1]) for row in connection.execute(
+                    "SELECT feedback_value, COUNT(*) FROM analytics_events "
+                    "WHERE event_type='feedback_submitted' AND feedback_value IS NOT NULL "
+                    "GROUP BY feedback_value"
+                )
+            }
+            reasons = {
+                row[0]: int(row[1]) for row in connection.execute(
+                    "SELECT feedback_reason, COUNT(*) FROM analytics_events "
+                    "WHERE event_type='feedback_submitted' AND feedback_reason IS NOT NULL "
+                    "GROUP BY feedback_reason "
+                    "ORDER BY COUNT(*) DESC, MIN(occurred_at), feedback_reason"
+                )
+            }
+            median_latency = p95_latency = None
+            latency_count = scalar(f"SELECT COUNT(*) {latency_rows}")
+            if latency_count:
+                middle = (
+                    latency_at((latency_count - 1) // 2) + latency_at(latency_count // 2)
+                ) / 2
+                median_latency = round(middle, 2)
+                p95_index = max(
+                    0, min(latency_count - 1, int((latency_count - 1) * 0.95 + 0.999999))
+                )
+                p95_latency = round(latency_at(p95_index), 2)
+            active_one_day = scalar(
+                f"SELECT COUNT(DISTINCT anonymous_user_id) FROM analytics_events WHERE {day} = ?",
+                (today.isoformat(),),
+            )
+            active_seven_day = scalar(
+                f"SELECT COUNT(DISTINCT anonymous_user_id) FROM analytics_events WHERE {day} >= ?",
+                (seven_day_cutoff.isoformat(),),
+            )
+            returning_users = scalar(
+                "SELECT COUNT(*) FROM (SELECT anonymous_user_id FROM analytics_events "
+                f"GROUP BY anonymous_user_id HAVING COUNT(DISTINCT {day}) >= 2)"
+            )
         return AnalyticsReportResponse(
             generated_at=current,
             retention_days=self.retention_days,
-            unique_anonymous_users=len(users),
+            unique_anonymous_users=users,
             searches=searches,
-            searches_per_user=round(searches / len(users), 3) if users else 0,
+            searches_per_user=round(searches / users, 3) if users else 0,
             completion_rate=round(completions / searches, 4) if searches else 0,
-            parse_correction_rate=round(
-                len(search_ids("interpretation_corrected")) / searches, 4
-            ) if searches else 0,
-            no_result_rate=round(
-                len(search_ids("no_convenient_option")) / searches, 4
-            ) if searches else 0,
-            rank_one_acceptance_rate=round(
-                len({
-                    row["search_id"] for row in selections
-                    if row["recommendation_rank"] == 1 and row["search_id"]
-                }) / completions,
-                4,
-            ) if completions else 0,
-            alternative_selection_rate=round(
-                len({row["search_id"] for row in alternatives if row["search_id"]})
-                / len(selected_searches),
-                4,
-            ) if selected_searches else 0,
-            navigation_click_rate=round(
-                len(search_ids("navigation_clicked")) / completions, 4
-            ) if completions else 0,
-            positive_feedback=feedback["positive"],
-            negative_feedback=feedback["negative"],
-            common_negative_feedback_reasons=dict(reasons.most_common()),
-            median_optimization_latency_ms=round(median(latencies), 2) if latencies else None,
-            p95_optimization_latency_ms=_percentile(latencies, 0.95),
-            active_users_one_day=len(active_one_day),
-            active_users_seven_day=len(active_seven_day),
+            parse_correction_rate=round(corrected / searches, 4) if searches else 0,
+            no_result_rate=round(no_result / searches, 4) if searches else 0,
+            rank_one_acceptance_rate=round(rank_one / completions, 4) if completions else 0,
+            alternative_selection_rate=(
+                round(alternative_searches / selected_searches, 4) if selected_searches else 0
+            ),
+            navigation_click_rate=round(navigated / completions, 4) if completions else 0,
+            positive_feedback=feedback.get("positive", 0),
+            negative_feedback=feedback.get("negative", 0),
+            common_negative_feedback_reasons=reasons,
+            median_optimization_latency_ms=median_latency,
+            p95_optimization_latency_ms=p95_latency,
+            active_users_one_day=active_one_day,
+            active_users_seven_day=active_seven_day,
             returning_users=returning_users,
-            return_usage_rate=round(returning_users / len(users), 4) if users else 0,
-            explicit_return_events=counts["return_usage"],
+            return_usage_rate=round(returning_users / users, 4) if users else 0,
+            explicit_return_events=counts.get("return_usage", 0),
             event_counts=dict(sorted(counts.items())),
         )
-
-
-def _percentile(values: list[float], quantile: float) -> float | None:
-    if not values:
-        return None
-    index = max(0, min(len(values) - 1, int((len(values) - 1) * quantile + 0.999999)))
-    return round(values[index], 2)

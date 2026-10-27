@@ -7,7 +7,7 @@ import { capitalise } from "./format";
  * so re-ranking is arithmetic over routed results rather than a new search -
  * which is exactly why it can be instant, and exactly why it must not be
  * dressed up as re-optimising. The candidate set was chosen under the default
- * weights; this reorders that set, and `rankNote` says so. */
+ * weights; this reorders that set. */
 export type RankKey = "recommended" | "time" | "walking" | "transfers";
 
 /* The same words as the planner's own preference control. The form asked
@@ -73,42 +73,6 @@ export function rankRoutedOptions(
   return Object.entries(recommendations).sort(
     ([, first], [, second]) => rankValue(first, rank) - rankValue(second, rank),
   );
-}
-
-export function rankNote(rank: RankKey, count: number) {
-  if (rank === "recommended")
-    return `Our ranking across ${count} routed options: added time, walking and transfers, and how confidently we know each place.`;
-  return `Reordering the same ${count} routed options by one measure. The search itself used our own ranking.`;
-}
-
-/** The comparison is only evidence if its shape is stated. Five places within
- *  half a minute of each other is a different fact from one clear winner, and
- *  the reader cannot tell which from a list of rounded numbers. */
-export function comparedSummary(
-  compared: Array<[string, Recommendation]>,
-  chosen: Recommendation,
-  otherOptions: Array<[string, Recommendation]>,
-) {
-  // Everything routed, not just the rejected half: the offered alternatives
-  // were compared too, and counting only what is in this list would understate
-  // the work by exactly the number of options the panel is already showing.
-  const total = compared.length + otherOptions.length + 1;
-  const spread = Math.max(
-    ...compared.map(
-      ([, option]) =>
-        option.detour_breakdown.extra_transport_minutes -
-        chosen.detour_breakdown.extra_transport_minutes,
-    ),
-    ...otherOptions.map(
-      ([, item]) =>
-        item.detour_breakdown.extra_transport_minutes -
-        chosen.detour_breakdown.extra_transport_minutes,
-    ),
-    0,
-  );
-  if (spread < 1)
-    return `All ${total} routed options landed within a minute of each other, so this pick is close to a tie.`;
-  return `${total} options were routed and compared; the rest cost up to ${Math.round(spread)} min more travel.`;
 }
 
 export function deduplicatedAlternatives(
@@ -180,7 +144,7 @@ export function tradeoffCopy(item: Recommendation, selected: Recommendation): st
   }
   if (transfers !== 0) {
     (transfers < 0 ? gains : costs).push(
-      `${Math.abs(transfers)} ${transfers < 0 ? "fewer" : "more"} transfer${Math.abs(transfers) === 1 ? "" : "s"}`,
+      `${Math.abs(transfers)} ${transfers < 0 ? "fewer" : "more"} change${Math.abs(transfers) === 1 ? "" : "s"}`,
     );
   }
 

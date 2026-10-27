@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from datetime import datetime
 
 from app.domain import CandidateFallback, Coordinate, Hub, OptimizationPreferences, RouteResult, ScoredCandidate
@@ -9,6 +10,7 @@ from app.intent_models import (
     Urgency,
     WalkingTolerance,
 )
+from app.services.candidates import BrandExcludingRepository, exclude_brand_stores
 from app.services.optimizer import Optimizer
 from app.poi_taxonomy import NEAR_MISS_SUBSTITUTES
 
@@ -80,7 +82,7 @@ def _fallbacks(intent: IntentV1) -> tuple[CandidateFallback, ...]:
         categories = tuple(substitute if category == item.category else category for category in requested)
         fallbacks.append(CandidateFallback(
             categories=categories,
-            match_classification="easier_alternative",
+            match_classification="substitute",
             requested_categories=requested,
             substituted_categories=((item.category, substitute),),
             exact_brands=tuple(
@@ -95,7 +97,24 @@ def _fallbacks(intent: IntentV1) -> tuple[CandidateFallback, ...]:
             ),
         ))
 
-    if len(errands) == 2:
+    # With an "if convenient" errand, the only sensible partial plan is the
+    # required errands alone. Offering the optional one by itself dropped the
+    # errand the person actually needed and called it an alternative.
+    if intent.optional_errands and intent.required_errands:
+        required = tuple(item.category for item in intent.required_errands)
+        fallbacks.append(CandidateFallback(
+            categories=required,
+            match_classification="partial_option",
+            requested_categories=requested,
+            omitted_categories=tuple(category for category in requested if category not in required),
+            exact_brands=tuple(
+                (item.category, item.exact_brand) for item in intent.required_errands if item.exact_brand
+            ),
+            exact_places=tuple(
+                (item.category, item.exact_place) for item in intent.required_errands if item.exact_place
+            ),
+        ))
+    elif len(errands) == 2:
         for item in errands:
             fallbacks.append(CandidateFallback(
                 categories=(item.category,),
@@ -125,6 +144,13 @@ async def optimize_intent(
 ]:
     all_errands = intent.required_errands + intent.optional_errands
     categories = [item.category for item in all_errands]
+    excluded = frozenset(brand for item in all_errands for brand in item.excluded_brands)
+    if excluded:
+        # A per-request view: the shared optimizer (and its route cache) is
+        # untouched, only the hubs it is offered lose the excluded stores.
+        optimizer = copy.copy(optimizer)
+        optimizer.repository = BrandExcludingRepository(optimizer.repository, excluded)
+        extra_hubs = tuple(exclude_brand_stores(list(extra_hubs), excluded))
     baseline, recommendations, diagnostics, considered = await optimizer.optimize(
         origin,
         destination,

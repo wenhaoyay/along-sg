@@ -40,6 +40,11 @@ export type Recommendation = {
   total_walking_distance_m: number;
   total_transfers: number;
   incremental_detour_minutes: number;
+  /** Extra time moving, without time in shops. Absent from older responses. */
+  incremental_travel_minutes?: number;
+  omitted_categories?: string[];
+  substituted_categories?: Array<{ requested: string; substitute: string }>;
+  missing_preferred_brands?: string[];
   incremental_walking_distance_m: number;
   incremental_transfers: number;
   stop_relationship: string;

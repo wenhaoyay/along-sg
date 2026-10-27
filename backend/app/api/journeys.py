@@ -42,6 +42,9 @@ from app.api.responses import (
 )
 
 
+TIMEOUT_DETAIL = "Optimization timed out before a bounded result was available."
+
+
 def register(app: FastAPI, app_settings: Settings) -> None:
     internal_fields = hidden_fields(app_settings)
 
@@ -68,19 +71,28 @@ def register(app: FastAPI, app_settings: Settings) -> None:
     async def optimize(payload: OptimizeRequest, request: Request):
         provider: MapProvider = request.app.state.provider
         optimizer: Optimizer = request.app.state.optimizer
-        try:
+
+        async def plan():
             origin = await resolve_location(request.app.state.location_resolver, payload.origin)
             destination = await resolve_location(request.app.state.location_resolver, payload.destination)
-            baseline, recommendations, diagnostics, considered = await optimizer.optimize(
+            return origin, destination, await optimizer.optimize(
                 origin.coordinate,
                 destination.coordinate,
                 payload.errands,
                 payload.departure,
             )
+
+        try:
+            # One bound over the whole request, as /api/optimize-intent has.
+            origin, destination, (baseline, recommendations, diagnostics, considered) = (
+                await asyncio.wait_for(plan(), timeout=app_settings.optimization_timeout_seconds)
+            )
         except ProviderError as error:
             raise provider_http_error(error) from error
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
+        except TimeoutError as error:
+            raise HTTPException(status_code=504, detail=TIMEOUT_DETAIL) from error
 
         categories = normalize_categories(payload.errands)
         labels = {
@@ -170,10 +182,7 @@ def register(app: FastAPI, app_settings: Settings) -> None:
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         except TimeoutError as error:
-            raise HTTPException(
-                status_code=504,
-                detail="Optimization timed out before a bounded result was available.",
-            ) from error
+            raise HTTPException(status_code=504, detail=TIMEOUT_DETAIL) from error
 
         if any(
             candidate.match_classification != "best_match"

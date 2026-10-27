@@ -1,20 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { ShoppingBag } from "lucide-react";
+import { inkOn } from "../../lineColors";
 import { clockTime } from "./format";
 import { RANK_LABELS, type RankKey, tradeoffCopy } from "./ranking";
 import { directStrip, recommendationStrip, type Strip } from "./strips";
+import { laterMinutes, optionTag, signed, travelMinutes } from "./figures";
 import { type Recommendation, type Result } from "./types";
 
 const VISIBLE_ROWS = 4;
-
-/* What makes an option a different kind of answer, said on its row. Without
- * it a +22 beside a +32 looked strictly better, when it was a 7-Eleven
- * standing in for the supermarket you asked for. */
-const OPTION_TAG: Record<string, string> = {
-  partial_option: "one errand only",
-  easier_alternative: "easier alternative",
-};
 
 type Props = {
   result: Result;
@@ -26,11 +21,14 @@ type Props = {
   onHover?: (key: string | null) => void;
   rankBy: RankKey;
   onRankChange: (rank: RankKey) => void;
-  note: string;
 };
 
 /** The options as journeys on one time axis, with the direct trip as the
- *  yardstick. Picking a row makes it the plan. */
+ *  yardstick. Picking a row makes it the plan.
+ *
+ *  The bars name themselves - a ride carries its line's code, a stop a bag -
+ *  so there is no key, and no axis: the figure beside each row is the time,
+ *  and the dashed line is where the direct trip arrives. */
 export function DetourDiagram({
   result,
   rows,
@@ -40,7 +38,6 @@ export function DetourDiagram({
   onHover,
   rankBy,
   onRankChange,
-  note,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const direct = directStrip(result);
@@ -51,13 +48,17 @@ export function DetourDiagram({
     const chosen = strips.find(([key]) => key === selectedKey);
     if (chosen) visible.push(chosen);
   }
-  const scale = Math.max(direct.total, ...visible.map(([, , strip]) => strip.total)) * 1.02;
+  // One scale for every row, shown or not, so "Show all" never changes the
+  // length of a bar you were already reading.
+  const scale = Math.max(direct.total, ...strips.map(([, , strip]) => strip.total)) * 1.02;
   const directAt = (direct.total / scale) * 100;
 
   return (
     <section className="detour" aria-labelledby="detour-title">
       <div className="detour-head">
-        <h2 id="detour-title">Compared with going direct</h2>
+        <h2 id="detour-title" className="sr-only">
+          Compared with going direct
+        </h2>
         {rows.length > 1 && (
           <div className="detour-sort" role="group" aria-label="Sort options by">
             {(Object.keys(RANK_LABELS) as RankKey[]).map((key) => (
@@ -88,28 +89,35 @@ export function DetourDiagram({
           <Track strip={direct} scale={scale} />
         </div>
         {visible.map(([key, item, strip]) => {
-          const added = Math.round(item.incremental_detour_minutes);
+          const travel = signed(travelMinutes(item));
+          const later = Math.round(laterMinutes(item));
           const name = item.stops.map((stop) => stop.display_name).join(" then ");
           const trade = key === selectedKey ? null : tradeoffCopy(item, selected);
-          const tag = OPTION_TAG[item.match_classification];
+          const tag = optionTag(item);
           return (
             <button
               type="button"
               key={key}
               className={`detour-row option${key === selectedKey ? " selected" : ""}`}
               aria-pressed={key === selectedKey}
-              aria-label={`${name}: ${added} min later than going direct${
-                item.arrival_time ? `, arrive ${clockTime(item.arrival_time)}` : ""
-              }${trade ? `. ${trade}` : ""}`}
               onClick={() => onSelect(key)}
               onMouseEnter={() => onHover?.(key)}
               onFocus={() => onHover?.(key)}
               onBlur={() => onHover?.(null)}
             >
               <span className="detour-name">{name}</span>
+              {/* The row's name is its own visible text plus what the bar
+                  shows, said in words - an aria-label that rephrased the
+                  figures did not contain what a voice user sees. */}
               <span className="detour-figure">
-                +{added} min
-                {item.arrival_time ? ` · ${clockTime(item.arrival_time)}` : ""}
+                {travel} min
+                <span className="sr-only">{` extra travel, ${later} min later than going direct`}</span>
+                {item.arrival_time ? (
+                  <>
+                    <span className="sr-only">, arrive</span>
+                    {` · ${clockTime(item.arrival_time)}`}
+                  </>
+                ) : null}
               </span>
               <Track strip={strip} scale={scale} />
               {(tag || trade) && (
@@ -122,37 +130,11 @@ export function DetourDiagram({
           );
         })}
       </div>
-
-      <div className="detour-foot">
-        <ul className="detour-legend" aria-label="Diagram key">
-          <li>
-            <i className="ride" />
-            Train or bus
-          </li>
-          <li>
-            <i className="walk" />
-            Walk
-          </li>
-          <li>
-            <i className="wait" />
-            Wait or change
-          </li>
-          <li>
-            <i className="stop" />
-            At your stops
-          </li>
-          <li>
-            <i className="direct" />
-            Direct arrives
-          </li>
-        </ul>
-        {strips.length > VISIBLE_ROWS && (
-          <button type="button" className="detour-more" onClick={() => setExpanded(!expanded)}>
-            {expanded ? "Show fewer" : `Show all ${strips.length} routed options`}
-          </button>
-        )}
-        <p className="precision-note">{note}</p>
-      </div>
+      {strips.length > VISIBLE_ROWS && (
+        <button type="button" className="detour-more" onClick={() => setExpanded(!expanded)}>
+          {expanded ? "Show fewer" : `Show all ${strips.length}`}
+        </button>
+      )}
     </section>
   );
 }
@@ -172,10 +154,12 @@ function Track({ strip, scale }: { strip: Strip; scale: number }) {
                 left: `${(piece.start / scale) * 100}%`,
                 width: `${width}%`,
                 "--piece-color": piece.color ?? undefined,
+                "--piece-ink": piece.color ? inkOn(piece.color) : undefined,
               } as React.CSSProperties
             }
           >
             {piece.kind === "ride" && piece.code && width > 7 ? piece.code : null}
+            {piece.kind === "stop" && width > 5 ? <ShoppingBag size={11} /> : null}
           </i>
         );
       })}
