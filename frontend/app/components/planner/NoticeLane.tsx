@@ -18,7 +18,9 @@ type Props = {
   onEditRequest: () => void;
 };
 
-/** The one message the planner has before it can show a plan. */
+/** The one message the planner has before it can show a plan. Each is its
+ *  sentence and its actions; the titles over them ("A quick check", "That
+ *  didn't work") said nothing the sentence did not. */
 export const NoticeLane = forwardRef<HTMLDivElement, Props>(function NoticeLane(
   {
     notice,
@@ -37,14 +39,12 @@ export const NoticeLane = forwardRef<HTMLDivElement, Props>(function NoticeLane(
     <div ref={ref} className="notice-lane">
       {notice?.kind === "clarify" && (
         <div className="notice" role="alert">
-          <strong>A quick check</strong>
           <p>{notice.text}</p>
         </div>
       )}
       {notice?.kind === "conflict" && (
         <div className="notice conflict" role="alert">
-          <strong>Your journey changed</strong>
-          <p>{notice.text}</p>
+          <p>{notice.text || notice.conflict.reason}</p>
           <div className="conflict-actions">
             <button type="button" onClick={onKeep}>
               Keep {notice.conflict.current_label}
@@ -62,26 +62,21 @@ export const NoticeLane = forwardRef<HTMLDivElement, Props>(function NoticeLane(
       )}
       {notice?.kind === "error" && (
         <div className="notice error" role="alert">
-          <strong>That didn’t work</strong>
           <p>{notice.text}</p>
         </div>
       )}
       {notice?.kind === "partial" && notice.text === need && !browsing && (
         <div className="notice" role="alert">
-          <strong>We found part of your request</strong>
-          <p>
-            Not resolved: {notice.missing.join(", ")}. Continue with{" "}
-            {[...notice.intent.required_errands, ...notice.intent.optional_errands]
-              .map((item) => intentLabel(categories, item))
-              .join(" and ")}{" "}
-            only?
-          </p>
+          <p>No match for {notice.missing.map((term) => `“${term}”`).join(" or ")}.</p>
           <div className="conflict-actions">
             <button type="button" onClick={onContinuePartial}>
-              Continue with matched errands
+              Continue with{" "}
+              {[...notice.intent.required_errands, ...notice.intent.optional_errands]
+                .map((item) => intentLabel(categories, item))
+                .join(" and ")}
             </button>
             <button type="button" onClick={onEditRequest}>
-              Edit request
+              Edit
             </button>
           </div>
         </div>

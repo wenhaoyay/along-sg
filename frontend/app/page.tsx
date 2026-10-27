@@ -852,8 +852,8 @@ export default function Home() {
         {result && savedRun && (
           <p className="notice saved-run" role="note">
             {savedRun.liveFailed
-              ? `The live check didn’t come back, so this is a saved run of the example from ${savedDate(savedRun.generatedAt)}. Its clock times are from then.`
-              : `Showing a saved run of this example while the server wakes up; the live answer replaces it in a moment.`}
+              ? `The live check didn’t come back. This is a saved run from ${savedDate(savedRun.generatedAt)}, with that day’s times.`
+              : `A saved run, while the server wakes up.`}
           </p>
         )}
         {result && selected && (

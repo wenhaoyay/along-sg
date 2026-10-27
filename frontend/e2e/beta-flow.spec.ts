@@ -275,9 +275,9 @@ test("partial requests require consent and mobile sheets resize", async ({ page,
   await resolveJourney(page);
   await page.getByLabel("What do you need on the way?").fill("KFC and shoe repair");
   await page.getByRole("button", { name: "Find best stop" }).click();
-  await expect(page.getByText("We found part of your request")).toBeVisible();
+  await expect(page.locator(".notice")).toContainText("No match for “shoe repair”.");
   expect(calls).toBe(0);
-  await page.getByRole("button", { name: "Continue with matched errands" }).click();
+  await page.getByRole("button", { name: /^Continue with / }).click();
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
   expect(calls).toBe(1);
   await expect(page.locator(".impact-caption")).toContainText(
@@ -368,7 +368,6 @@ test("failed discovery offers explicit related searches without claiming stock",
   await page.goto("/");
   await page.getByRole("button", { name: "More categories" }).click();
   await page.getByLabel("Search brands, shops or categories").fill("printer ink");
-  await expect(page.getByText(/check cartridge compatibility/)).toBeVisible();
   await page.getByRole("button", { name: "Search printer supplies" }).click();
   await expect(page.getByLabel("Search brands, shops or categories")).toHaveValue(
     "printer supplies",
@@ -589,7 +588,7 @@ test("destination conflict blocks optimization until a user chooses", async ({ p
   await resolveJourney(page);
   await page.getByLabel("What do you need on the way?").fill("bubble tea then go Orchard MRT");
   await page.getByRole("button", { name: /Find best stop/ }).click();
-  await expect(page.getByText("Your journey changed")).toBeVisible();
+  await expect(page.locator(".notice.conflict")).toBeVisible();
   await expect(page.getByRole("button", { name: "Keep Fajar LRT Station" })).toBeVisible();
   expect(optimizeCalls).toBe(0);
 });

@@ -222,7 +222,9 @@ export function DiscoveryPalette({
   // The list exists only while there is something in it to choose.
   const expanded = listed && results.length > 0;
   return (
-    <section className="discovery" aria-label="Find something" data-testid="discovery-palette">
+    <section className="discovery" aria-label="Browse categories" data-testid="discovery-palette">
+      {/* Back, the search and - once something is chosen - how many of the
+          two: one row, no title or instructions above it. */}
       <div className="discovery-title">
         <button
           type="button"
@@ -232,50 +234,49 @@ export function DiscoveryPalette({
         >
           <ArrowLeft size={18} />
         </button>
-        <div>
-          <span>Find something</span>
-          <p>Choose up to two needs</p>
-        </div>
-        <span className="selection-count">{selections.length}/2</span>
-      </div>
-      <label className="discovery-search">
-        <Search size={18} aria-hidden="true" />
-        <input
-          autoFocus
-          value={query}
-          onChange={(event) => {
-            const value = event.target.value;
-            setQuery(value);
-            if (value.trim().length < 2) {
-              setResults([]);
-              setActiveIndex(-1);
-              setSearching(false);
+        <label className="discovery-search">
+          <Search size={18} aria-hidden="true" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(event) => {
+              const value = event.target.value;
+              setQuery(value);
+              if (value.trim().length < 2) {
+                setResults([]);
+                setActiveIndex(-1);
+                setSearching(false);
+              }
+            }}
+            onKeyDown={onSearchKeyDown}
+            placeholder="Brands, shops or categories"
+            role="combobox"
+            aria-label="Search brands, shops or categories"
+            aria-expanded={expanded}
+            aria-controls={expanded ? resultListId : undefined}
+            aria-autocomplete="list"
+            aria-activedescendant={
+              expanded && activeIndex >= 0 ? `${resultListId}-${activeIndex}` : undefined
             }
-          }}
-          onKeyDown={onSearchKeyDown}
-          placeholder="Brands, shops or categories"
-          role="combobox"
-          aria-label="Search brands, shops or categories"
-          aria-expanded={expanded}
-          aria-controls={expanded ? resultListId : undefined}
-          aria-autocomplete="list"
-          aria-activedescendant={
-            expanded && activeIndex >= 0 ? `${resultListId}-${activeIndex}` : undefined
-          }
-        />
-        {searching && (
-          <LoaderCircle
-            className="spinner-icon"
-            size={17}
-            role="img"
-            aria-label="Searching catalog"
           />
+          {searching && (
+            <LoaderCircle
+              className="spinner-icon"
+              size={17}
+              role="img"
+              aria-label="Searching catalog"
+            />
+          )}
+        </label>
+        {selections.length > 0 && (
+          <span className="selection-count" aria-label={`${selections.length} of 2 chosen`}>
+            {selections.length}/2
+          </span>
         )}
-      </label>
+      </div>
       {!query && (
         <div className="popular">
-          <span>Popular</span>
-          <div>
+          <div role="group" aria-label="Popular">
             {POPULAR.map(
               (slug) =>
                 categoryBySlug.has(slug) && (
@@ -334,17 +335,12 @@ export function DiscoveryPalette({
       )}
       {listed && !results.length && (
         <p className="empty-search" role="status">
-          No reliable place yet. You can still search the free-form request, try a broader category,
-          or edit the term.
+          No match for “{query.trim()}”.
         </p>
       )}
       {query.trim().length >= 2 && !searching && !results.length && suggestions.length > 0 && (
         <div className="discovery-recovery">
-          <p>
-            Try a related search. These are suggestions, not confirmed stock or service
-            availability. For ink, check cartridge compatibility.
-          </p>
-          <div>
+          <div role="group" aria-label="Related searches">
             {suggestions.map((term) => (
               <button
                 type="button"

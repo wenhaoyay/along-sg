@@ -135,7 +135,7 @@ test("capture the UI review states", async ({ page }, testInfo) => {
   parseBody = conflict;
   await page.getByLabel("What do you need on the way?").fill("bubble tea then Orchard MRT");
   await page.getByRole("button", { name: /Find best stop/ }).click();
-  await expect(page.getByText("Your journey changed")).toBeVisible();
+  await expect(page.locator(".notice.conflict")).toBeVisible();
   await shoot(page, output, "G-destination-conflict");
 
   await openPlanner(page);
