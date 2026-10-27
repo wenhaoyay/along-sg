@@ -66,11 +66,58 @@ def _join(parts: list[str]) -> str:
     return ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
+# A place, in the singular, for "No pharmacy on the way is open". The catalogue
+# labels are headings ("ATMs", "Post offices") and read wrongly in a sentence.
+PLACE_NOUNS = {
+    "groceries": "supermarket",
+    "convenience": "convenience store",
+    "bubble_tea": "bubble tea shop",
+    "coffee": "café",
+    "fast_food": "fast-food outlet",
+    "restaurants": "restaurant",
+    "parcel": "parcel point",
+    "post_office": "post office",
+    "banking": "bank",
+    "atm": "ATM",
+    "haircuts": "barber or salon",
+}
+
+
+def place_noun(category: str) -> str:
+    return PLACE_NOUNS.get(category) or category_label(category).lower()
+
+
+def _fallback_reason(winner: ScoredCandidate, closed_errands: frozenset[str]) -> str | None:
+    """Why the pick is not a full match. It used to fall through to "the only
+    place we could route that covers everything you asked for" - said of a
+    plan that skipped the pharmacy because every pharmacy was still shut."""
+    option = winner.option
+    if winner.match_classification == "partial_option" and option.omitted_categories:
+        skipped = option.omitted_categories
+        kept = _join([place_noun(item) for item in option.required_categories])
+        missing = _join([place_noun(item) for item in skipped])
+        if closed_errands and all(item in closed_errands for item in skipped):
+            return f"No {missing} on the way is open when you'd get there, so this covers the {kept} only."
+        return f"No stop on the way covers the {missing} too, so this covers the {kept} only."
+    if winner.match_classification == "substitute" and option.substituted_categories:
+        requested = [requested for requested, _ in option.substituted_categories]
+        asked = _join([place_noun(item) for item in requested])
+        instead = _join([place_noun(sub) for _, sub in option.substituted_categories])
+        if closed_errands and all(item in closed_errands for item in requested):
+            return f"No {asked} on the way is open when you'd get there, so this is a {instead} instead."
+        return f"No {asked} on the way could be fitted in, so this is a {instead} instead."
+    return None
+
+
 def explain_best(
     winner: ScoredCandidate,
     pool: list[ScoredCandidate],
     preferences: OptimizationPreferences,
+    closed_errands: frozenset[str] = frozenset(),
 ) -> str:
+    reason = _fallback_reason(winner, closed_errands)
+    if reason is not None:
+        return reason
     others: dict[frozenset[int], ScoredCandidate] = {}
     # A two-stop plan is routed in both orders; compare against its better one.
     for item in pool:
@@ -127,7 +174,7 @@ def explain_alternative(
     preferences: OptimizationPreferences,
 ) -> str:
     if candidate.match_classification == "partial_option" and candidate.option.omitted_categories:
-        skipped = _join([category_label(item).lower() for item in candidate.option.omitted_categories])
+        skipped = _join([place_noun(item) for item in candidate.option.omitted_categories])
         saving = ""
         if best is not None:
             saved = best.incremental_detour_minutes - candidate.incremental_detour_minutes
@@ -136,7 +183,7 @@ def explain_alternative(
         return f"Skips the {skipped}{saving}."
     if candidate.match_classification == "substitute" and candidate.option.substituted_categories:
         swaps = _join([
-            f"{category_label(substitute).lower()} instead of {category_label(requested).lower()}"
+            f"{place_noun(substitute)} instead of {place_noun(requested)}"
             for requested, substitute in candidate.option.substituted_categories
         ])
         sooner = ""

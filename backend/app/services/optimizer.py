@@ -347,7 +347,7 @@ class Optimizer:
         results = await asyncio.gather(*(price(option, order) for option, order in jobs))
         evaluated = [result for result in results if result is not None]
 
-        recommendations, outcome = self._choose(evaluated, prefs)
+        recommendations, outcome = self._choose(evaluated, prefs, session.closed_errands())
         considered = _compared_but_not_offered(evaluated, recommendations)
 
         latency_ms = round((time.perf_counter() - started) * 1000, 2)
@@ -485,20 +485,27 @@ class Optimizer:
                 current_coordinate = stop.coordinate
             segments.append(await session.route(current_coordinate, destination, current_departure))
         except RoutingBudgetExceeded:
+            session.note_unrouted(option)
             return None
         except ProviderNoRouteError:
             session.no_route_candidate_count += 1
+            session.note_unrouted(option)
             return None
         except ProviderError:
             # One failed check must not sink the plan: skip this place and let
             # the others stand. Only the direct trip is vital.
             session.provider_error_candidate_count += 1
+            session.note_unrouted(option)
             return None
 
-        open_on_arrival = _open_on_arrival(option, stop_order, estimated_arrivals, stop_dwells)
-        if open_on_arrival is None:
+        open_on_arrival, closed_errand = _open_on_arrival(option, stop_order, estimated_arrivals, stop_dwells)
+        if closed_errand is not None:
             session.closed_candidate_count += 1
+            if option.match_classification == "best_match":
+                session.closed_full_errands.add(closed_errand)
             return None
+        if option.match_classification == "best_match":
+            session.full_priced = True
 
         total = combine_routes(segments, dwell_minutes=dwell_total, time_dependent=session.time_aware)
         detour = round(max(0.0, total.duration_minutes - baseline.duration_minutes), 2)
@@ -589,6 +596,7 @@ class Optimizer:
         self,
         evaluated: list[ScoredCandidate],
         prefs: OptimizationPreferences,
+        closed_errands: frozenset[str] = frozenset(),
     ) -> tuple[dict[str, ScoredCandidate], str]:
         """The offered options: the best full matches, then fallbacks that earn
         a place, each with its sentence. Also the outcome of the search."""
@@ -622,7 +630,7 @@ class Optimizer:
             key: replace(
                 item,
                 why_this_wins=(
-                    explain_best(item, primary_pool, prefs)
+                    explain_best(item, primary_pool, prefs, closed_errands)
                     if key == "best_overall"
                     else explain_alternative(key, item, best, prefs)
                 ),
@@ -725,6 +733,23 @@ class _RoutingSession:
         self.provider_error_candidate_count = 0
         self.closed_candidate_count = 0
         self.excessive_detour_candidate_count = 0
+        # Errands that shut every full match that was otherwise routable, so a
+        # fallback can say why it is a fallback.
+        self.closed_full_errands: set[str] = set()
+        self.full_priced = False
+        self.full_unrouted = False
+
+    def note_unrouted(self, option: CandidateOption) -> None:
+        if option.match_classification == "best_match":
+            self.full_unrouted = True
+
+    def closed_errands(self) -> frozenset[str]:
+        """Errands closed at every full match, when closure is the only reason
+        none survived. Empty when a full match was priced or failed to route:
+        then "nothing is open" would be a guess."""
+        if self.full_priced or self.full_unrouted:
+            return frozenset()
+        return frozenset(self.closed_full_errands)
 
     async def route(self, start: Coordinate, end: Coordinate, effective_departure: datetime) -> RouteResult:
         optimizer = self.optimizer
@@ -774,9 +799,9 @@ def _open_on_arrival(
     stop_order: tuple[Hub, ...],
     arrivals: list[datetime],
     dwells: list[float],
-) -> list[bool] | None:
-    """Per stop, whether a matching shop is listed as open when you get there;
-    None when every matching shop for some errand is listed as shut, since a
+) -> tuple[list[bool], str | None]:
+    """Per stop, whether a matching shop is listed as open when you get there,
+    and the first errand for which every matching shop is listed as shut - a
     closed place is not an answer however close it is."""
     open_flags: list[bool] = []
     for index, stop in enumerate(stop_order):
@@ -788,10 +813,10 @@ def _open_on_arrival(
                 if category in store.all_categories
             ]
             if statuses and all(status == "closed" for status in statuses):
-                return None
+                return open_flags, category
             stop_open = stop_open or "open" in statuses
         open_flags.append(stop_open)
-    return open_flags
+    return open_flags, None
 
 
 def _limits_exceeded(

@@ -13,7 +13,9 @@ The catalogue is built once per session into a temporary file (~15 s).
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
@@ -25,6 +27,17 @@ from app.ops import OpsSettings
 from app.poi_ingestion import ingest_payload, load_payload
 
 CAPTURE = Path(__file__).resolve().parents[1] / "data" / "singapore-osm-pois.json"
+SINGAPORE = ZoneInfo("Asia/Singapore")
+
+
+def next_weekday_at(hour: int) -> str:
+    """A departure on the next weekday at `hour`, Singapore time. Planning for
+    "now" made these tests depend on the clock: before about 9:30 every
+    pharmacy is shut and the Punggol journey is a different answer."""
+    day = datetime.now(SINGAPORE).date() + timedelta(days=1)
+    while day.weekday() >= 5:
+        day += timedelta(days=1)
+    return datetime(day.year, day.month, day.day, hour, tzinfo=SINGAPORE).isoformat()
 
 
 @pytest.fixture(scope="module")
@@ -47,7 +60,7 @@ def client(tmp_path_factory: pytest.TempPathFactory):
         yield test_client
 
 
-def plan(client: TestClient, origin: str, destination: str, text: str) -> dict:
+def plan(client: TestClient, origin: str, destination: str, text: str, hour: int = 10) -> dict:
     parsed = client.post("/api/intent/parse", json={"text": text})
     assert parsed.status_code == 200, parsed.text
     preview = parsed.json()
@@ -58,6 +71,7 @@ def plan(client: TestClient, origin: str, destination: str, text: str) -> dict:
             "origin": {"query": origin},
             "destination": {"query": destination},
             "intent": preview["intent"],
+            "departure": next_weekday_at(hour),
         },
     )
     assert response.status_code == 200, response.text
@@ -153,3 +167,14 @@ def test_detour_limit_is_a_limit_on_travel(client):
     best = offered(body)["best_overall"]
     assert best["match_classification"] != "exceeds_limit"
     assert best["incremental_travel_minutes"] <= 5
+
+
+def test_a_closed_errand_is_named_not_claimed_as_covered(client):
+    # At 8:00 no pharmacy on the way has opened, so the plan covers groceries
+    # only. It used to say "covers everything you asked for".
+    body = plan(client, "Punggol MRT", "Orchard MRT", "need to grab panadol and some groceries, prefer FairPrice", hour=8)
+    best = offered(body)["best_overall"]
+    assert best["match_classification"] == "partial_option"
+    assert best["omitted_categories"] == ["pharmacy"]
+    assert best["why_this_wins"].startswith("No pharmacy on the way is open when you'd get there")
+    assert "everything" not in best["why_this_wins"]
