@@ -22,7 +22,7 @@ test("the planner opens with no console errors", async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Browse categories" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "More categories" })).toBeVisible();
   await page.waitForTimeout(1500);
   expect(errors).toEqual([]);
 });

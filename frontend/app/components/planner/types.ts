@@ -55,8 +55,6 @@ export type Notice =
   | { kind: "partial"; intent: Intent; text: string; missing: string[] }
   | { kind: "error"; text: string };
 
-export type TripStyle = "balanced" | "faster" | "walking";
-
 export function categoryName(categories: CatalogCategory[], slug: string) {
   return categories.find((item) => item.slug === slug)?.name ?? slug.replaceAll("_", " ");
 }

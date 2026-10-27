@@ -1,7 +1,6 @@
 import type { ResolvedLocation } from "./components/LocationField";
-import type { TripStyle } from "./components/planner/types";
 
-/* A plan as a link: where from, where to, what for, and how to weigh it.
+/* A plan as a link: where from, where to and what for.
  *
  * Coordinates, not place names, are what the planner sends, so they are what
  * the link carries; the names ride along so the fields read the same when the
@@ -12,10 +11,7 @@ export type SharedTrip = {
   origin: ResolvedLocation;
   destination: ResolvedLocation;
   need: string;
-  style: TripStyle;
 };
-
-const STYLES: TripStyle[] = ["balanced", "faster", "walking"];
 
 function point(location: ResolvedLocation) {
   const { latitude, longitude } = location.coordinate;
@@ -30,7 +26,6 @@ export function tripQuery(trip: SharedTrip): string {
     toName: trip.destination.label,
     need: trip.need,
   });
-  if (trip.style !== "balanced") params.set("style", trip.style);
   return `?${params.toString()}`;
 }
 
@@ -54,11 +49,5 @@ export function readTrip(search: string): SharedTrip | null {
   const destination = location(params.get("to"), params.get("toName"));
   const need = (params.get("need") ?? "").trim().slice(0, 300);
   if (!origin || !destination || !need) return null;
-  const style = params.get("style") as TripStyle | null;
-  return {
-    origin,
-    destination,
-    need,
-    style: style && STYLES.includes(style) ? style : "balanced",
-  };
+  return { origin, destination, need };
 }

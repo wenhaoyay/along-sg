@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ArrowDownUp, ChevronRight, Info, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowDownUp, Info, Play, Search } from "lucide-react";
 
 import {
   CatalogCategory,
@@ -25,14 +25,13 @@ import { laterMinutes, signed, travelMinutes } from "./components/journey/figure
 import { clockTime } from "./components/journey/format";
 import { readTrip, tripQuery } from "./share";
 import { NoticeLane } from "./components/planner/NoticeLane";
-import { TripOptions } from "./components/planner/TripOptions";
+import { DepartureTime, DepartureToggle } from "./components/planner/Departure";
 import {
   categoryName,
   intentLabel,
   type Conflict,
   type Intent,
   type Notice,
-  type TripStyle,
 } from "./components/planner/types";
 
 /* How long an example waits for the live answer before showing the saved run
@@ -42,17 +41,10 @@ const SAVED_EXAMPLE_AFTER_MS = 2500;
 type SavedRun = { generatedAt: string; liveFailed: boolean };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-/* The planner's preference and the result's sort are one idea, so they share
- * one vocabulary, and the result opens sorted the way the search was asked. */
 /* One empty list for the map's props. A fresh `[]` per render is a new
  * dependency every keystroke, and the map rebuilt and refitted its layers on
  * each one. */
 const NONE: never[] = [];
-const STYLE_RANK: Record<"balanced" | "faster" | "walking", RankKey> = {
-  balanced: "recommended",
-  faster: "time",
-  walking: "walking",
-};
 const QUICK_NEEDS = [
   ["fast_food", "Food"],
   ["coffee", "Coffee"],
@@ -84,7 +76,6 @@ export default function Home() {
   const searchRef = useRef<AbortController | null>(null);
   const [loadingSlow, setLoadingSlow] = useState(false);
   const [searchStage, setSearchStage] = useState<"discovery" | "routing">("discovery");
-  const [tripStyle, setTripStyle] = useState<TripStyle>("balanced");
   // At most one message before a plan: a question, a journey conflict, a
   // partly understood request or an error (see Notice).
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -139,7 +130,6 @@ export default function Home() {
     setOrigin(shared.origin);
     setDestination(shared.destination);
     setNeed(shared.need);
-    setTripStyle(shared.style);
     pendingExample.current = true;
   }, []);
   // Back from a result returns to the form; Forward brings the result back.
@@ -213,7 +203,6 @@ export default function Home() {
     setSelections([]);
     setNotice(null);
     setPreviewExample(null);
-    setTripStyle("balanced");
     exampleRef.current = example.id;
     pendingExample.current = true;
   }
@@ -296,14 +285,6 @@ export default function Home() {
   async function optimize(interpreted: Intent, signal: AbortSignal) {
     if (!origin || !destination) throw new Error("Choose both From and To before searching.");
     setSearchStage("routing");
-    interpreted = {
-      ...interpreted,
-      preferences: {
-        ...interpreted.preferences,
-        ...(tripStyle === "walking" ? { walking_tolerance: "minimal" } : {}),
-        ...(tripStyle === "faster" ? { urgency: "urgent" } : {}),
-      },
-    };
     const confirmedDiscoveryPlaces = selections.flatMap(({ category, item }) =>
       item?.coordinate
         ? [
@@ -334,18 +315,18 @@ export default function Home() {
     setIntent(interpreted);
     setResult(body as Result);
     setSavedRun(null);
-    const rank = STYLE_RANK[tripStyle];
-    setRankBy(rank);
-    const ranked =
-      rank === "recommended" ? [] : rankRoutedOptions((body as Result).recommendations ?? {}, rank);
-    setSelectedKey(ranked[0]?.[0] ?? "best_overall");
+    // "Faster" and "Less walking" are the result's sort, not a second set of
+    // weights on the form: the text already says "in a rush" or "minimal
+    // walking", and the same words meant two different things.
+    setRankBy("recommended");
+    setSelectedKey("best_overall");
     setSheet("half");
     setNotice(null);
     setActiveStop(null);
     // The plan becomes a link: shareable, and Back returns to the form. A
     // structured (browsed) selection has no text to put in a link.
     if (need.trim() && !selections.length) {
-      const query = tripQuery({ origin, destination, need: need.trim(), style: tripStyle });
+      const query = tripQuery({ origin, destination, need: need.trim() });
       visited.current.set(query, body as Result);
       if (window.location.search !== query)
         window.history.pushState(null, "", `${window.location.pathname}${query}`);
@@ -540,7 +521,7 @@ export default function Home() {
   // A browsed selection has no text to put in a link, so it is not shareable.
   const shareQuery =
     result && origin && destination && need.trim() && !selections.length
-      ? tripQuery({ origin, destination, need: need.trim(), style: tripStyle })
+      ? tripQuery({ origin, destination, need: need.trim() })
       : null;
 
   return (
@@ -615,22 +596,118 @@ export default function Home() {
         )}
         {!result && (
           <form onSubmit={submit} ref={formRef}>
-            {/* One sentence that says what the app does, instead of three
-                taglines that said it was useful. */}
-            <div className="planner-intro">
-              <h1>
-                Errands on the way, <br />
-                <em>not out of the way.</em>
-              </h1>
-              <p>
-                Say what you need. Along compares real stops along a trip you are already making by
-                MRT or bus, and shows what each one adds.
-              </p>
-            </div>
-            {!origin && !destination && (
-              <div className="examples" aria-labelledby="examples-title">
-                <span id="examples-title">Try one</span>
-                <div onMouseLeave={() => setPreviewExample(null)}>
+            <fieldset className="planner-controls" disabled={loading}>
+              {/* The question is the page's heading: it says what the app does,
+                  so the tagline and the paragraph under it could go, and the
+                  field it names is the first thing on the screen. */}
+              <div className="need-control">
+                <h1>
+                  <label htmlFor="need">What do you need on the way?</label>
+                </h1>
+                <div className="need-input-wrap">
+                  <Search size={19} aria-hidden="true" />
+                  <textarea
+                    id="need"
+                    ref={needRef}
+                    value={need}
+                    onKeyDown={submitOnEnter}
+                    onChange={(event) => {
+                      setNeed(event.target.value);
+                      setNotice((current) => (current?.kind === "partial" ? null : current));
+                      setIntent(null);
+                      setSelections([]);
+                    }}
+                    placeholder="Mee pok, Molly Tea or printer ink"
+                    rows={1}
+                    maxLength={300}
+                  />
+                </div>
+              </div>
+
+              <div ref={discoveryRef}>
+                {discoveryOpen && (
+                  <DiscoveryPalette
+                    apiBase={API_BASE}
+                    categories={categories}
+                    selections={selections}
+                    onClose={() => setDiscoveryOpen(false)}
+                    onChange={(items) => {
+                      setSelections(items);
+                      setNeed("");
+                      setIntent(null);
+                    }}
+                  />
+                )}
+              </div>
+              {!discoveryOpen && !intent && !selections.length && (
+                <div className="quick-needs">
+                  <div role="group" aria-label="Popular needs">
+                    {QUICK_NEEDS.map(([slug, label]) => (
+                      <button type="button" key={slug} onClick={() => selectQuickNeed(slug, label)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="more-needs"
+                    aria-label="More categories"
+                    aria-expanded="false"
+                    data-discovery-trigger
+                    onClick={() => setDiscoveryOpen(true)}
+                  >
+                    More
+                  </button>
+                </div>
+              )}
+              {(intent || selections.length > 0) && !discoveryOpen && (
+                <div className="intent-preview">
+                  <div>
+                    {intent
+                      ? [...intent.required_errands, ...intent.optional_errands].map((item) => (
+                          <span
+                            className="intent-token"
+                            key={`${item.category}-${item.exact_brand ?? item.preferred_brand ?? "any"}`}
+                          >
+                            {intentLabel(categories, item)}
+                          </span>
+                        ))
+                      : selections.map((item) => (
+                          <span className="intent-token" key={item.category}>
+                            {item.item?.display_name ?? categoryName(categories, item.category)}
+                            {item.mode !== "any" ? ` · ${item.mode}` : ""}
+                          </span>
+                        ))}
+                  </div>
+                  {/* A browsed selection is edited where it was made; a parsed
+                      request by editing its text. */}
+                  <button
+                    type="button"
+                    data-discovery-trigger={selections.length > 0 || undefined}
+                    onClick={() => {
+                      if (selections.length) {
+                        setDiscoveryOpen(true);
+                        return;
+                      }
+                      setIntent(null);
+                      needRef.current?.focus();
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
+
+              {/* One tap to a real plan, while no journey is entered. Under
+                  the field, where they read as suggestions for it, rather
+                  than under a "Try one" heading of their own. */}
+              {!origin && !destination && !discoveryOpen && (
+                <div
+                  className="examples"
+                  role="group"
+                  aria-label="Examples"
+                  onMouseLeave={() => setPreviewExample(null)}
+                >
                   {EXAMPLES.map((example) => (
                     <button
                       type="button"
@@ -640,6 +717,7 @@ export default function Home() {
                       onFocus={() => setPreviewExample(example)}
                       onBlur={() => setPreviewExample(null)}
                     >
+                      <Play size={12} aria-hidden="true" />
                       <strong>
                         {placeName(example.origin)} <ArrowRight size={12} aria-hidden="true" />{" "}
                         {placeName(example.destination)}
@@ -648,9 +726,8 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-            <fieldset className="planner-controls" disabled={loading}>
+              )}
+
               <div className="journey-fields">
                 <LocationField
                   label="From"
@@ -662,6 +739,14 @@ export default function Home() {
                     setResult(null);
                   }}
                   allowCurrentLocation
+                  aside={
+                    <DepartureToggle
+                      mode={leaveMode}
+                      onMode={setLeaveMode}
+                      at={leaveAt}
+                      onAt={setLeaveAt}
+                    />
+                  }
                 />
                 <div className="journey-line" aria-hidden="true" />
                 <button
@@ -690,76 +775,7 @@ export default function Home() {
                   }}
                 />
               </div>
-
-              <label className="need-control">
-                <span>What do you need on the way?</span>
-                <div className="need-input-wrap">
-                  <Search size={19} aria-hidden="true" />
-                  <textarea
-                    ref={needRef}
-                    value={need}
-                    onKeyDown={submitOnEnter}
-                    onChange={(event) => {
-                      setNeed(event.target.value);
-                      setNotice((current) => (current?.kind === "partial" ? null : current));
-                      setIntent(null);
-                      setSelections([]);
-                    }}
-                    placeholder="Mee pok, Molly Tea or printer ink"
-                    rows={1}
-                    maxLength={300}
-                  />
-                </div>
-              </label>
-              {!intent && !selections.length && (
-                <div className="quick-needs" aria-label="Popular needs">
-                  {QUICK_NEEDS.map(([slug, label]) => (
-                    <button type="button" key={slug} onClick={() => selectQuickNeed(slug, label)}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <TripOptions
-                style={tripStyle}
-                onStyle={setTripStyle}
-                leaveMode={leaveMode}
-                onLeaveMode={setLeaveMode}
-                leaveAt={leaveAt}
-                onLeaveAt={setLeaveAt}
-              />
-
-              {(intent || selections.length > 0) && (
-                <div className="intent-preview">
-                  <span>Looking for</span>
-                  <div>
-                    {intent
-                      ? [...intent.required_errands, ...intent.optional_errands].map((item) => (
-                          <span
-                            className="intent-token"
-                            key={`${item.category}-${item.exact_brand ?? item.preferred_brand ?? "any"}`}
-                          >
-                            {intentLabel(categories, item)}
-                          </span>
-                        ))
-                      : selections.map((item) => (
-                          <span className="intent-token" key={item.category}>
-                            {item.item?.display_name ?? categoryName(categories, item.category)}
-                            {item.mode !== "any" ? ` · ${item.mode}` : ""}
-                          </span>
-                        ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIntent(null);
-                      setSelections([]);
-                    }}
-                  >
-                    Edit
-                  </button>
-                </div>
-              )}
+              {leaveMode === "later" && <DepartureTime at={leaveAt} onAt={setLeaveAt} />}
 
               <NoticeLane
                 ref={noticeRef}
@@ -773,24 +789,10 @@ export default function Home() {
                 onContinuePartial={continuePartial}
                 onEditRequest={() => needRef.current?.focus()}
               />
-
-              <div ref={discoveryRef}>
-                {discoveryOpen && (
-                  <DiscoveryPalette
-                    apiBase={API_BASE}
-                    categories={categories}
-                    selections={selections}
-                    onClose={() => setDiscoveryOpen(false)}
-                    onChange={(items) => {
-                      setSelections(items);
-                      setNeed("");
-                      setIntent(null);
-                    }}
-                  />
-                )}
-              </div>
             </fieldset>
 
+            {/* The button says which stage a search is at, and when it is slow;
+                the numbered steps under it said the same thing again. */}
             <button
               className="find-button"
               type="submit"
@@ -798,9 +800,11 @@ export default function Home() {
             >
               <span>
                 {loading
-                  ? searchStage === "routing"
-                    ? "Comparing journeys…"
-                    : "Finding suitable stops…"
+                  ? loadingSlow
+                    ? "Still comparing…"
+                    : searchStage === "routing"
+                      ? "Comparing journeys…"
+                      : "Finding suitable stops…"
                   : error
                     ? "Retry search"
                     : "Find best stop"}
@@ -826,34 +830,9 @@ export default function Home() {
               </button>
             )}
             {cancelled && (
-              <p role="status" className="precision-note">
-                Search cancelled. Your journey is kept; edit it or search again. A server check
-                already in progress may still finish.
+              <p role="status" className="sr-only">
+                Search cancelled.
               </p>
-            )}
-            {loading && (
-              <div className="search-progress" role="status">
-                <span className={searchStage === "discovery" ? "active" : "complete"}>
-                  1 · Find places
-                </span>
-                <span className={searchStage === "routing" ? "active" : ""}>
-                  2 · Compare journeys
-                </span>
-                {loadingSlow && (
-                  <small>This is taking a little longer. We’re still checking your options.</small>
-                )}
-              </div>
-            )}
-            {!discoveryOpen && (
-              <button
-                className="catalog-toggle"
-                type="button"
-                aria-expanded="false"
-                onClick={() => setDiscoveryOpen(true)}
-              >
-                <span>Browse categories</span>
-                <ChevronRight size={17} aria-hidden="true" />
-              </button>
             )}
           </form>
         )}

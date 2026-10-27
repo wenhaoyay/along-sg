@@ -25,7 +25,7 @@ test("offline, each page opens as itself from a cache named for this build", asy
   await page.goto("/privacy/");
   await expect(page.getByRole("heading", { name: "Privacy and data sources" })).toBeVisible();
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Browse categories" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "More categories" })).toBeVisible();
 
   const caches = await page.evaluate(() => window.caches.keys());
   expect(caches.sort()).toEqual([`assets-${build}`, `shell-${build}`]);
@@ -34,6 +34,8 @@ test("offline, each page opens as itself from a cache named for this build", asy
   await page.goto("/privacy/");
   await expect(page.getByRole("heading", { name: "Privacy and data sources" })).toBeVisible();
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Errands on the way");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "What do you need on the way?",
+  );
   await context.setOffline(false);
 });

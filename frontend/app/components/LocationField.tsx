@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { KeyboardEvent, ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Check, LocateFixed, LoaderCircle, MapPin } from "lucide-react";
 
 export type Coordinate = { latitude: number; longitude: number };
@@ -22,6 +22,8 @@ type Props = {
   value: ResolvedLocation | null;
   onChange: (value: ResolvedLocation | null) => void;
   allowCurrentLocation?: boolean;
+  /** Beside the label, at the right: the departure control sits here. */
+  aside?: ReactNode;
 };
 
 export function LocationField({
@@ -31,6 +33,7 @@ export function LocationField({
   value,
   onChange,
   allowCurrentLocation,
+  aside,
 }: Props) {
   const id = useId();
   const [query, setQuery] = useState(value?.label ?? "");
@@ -167,12 +170,7 @@ export function LocationField({
     <div className={`location-control state-${status}`}>
       <div className="field-heading">
         <label htmlFor={id}>{label}</label>
-        {allowCurrentLocation && (
-          <button type="button" className="use-current" onClick={locate} disabled={locating}>
-            <LocateFixed size={14} aria-hidden="true" />
-            {locating ? "Locating" : "Current"}
-          </button>
-        )}
+        {aside}
       </div>
       <div className="location-input-wrap">
         <span
@@ -205,19 +203,25 @@ export function LocationField({
             <Check size={16} />
           </span>
         )}
-      </div>
-      {status === "resolved" && value && (
-        <p className="resolved-detail">
-          {value.subtitle ??
-            (value.address && value.address !== value.label
-              ? value.address
-              : humanEntity(value.entity_type))}
-        </p>
-      )}
-      {status === "suggestions" &&
-        (results.length > 1 || results.some((item) => item.confidence === "ambiguous")) && (
-          <p className="ambiguous-prompt">Pick the one you mean</p>
+        {/* An icon in the field, not a "Current" word beside its label. The
+          name says what it does; the title says it to a pointer. */}
+        {allowCurrentLocation && status !== "resolved" && status !== "searching" && (
+          <button
+            type="button"
+            className="use-current"
+            onClick={locate}
+            disabled={locating}
+            aria-label="Use my location"
+            title="Use my location"
+          >
+            {locating ? (
+              <LoaderCircle className="spinning" size={17} aria-hidden="true" />
+            ) : (
+              <LocateFixed size={17} aria-hidden="true" />
+            )}
+          </button>
         )}
+      </div>
       {/* The options are the listbox's own rows, driven from the input: a
         button inside each was a Tab stop of its own and read as "option,
         button". Pressing keeps focus in the input, so blur can close it. */}

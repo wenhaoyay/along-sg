@@ -36,7 +36,7 @@ test("the input screen has no serious accessibility violations", async ({ page }
 test("the category browser has no serious accessibility violations", async ({ page }) => {
   await commonRoutes(page);
   await openPlanner(page);
-  await page.getByRole("button", { name: "Browse categories" }).click();
+  await page.getByRole("button", { name: "More categories" }).click();
   await page.getByRole("button", { name: "Fast food" }).click();
   await page.getByRole("combobox", { name: "Search brands, shops or categories" }).fill("kfc");
   await expect(page.getByRole("listbox")).toBeVisible();
@@ -58,7 +58,7 @@ test("the privacy page has no serious accessibility violations", async ({ page }
 test("the category search is a combobox that says when its list is open", async ({ page }) => {
   await commonRoutes(page);
   await openPlanner(page);
-  await page.getByRole("button", { name: "Browse categories" }).click();
+  await page.getByRole("button", { name: "More categories" }).click();
   const search = page.getByRole("combobox", { name: "Search brands, shops or categories" });
   await expect(search).toHaveAttribute("aria-expanded", "false");
   await expect(search).not.toHaveAttribute("aria-controls", /.+/);
@@ -75,7 +75,7 @@ test("the category search is a combobox that says when its list is open", async 
 test("preference strength states which is chosen, not only by colour", async ({ page }) => {
   await commonRoutes(page);
   await openPlanner(page);
-  await page.getByRole("button", { name: "Browse categories" }).click();
+  await page.getByRole("button", { name: "More categories" }).click();
   await page.getByLabel("Search brands, shops or categories").fill("kfc");
   await page.getByRole("option", { name: /KFC/ }).click();
   const strength = page.getByRole("group", { name: "Preference strength" });
@@ -99,9 +99,9 @@ test("preference strength states which is chosen, not only by colour", async ({ 
 test("closing the category browser with Escape returns focus to its button", async ({ page }) => {
   await commonRoutes(page);
   await openPlanner(page);
-  await page.getByRole("button", { name: "Browse categories" }).click();
+  await page.getByRole("button", { name: "More categories" }).click();
   await page.getByLabel("Search brands, shops or categories").press("Escape");
-  await expect(page.getByRole("button", { name: "Browse categories" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "More categories" })).toBeFocused();
 });
 
 test("map markers are named for what they are, and only the plan is a tab stop", async ({

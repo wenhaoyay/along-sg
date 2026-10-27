@@ -139,7 +139,7 @@ test("capture the UI review states", async ({ page }, testInfo) => {
   await shoot(page, output, "G-destination-conflict");
 
   await openPlanner(page);
-  await page.getByRole("button", { name: "Browse categories" }).click();
+  await page.getByRole("button", { name: "More categories" }).click();
   await page.getByLabel("Search brands, shops or categories").fill("kfc");
   await expect(page.getByRole("listbox")).toBeVisible();
   await shoot(page, output, "H-category-browser");

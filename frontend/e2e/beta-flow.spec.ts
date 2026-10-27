@@ -366,7 +366,7 @@ test("failed discovery offers explicit related searches without claiming stock",
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "Browse categories" }).click();
+  await page.getByRole("button", { name: "More categories" }).click();
   await page.getByLabel("Search brands, shops or categories").fill("printer ink");
   await expect(page.getByText(/check cartridge compatibility/)).toBeVisible();
   await page.getByRole("button", { name: "Search printer supplies" }).click();
@@ -398,7 +398,9 @@ test("failed comparison can be retried without reentering the journey", async ({
   expect(calls).toBe(2);
 });
 
-test("journey swap and walking preference reach the optimizer", async ({ page }) => {
+test("a journey swap reaches the optimizer, and the form adds no weighting of its own", async ({
+  page,
+}) => {
   await commonRoutes(page);
   await page.route("**/api/intent/parse", (route) =>
     route.fulfill({
@@ -425,16 +427,16 @@ test("journey swap and walking preference reach the optimizer", async ({ page })
   await resolveJourney(page);
   await page.getByRole("button", { name: "Reverse journey" }).click();
   await expect(page.getByLabel("From", { exact: true })).toHaveValue("Fajar LRT Station");
-  await page.getByRole("button", { name: "Less walking", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Less walking", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  // "Faster" and "Less walking" are the result's sort now; the request's own
+  // preferences go through untouched.
+  await expect(page.getByRole("button", { name: "Less walking", exact: true })).toHaveCount(0);
   await page.getByLabel("What do you need on the way?").fill("KFC");
   await page.getByRole("button", { name: "Find best stop" }).click();
   await expect(page.getByRole("heading", { name: "Lot One" })).toBeVisible();
   expect(submitted?.origin.coordinate.latitude).toBe(fajar.coordinate.latitude);
-  expect(submitted?.intent.preferences.walking_tolerance).toBe("minimal");
+  expect(submitted?.intent.preferences.walking_tolerance).toBe(
+    intent.preferences.walking_tolerance,
+  );
 });
 
 test("resolved journey produces a hub-first map recommendation", async ({ page }) => {
@@ -614,7 +616,7 @@ test("non-errands are explained and the structured catalog is live", async ({ pa
   await page.getByLabel("What do you need on the way?").fill("I like cats");
   await page.getByRole("button", { name: /Find best stop/ }).click();
   await expect(page.getByText(/couldn't find an errand/)).toBeVisible();
-  await page.getByRole("button", { name: /Browse categories/ }).click();
+  await page.getByRole("button", { name: /More categories/ }).click();
   await page.getByLabel("Search brands, shops or categories").fill("Japanese");
   await expect(page.getByText("Sakura Independent Kitchen")).toBeVisible();
   await page.getByRole("listbox").getByRole("option").click();
@@ -658,7 +660,7 @@ test("discovery shows a dish concept and evidenced place", async ({ page }) => {
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: /Browse categories/ }).click();
+  await page.getByRole("button", { name: /More categories/ }).click();
   await page.getByLabel("Search brands, shops or categories").fill("mee pok");
   await expect(page.getByText("Dish · 1 matching place")).toBeVisible();
   await expect(page.getByText("Ah Hoe Mee Pok")).toBeVisible();
@@ -748,7 +750,7 @@ test("product discovery labels category matches without claiming stock", async (
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: /Browse categories/ }).click();
+  await page.getByRole("button", { name: /More categories/ }).click();
   await page.getByLabel("Search brands, shops or categories").fill("Panadol");
   await expect(page.getByText("Stock not guaranteed")).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/in stock|available now/i);

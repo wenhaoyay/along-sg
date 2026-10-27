@@ -190,7 +190,7 @@ export function DiscoveryPalette({
   function close() {
     onClose();
     window.requestAnimationFrame(() =>
-      document.querySelector<HTMLElement>("[data-discovery-trigger], .catalog-toggle")?.focus(),
+      document.querySelector<HTMLElement>("[data-discovery-trigger]")?.focus(),
     );
   }
 
