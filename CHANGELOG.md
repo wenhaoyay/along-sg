@@ -2,6 +2,72 @@
 
 This file keeps the development milestones out of the main README while preserving the project's progression.
 
+## 0.12.0 - Fewer words, same facts
+
+Every tagline, helper line and secondary label was cut, under one rule: a
+line on screen is a fact about this trip, an action or a warning. Where a
+screen needed a line to make sense, the layout changed instead. On the same
+stubbed journey the input screen went from 68 words to 9, and a result from
+187 to 130, counting what is not a button, link or field.
+
+**A false sentence, fixed first**
+
+- **A fallback says why it is one.** Before about 9:30 every pharmacy between
+  Punggol and Orchard is shut, so the headline example falls back to
+  groceries, and its sentence read "covers everything you asked for" beside
+  "skips pharmacy". It now reads "No pharmacy on the way is open when you'd
+  get there, so this covers the supermarket only". It names a closure only
+  when every full match was dropped for it. A substitute gets its own
+  sentence, and a lone pick without the preferred brand names the brand.
+- **The real-catalogue tests run at a fixed hour** (10:00 on the next
+  weekday), plus one at 8:00 for the case above. They used to plan for "now",
+  so their answers changed with the hour of the run.
+
+**The input screen**
+
+- "What do you need on the way?" is the page's heading and first field. The
+  tagline and the paragraph under it are gone, and the whole form fits the
+  first screen at 1280×800 and on a phone.
+- The examples sit under the field with a play mark, without the "Try one"
+  heading. "Browse categories" is a "More" chip pinned to the end of the
+  quick choices.
+- The form's "Best overall / Faster / Less walking" control is gone. The
+  result's sort has the same words, the request text sets the weights ("in a
+  rush", "minimal walking"), and the same words meant two things in two
+  places. Share links no longer carry `style`.
+- Leave now / later is two small buttons beside the From label, and the
+  time field appears only for "Later". "Current" is a locate icon in the
+  field.
+
+**The result**
+
+- The label is a plain tag; the "Why?" behind it, the yellow outcome
+  notice and the "How the N minutes add up" box are gone. Each repeated
+  something already on screen.
+- The diagram labels itself: rides carry line codes, stops a bag. The key,
+  the colliding time axis and the note under it are gone. The map labels
+  "Direct" on the line itself, instead of in a key.
+- "Leave" and "Arrive" under A and B, and "Listed open · hours can change"
+  beside a green dot, are gone; hours warnings stay.
+
+**Elsewhere**
+
+- Browse: back, search and the "1/2" count are one row. The title, the
+  instructions, "Popular" and the ink caveat are gone.
+- Messages lose their titles ("A quick check", "That didn't work").
+- The header's theme and privacy controls are icons at every width.
+
+**Keeping it so**
+
+- `e2e/copy-budget.spec.ts` counts the visible words outside controls on
+  the input screen and a result. It fails past a budget, or if the form no
+  longer fits the first screen.
+- `frontend/CLAUDE.md` states the rule for anyone, person or agent, adding
+  to the UI.
+- README pictures retaken. `scripts/capture-readme.mjs` now leaves at 10:00
+  on the next weekday through the page's own control, so a capture matches
+  the README at any hour.
+
 ## 0.11.0 - Every claim checkable
 
 A devil's-advocate review tried the demo the way a reviewer would. In the

@@ -78,14 +78,15 @@ lists under the Navigate button.
 - A scatter of added time against walking. It's good for an analyst, but it's unreadable at
   phone width.
 - Each option drawn as its own journey on a shared time axis. This is the one I chose. Rides
-  are in their MRT line's colour, and the time in shops is hatched. The direct trip is the
-  first row, with a dashed "direct arrives" line through every row.
+  are in their MRT line's colour, and the time in shops is its own block. The direct trip is
+  the first row, with a dashed "direct arrives" line through every row.
 
 The third answers the questions the other two can't. Why is +2 min of travel +32 min late?
-The hatched block shows the shopping time. Why is a +18 option not the pick? Its row says
+The block at the stop shows the shopping time. Why is a +18 option not the pick? Its row says
 "one errand only". Where is the shopping? At the start, beside the station, because the
-hatching sits before the purple North East Line ride. It reuses the colour system every
-Singaporean already reads, and it needs no legend beyond five swatches.
+stop block sits before the purple North East Line ride. It reuses the colour system every
+Singaporean already reads. It first shipped with a five-item key and a time axis; both went
+in the pass described below, once rides carried their line codes and stops a bag.
 
 **Every number checks against its neighbours.** The old timeline printed the departure, one
 stop's arrival and the final arrival, and left the rest of the hour unexplained. The new one
@@ -145,6 +146,35 @@ every mall has everything. So the fixes came with tests that run where the bugs 
 - **A parser evaluation that includes what people type.** 32 held-out phrasings, written
   before any tuning, cover negation, typos, Singlish, Chinese and clock times. They went from
   2 of 32 to 31 of 32.
+
+## Cutting the words
+
+A later pass cut every tagline, helper line and secondary label, under one rule: a line on
+screen is a fact about this trip, an action or a warning. Where a screen needed a line to
+make sense, the layout changed instead.
+
+- **The question became the heading.** At 1280×800 the tagline and the paragraph under it
+  pushed the need field under the sticky Find button. "What do you need on the way?" is now
+  the page's heading and its first field, and the whole form fits one screen.
+- **The diagram labels itself.** Rides carry their line codes and stops a bag, so the
+  five-item key and the time axis went. The axis labels had been colliding anyway.
+- **One explanation, from the server.** Before about 9:30 every pharmacy between Punggol and
+  Orchard is shut, so the headline example falls back to groceries. The result then said so
+  four ways, and one was false: "covers everything you asked for", beside "skips pharmacy".
+  Now one sentence gives the reason: "No pharmacy on the way is open when you'd get there,
+  so this covers the supermarket only."
+- **One vocabulary.** "Faster" and "Less walking" meant "re-weight the search" on the form and
+  "re-sort" on the result. The form's control went; the request's own words ("in a rush",
+  "minimal walking") and the result's sort cover both.
+
+| Screen, same stubbed journey | Words before | Words after |
+| --- | --- | --- |
+| Input, desktop | 68 | 9 |
+| Input, phone | 34 | 9 |
+| Result | 187 | 130 |
+
+These are the words outside buttons, links and fields. `e2e/copy-budget.spec.ts` counts them,
+and fails if a screen grows past its budget or the form no longer fits the first screen.
 
 ## How it's verified
 

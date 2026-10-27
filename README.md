@@ -68,8 +68,9 @@ trade-offs: [`docs/case-study.md`](docs/case-study.md).
 
 The comparison is the product, so it's drawn rather than described:
 
-- **One bar per option, on one time axis.** Each ride is in its line's colour, with walks and
-  waits between, and the time in shops hatched.
+- **One bar per option, on one time axis.** Each ride is in its line's colour and carries its
+  line code, with walks and waits between, and the time in shops is an outlined block with a
+  bag in it. The bars label themselves, so the diagram has no key.
 - **The direct trip is the top bar.** A dashed line marks where it arrives on every row, so how
   far an option runs past that line is how much later you arrive.
 - **The number on each row is extra travel.** It's what differs between places, and the same
@@ -95,9 +96,10 @@ stop on a transit route.
 | Request parsing: 112 everyday phrasings | 98% correct |
 | …of which 52 held out, written before tuning (negation, typos, Singlish, Chinese, times) | 96% (was 40%) |
 | Pruning vs. an unpruned search, 20 journeys | same pick on 18; misses within 1.6 min |
-| Golden journeys on the real catalogue | explanations, limits and fallbacks checked on 8 trips |
-| Backend tests | 510 passed |
-| Browser tests, API stubbed: phone and desktop × light and dark | 190 passed |
+| Golden journeys on the real catalogue | explanations, limits and fallbacks checked on 8 trips at 10:00, and one at 8:00 |
+| Backend tests | 516 passed |
+| Browser tests, API stubbed: phone and desktop × light and dark, and iPhone WebKit | 234 passed |
+| Words on screen outside controls, input screen / a result | 9 / 130, down from 68 / 187 |
 | Browser tests against the real API and production build | 14 passed |
 
 - **Phrasings:** [`backend/data/phrasing-evaluation.json`](backend/data/phrasing-evaluation.json),

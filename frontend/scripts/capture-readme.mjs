@@ -32,7 +32,27 @@ async function open(viewport, colorScheme = "light", extra = {}) {
   return page;
 }
 
+/* The README describes the 10:00 answer. Before about 9:30 every pharmacy
+ * between Punggol and Orchard is shut and the headline example is another
+ * plan, so a capture leaves at 10:00 on the next weekday - set through the
+ * page's own control, at whatever hour the script runs. */
+function nextWeekdayAtTen() {
+  const day = new Date(Date.now() + 8 * 60 * 60_000); // Singapore's date
+  do day.setUTCDate(day.getUTCDate() + 1);
+  while (day.getUTCDay() === 0 || day.getUTCDay() === 6);
+  return `${day.toISOString().slice(0, 10)}T10:00`;
+}
+
+async function leaveAtTen(page) {
+  await page.getByRole("button", { name: "Leave later" }).click();
+  await page.getByLabel("Departure time in Singapore").fill(nextWeekdayAtTen());
+  // Filling the field scrolled the planner to it; the picture starts at the top.
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator("#planner").evaluate((el) => el.scrollTo({ top: 0 }));
+}
+
 async function runExample(page) {
+  await leaveAtTen(page);
   await page.getByRole("button", { name: /Punggol.*Orchard/ }).click();
   await page.locator(".result-arrival").waitFor({ timeout: 60_000 });
   await page.waitForTimeout(1800); // the route draws itself
@@ -49,6 +69,7 @@ async function runExample(page) {
       await page.waitForTimeout(gap);
     }
   };
+  await leaveAtTen(page);
   await shoot(8, 120);
   await page.getByRole("button", { name: /Punggol.*Orchard/ }).hover();
   await shoot(6, 120);

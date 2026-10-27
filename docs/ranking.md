@@ -13,13 +13,13 @@ Every option is measured against the trip you were already making, the
 | Figure | Meaning | Where it shows |
 | --- | --- | --- |
 | Extra travel | Extra minutes on trains, buses and on foot. Time in shops is not included. | The headline, every row, every map pin |
-| Time in shops | A planning allowance per errand (`DwellTimes` in `config.py`). An ATM is 2 min, a supermarket 15, a haircut 30. | The line under the headline, and the breakdown |
-| Later than direct | Extra travel plus time in shops: how much later you arrive. | The line under the headline, the breakdown's last row, and how far a bar runs past the "direct" line |
+| Time in shops | A planning allowance per errand (`DwellTimes` in `config.py`). An ATM is 2 min, a supermarket 15, a haircut 30. | The line under the headline, and each stop's "~15 min here" in the plan |
+| Later than direct | Extra travel plus time in shops: how much later you arrive. | The line under the headline, and how far a bar runs past the "direct" line |
 
 Extra travel leads because it is what changes from one place to another. Doing
 the same errands takes about the same time wherever you do them. All three
 figures come from one module on the page (`journey/figures.ts`), so the
-headline, the rows, the pins and the breakdown cannot disagree.
+headline, the rows and the pins cannot disagree.
 
 ## Choosing what to route
 
@@ -56,8 +56,11 @@ score = later-than-direct minutes × 1.0
       − 1.0 if you asked for one stop and it is one stop
 ```
 
-- **Preference weights.** "Less walking" raises the walking weight and
-  "Faster" raises the time weight.
+- **Preference weights.** The request sets them: "minimal walking" raises
+  the walking weight, "in a rush" the time weight. On the result, "Faster",
+  "Less walking" and "Fewer changes" only re-sort the options already
+  routed; the form has no weighting control of its own, because the same
+  words meant two different things in two places.
 - **Shop time inside the score.** The score uses minutes later than direct,
   which includes time in shops. That only separates options that do
   *different* errands, such as a substitute shop.
